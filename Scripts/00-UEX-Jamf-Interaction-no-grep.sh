@@ -243,10 +243,7 @@ bCocoaDialog_DisplayIsInitialized=0
 CocoaDialogProgressCounter=0
 
 fn_find_Clutter () {
-	sudo -u "$loggedInUser" -H open -a "/Applications/Utilities/System Information.app"
-	sleep 1
-	sudo -u "$loggedInUser" -H osascript -e 'tell application "System Events"' -e 'keystroke "u" using command down' -e 'end tell'
-	echo $? RESULT OF keystroke
+	sudo -u "$loggedInUser" -H open -a "/System/Library/CoreServices/Applications/Storage Management.app"
 }
 
 fn_trigger ()
