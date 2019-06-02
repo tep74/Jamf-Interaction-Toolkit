@@ -160,20 +160,20 @@ customMessage=${11}
 
 
 # fordebugging
-# NameConsolidated="Big Apps Inc;Microsoft Outlook;1.0"
-# checks=`echo "block update" | tr '[:upper:]' '[:lower:]'`
-# apps="Microsoft Outlook.app"
-# installDuration=15
-# maxdeferConsolidated="3"
-# packages=""
-# triggers="outlook;none"
-# customMessage=""
-# selfservicePackage=""
-# debug="true"
-# helpTicketsEnabled="false"
-# helpTicketsEnabledViaAppRestriction="false"
-# helpTicketsEnabledViaTrigger="false"
-# helpTicketsEnabledViaFunction="false"
+NameConsolidated="Big Apps Inc;Microsoft Outlook;1.0"
+checks=`echo "block update" | tr '[:upper:]' '[:lower:]'`
+apps="Microsoft Outlook.app"
+installDuration=15
+maxdeferConsolidated="3"
+packages=""
+triggers="outlook;none"
+customMessage=""
+selfservicePackage=""
+debug="true"
+helpTicketsEnabled="false"
+helpTicketsEnabledViaAppRestriction="false"
+helpTicketsEnabledViaTrigger="false"
+helpTicketsEnabledViaFunction="false"
 
 ##########################################################################################
 #								Package name Processing									 #
@@ -467,6 +467,7 @@ fn_check4Packages () {
 }
 
 fn_generatateApps2quit () {
+	local logMode="$1"
 	apps2quit=()
 	apps2ReOpen=()
 	apps2kill=()
@@ -492,7 +493,14 @@ fn_generatateApps2quit () {
 					apps2quit+=(${app})
 					apps2kill+=(${app})
 				fi
-			log4_JSS "$app is stil running. Notifiying user"
+			if [[ $logMode = areyousure ]] ;then
+				log4_JSS "$app is stil running. Loading Are You Sure Window"
+			elif [[ $logMode = beforedialog ]] ;then
+				log4_JSS "$app is running. Notification Required"
+			elif [[ $logMode = safequit ]] ;then
+				log4_JSS "$app is stil running. Attempting to safely quit the App."
+			fi
+
 		fi
 	done
 	unset IFS
@@ -536,6 +544,55 @@ fn_waitForApps2Quit4areYouSure () {
 		apps2Relaunch=("${apps2ReOpen[@]}")
 		killall jamfHelper
 	fi
+}
+
+
+fn_check4KeynoteRunningInPresentationMode () {
+# KeynotePlaying=`lsof -p $(pgrep 'Keynote' | awk '{print $1}') | grep "/Resources/KeynotePlaying.icns"`
+KeynotePlaying=`pmset -g assertions`
+
+
+if [[ "$KeynotePlaying" == *"Displaying Keynote slideshow"* ]];then
+	log4_JSS "User is in Presentation Mode on Keynote and its currently the Active Screen"
+	presentationRunning=true
+fi
+}
+
+fn_check4PowerPointRunningInPresentationMode () {
+PowerPointPlaying=`pmset -g assertions | grep "Microsoft PowerPoint"`
+if [[ "$PowerPointPlaying" == *"Slide Show"* ]];then
+	log4_JSS "User is in Presentation Mode on Microsoft PowerPoint"
+	presentationRunning=true
+fi
+}
+
+fn_check4ActiveScreenSharingInSkypeForBusiness () {
+S4Bscreensharing=`lsof -p $(ps -A | grep -m1 'Skype for Business' | awk '{print $1}') | grep "Resources/ScreenSharingIndicator.storyboardc"`
+if [[ "$S4Bscreensharing" == *"ScreenSharingIndicator.storyboardc"* ]] ; then
+	log4_JSS "User is in sharing their screen on Skype for Business."
+	presentationRunning=true
+fi
+}
+
+
+fn_check4ActiveScreenSharingInWebExMeetingCenter () {
+webExScreenSharing=`lsof -p $(ps -A | grep -m1 'Meeting Center.app' | awk '{print $1}') | grep "NF_Button_Stop_default.tiff"`
+if [[ "$webExScreenSharing" == *"NF_Button_Stop_default.tiff"* ]] ; then
+	log4_JSS "User is in sharing their screen on WebEx Meeting Center."
+	presentationRunning=true
+fi
+}
+
+
+fn_check4ActiveScreenSharingInMicrosoftTeams () {
+
+msTeamsLogLocation=`lsof -p $(ps -A | grep -m1 'Microsoft Teams' | awk '{print $1}') | grep -m1 logs.txt | tail -n 1 | awk '{ print $9 " " $NF }'`
+
+msTeamsScreensharing=`cat "$msTeamsLogLocation" | grep SharingIndicator | tail -n 1`
+if [[ "$msTeamsScreensharing" != *"disposing"* ]] ; then
+	log4_JSS "User is in sharing their screen on Microsoft Teams."
+	presentationRunning=true
+fi
 }
 
 
@@ -2257,19 +2314,30 @@ if [[ "$loggedInUser" != root ]] ; then
 ##########################################################################################
 
 presentationApps=(
-"Microsoft PowerPoint.app"
-"Keynote.app"
 "VidyoDesktop.app"
 "Vidyo Desktop.app"
-"Meeting Center.app"
+# "Meeting Center.app"
+# "webexpluginagent.app"
 "People + Content IP.app"
 )
+
+
+fn_check4KeynoteRunningInPresentationMode 
+
+fn_check4PowerPointRunningInPresentationMode
+
+fn_check4ActiveScreenSharingInSkypeForBusiness
+
+fn_check4ActiveScreenSharingInMicrosoftTeams
+
+fn_check4ActiveScreenSharingInWebExMeetingCenter
 
 for app in "${presentationApps[@]}" ; do
 	IFS=$'\n'
 	appid=`ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'}`
 # 	echo Processing application $app
 	if  [ "$appid" != "" ] ; then
+		log4_JSS "Application $app is Running"
 		presentationRunning=true
 	fi
 done
@@ -2280,7 +2348,10 @@ done
 ##########################################################################################
 ##								PRIMARY DIALOGS FOR INTERACTION							##
 ##########################################################################################
-	
+if [[ $presentationRunning != true ]] ; then
+	fn_generatateApps2quit "beforedialog"
+fi
+
 reqlooper=1 
 while [ $reqlooper = 1 ] ; do
 	
@@ -2573,7 +2644,7 @@ Current work may be lost if you do not save before proceeding."
 		#########################
 
 
-			fn_generatateApps2quit
+			fn_generatateApps2quit "safequit"
 			# Safe quit options
 			if [[ $apps2kill != "" ]] && [[ "$checks" != *"nopreclose"* ]] ; then
 
@@ -2608,7 +2679,7 @@ Current work may be lost if you do not save before proceeding."
 		fn_generatateApps2quit
 
 		if [[ "$apps2quit" == *".app"* ]] && [ -z $PostponeClickResult ] || [[ "$apps2ReOpen" == *".app"* ]] && [ -z $PostponeClickResult ] || [[ "$checks" == *"saveallwork"* ]] && [ -z $PostponeClickResult ] ; then
-
+			fn_generatateApps2quit "areyousure"
 			# if [[ "$checks" == *"critical"* ]] || [[ $delayNumber -ge $maxdefer ]] ; then
 			# 	areYouSure=$( "$jhPath" -windowType hud -lockHUD -icon "$icon" -title "$title" -heading "$areyousureHeading" -description "$areyousureMessage" -button1 "Continue" -timeout 300 -countdown)
 			# else
