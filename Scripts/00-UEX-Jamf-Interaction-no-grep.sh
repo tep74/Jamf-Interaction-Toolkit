@@ -84,7 +84,7 @@ jhPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamf
 # User experience Post installation script to be bundled with PKG.
 # 
 # Version Number: 4.1
-	uexvers=4.1
+	uexvers=4.1.1
 # 
 # Created Jan 18, 2016 by David Ramirez
 #
@@ -160,18 +160,18 @@ customMessage=${11}
 
 
 # fordebugging
-# NameConsolidated="Big Apps Inc;macOS Mojave;1.0;6000"
-# checks=`echo "macosupgrade compliance ssavail" | tr '[:upper:]' '[:lower:]'`
-# apps=""
-# installDuration=90
-# maxdeferConsolidated="0"
+# NameConsolidated="Big Apps Inc;Microsoft Outlook;1.0"
+# checks=`echo "block update" | tr '[:upper:]' '[:lower:]'`
+# apps="Microsoft Outlook.app"
+# installDuration=15
+# maxdeferConsolidated="3"
 # packages=""
-# triggers="bigkahuna;none"
-# customMessage="You will love the new dark mode!"
+# triggers="outlook;none"
+# customMessage=""
 # selfservicePackage=""
 # debug="true"
-# helpTicketsEnabled="true"
-# helpTicketsEnabledViaAppRestriction="true"
+# helpTicketsEnabled="false"
+# helpTicketsEnabledViaAppRestriction="false"
 # helpTicketsEnabledViaTrigger="false"
 # helpTicketsEnabledViaFunction="false"
 
@@ -518,6 +518,26 @@ fn_waitForApps2Quit () {
 	fi
 }
 
+fn_waitForApps2Quit4areYouSure () {
+	appsRunning=()
+	for app in "${apps[@]}" ; do
+		IFS=$'\n'
+		appid=`ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'}`
+		# Processing application $app
+		if  [ "$appid" != "" ] ; then
+			appsRunning+=(${app})
+
+		fi
+	done
+
+	if [[ "${appsRunning[@]}" != *".app"* ]] ; then
+		log4_JSS "User has closed all apps needed. Continuing $action"
+		echo 0 > $areYouSureClickResultFile
+		apps2Relaunch=("${apps2ReOpen[@]}")
+		killall jamfHelper
+	fi
+}
+
 
 
 fn_check4PendingRestartsOrLogout () {
@@ -767,6 +787,7 @@ deploymentpolicyRunning=`ps aux | grep "00-UEX-Deploy-via-Trigger" | grep -v gre
 silentpolicyRunning=`ps aux | grep "00-UEX-Install-Silent-via-trigger" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]'`
 
 if [[ "$silentpolicyRunning" == *"$UEXpolicyTrigger"* ]] ; then
+	log4_JSS "Deteced Policy is running with Silent-via-trigger script. Forcing the $actionation in the background."
 	silentPackage=true
 fi
 
@@ -780,16 +801,18 @@ DEPNotifyRunning=`ps aux | grep DEPNotify.app/Contents/MacOS/ | grep -v grep | g
 AppleSetupDoneFile="/var/db/.AppleSetupDone"
 
 if [ $splashBuddyRunning ] ; then
+	log4_JSS "SplashBuddy is Running. Forcing the $actionation in the background."
 	silentPackage=true
 fi
 
 if [ $DEPNotifyRunning ] ; then
+	log4_JSS "DEPNotify is Running. Forcing the $actionation in the background."
 	silentPackage=true
 fi
 
 if [[ "$loggedInUser" == "_mbsetupuser" ]] && [[ ! -f "$AppleSetupDoneFile" ]]; then
 	silentPackage=true
-	# log4_JSS "First time setup running. Allowing all installations to run silently."
+	log4_JSS "First time setup running. Allowing all installations to run silently."
 fi
 
 
@@ -2579,31 +2602,66 @@ Current work may be lost if you do not save before proceeding."
 		fi
 
 		sleep 2
+
+		areYouSureClickResultFile=/tmp/areYouSure$UEXpolicyTrigger.txt
+		
 		fn_generatateApps2quit
 
 		if [[ "$apps2quit" == *".app"* ]] && [ -z $PostponeClickResult ] || [[ "$apps2ReOpen" == *".app"* ]] && [ -z $PostponeClickResult ] || [[ "$checks" == *"saveallwork"* ]] && [ -z $PostponeClickResult ] ; then
 
+			# if [[ "$checks" == *"critical"* ]] || [[ $delayNumber -ge $maxdefer ]] ; then
+			# 	areYouSure=$( "$jhPath" -windowType hud -lockHUD -icon "$icon" -title "$title" -heading "$areyousureHeading" -description "$areyousureMessage" -button1 "Continue" -timeout 300 -countdown)
+			# else
+			# 	areYouSure=$( "$jhPath" -windowType hud -lockHUD -icon "$icon" -title "$title" -heading "$areyousureHeading" -description "$areyousureMessage" -button1 "Continue" -button2 "Go Back" -timeout 600 -countdown)
+			# fi
+			rm "$areYouSureClickResultFile"
 			if [[ "$checks" == *"critical"* ]] || [[ $delayNumber -ge $maxdefer ]] ; then
-				areYouSure=$( "$jhPath" -windowType hud -lockHUD -icon "$icon" -title "$title" -heading "$areyousureHeading" -description "$areyousureMessage" -button1 "Continue" -timeout 300 -countdown)
+				"$jhPath" -windowType hud -lockHUD -icon "$icon" -title "$title" -heading "$areyousureHeading" -description "$areyousureMessage" -button1 "Continue" -timeout 300 -countdown > "$areYouSureClickResultFile" &
 			else
-				areYouSure=$( "$jhPath" -windowType hud -lockHUD -icon "$icon" -title "$title" -heading "$areyousureHeading" -description "$areyousureMessage" -button1 "Continue" -button2 "Go Back" -timeout 600 -countdown)
+				"$jhPath" -windowType hud -lockHUD -icon "$icon" -title "$title" -heading "$areyousureHeading" -description "$areyousureMessage" -button1 "Continue" -button2 "Go Back" -timeout 600 -countdown > "$areYouSureClickResultFile" &
 			fi
 
-			# log4_JSS "areYouSure Button result was: $areYouSure"
-			if [[ "$areYouSure" = "2" ]] ; then
-				reqlooper=1
-	
-				skipOver=true
-			else
-				reqlooper=0
-				if [ $areYouSure = 2 ] ; then 
-					log4_JSS "User Clicked continue or timer ran out."
-				fi
-				if [ $areYouSure = 239 ] ; then 
-					log4_JSS "User Quit jamfHelper."
+
+		fi # ARE YOU SURE? if apps are still running 
+		areYouSureLooper=0
+		while [[ "$areYouSureLooper" = 0 ]]; do
+			#statements
+			if [[ -e "$areYouSureClickResultFile" ]]; then
+				#statements
+				areYouSure=$(cat "$areYouSureClickResultFile")
+
+				# log4_JSS "areYouSure Button result was: $areYouSure"
+				if [[ -z "$areYouSure" ]] ; then
+					areYouSureLooper=0
+				elif [[ "$areYouSure" = "2" ]] ; then
+					reqlooper=1
+					areYouSureLooper=1
+					skipOver=true
+				else
+					reqlooper=0
+					areYouSureLooper=1
+					if [[ $areYouSure = 0 ]] ; then 
+						log4_JSS "User Clicked continue or timer ran out on are you sure."
+						areYouSureLooper=1
+					fi
+					if [[ $areYouSure = 239 ]] ; then 
+						log4_JSS "User Quit are you sure jamfHelper."
+						areYouSureLooper=1
+					fi
 				fi
 			fi
-		fi # ARE YOU SURE? if apps are still running 
+			
+
+			if  [[ "$checks" == *"quit"* ]] ; then
+				# Start the function to kill jamfHelper and start the install if apps are quit
+				fn_waitForApps2Quit4areYouSure
+
+			elif [[ "$checks" == *"block"* ]] && [[ "${apps2ReOpen[@]}" == *".app"*  ]] ; then
+				# Start the function to kill jamfHelper and start the install if apps are quit
+				fn_waitForApps2Quit4areYouSure
+			fi
+
+		done
 	fi #SkipOver is not true
 
 
