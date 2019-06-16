@@ -161,15 +161,15 @@ customMessage=${11}
 
 
 # fordebugging
-# NameConsolidated="Microsoft;Microsoft Office;1.0"
-# checks=`echo "msupdate" | tr '[:upper:]' '[:lower:]'`
-# apps=""
+# NameConsolidated="Adobe;After Effects CC 2018;15.1.1"
+# checks=`echo "block update" | tr '[:upper:]' '[:lower:]'`
+# apps="Adobe After Effects CC 2018.app;Adobe After Effects CC 2017.app;Adobe Premiere Pro CC 2017.app;Adobe Bridge CC 2017.app;ExtendScript Toolkit.app;Adobe Extension Manager CC.app"
 # installDuration=15
 # maxdeferConsolidated="3"
-# packages=""
-# triggers="outlook;none"
-# customMessage=""
-# selfservicePackage="true"
+# packages="aG-Adobe-AfterEffectsCC2018-15.1.1-MAC-EN-SR05172-1.0.pkg.zip"
+# triggers="After_Effects_CC_2018"
+# # customMessage=""
+# selfservicePackage="false"
 # debug="true"
 # helpTicketsEnabled="false"
 # helpTicketsEnabledViaAppRestriction="false"
@@ -381,48 +381,50 @@ fn_setPlistValue () {
 
 fn_checkPKGsForApps () {
 for package in "${packages[@]}"; do
-	pathtopkg="$waitingRoomDIR"
-	pkg2install="$pathtopkg""$PKG"
-	logInUEX4DebugMode "Checking $package for apps that are interacted with."
-	local packageContents=`pkgutil --payload-files "$pkg2install"`
+	if [[ $package != *".zip" ]] && [[ $package != *".dmg" ]] ;then
+		pathtopkg="$waitingRoomDIR"
+		pkg2install="$pathtopkg""$PKG"
+		logInUEX4DebugMode "Checking $package for apps that are interacted with."
+		local packageContents=`pkgutil --payload-files "$pkg2install"`
 
-	for app in "${apps[@]}"; do
-		#statements
-		logInUEX4DebugMode "Check $package for app $app"
-		if [[ "$packageContents" == *"$app"* ]]; then
-			#statements 
+		for app in "${apps[@]}"; do
+			#statements
+			logInUEX4DebugMode "Check $package for app $app"
+			if [[ "$packageContents" == *"$app"* ]]; then
+				#statements 
 
-			loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
-			local appfound=`/usr/bin/find /Applications -maxdepth 3 -iname "$app"`
-			if [[ -e /Users/"$loggedInUser"/Applications/ ]] ; then
-				local userappfound=`/usr/bin/find /Users/"$loggedInUser"/Applications/ -maxdepth 3 -iname "$app"`
-			fi
-			
-	# 		altpathsfound=""
-			for altpath in "${altpaths[@]}" ; do
-				
-				if [[ "$altpath" == "~"* ]] ; then 
-					altpathshort=`echo $altpath | cut -c 2-`
-					altuserpath="/Users/${loggedInUser}${altpathshort}"
-					if [[ -e "$altuserpath" ]] ; then 
-						local foundappinalthpath=`/usr/bin/find "$altuserpath" -maxdepth 3 -iname "$app"`
-					fi
-				else
-					if [[ -e "$altpath" ]] ; then		
-						local foundappinalthpath=`/usr/bin/find "$altpath" -maxdepth 3 -iname "$app"`
-					fi
+				loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
+				local appfound=`/usr/bin/find /Applications -maxdepth 3 -iname "$app"`
+				if [[ -e /Users/"$loggedInUser"/Applications/ ]] ; then
+					local userappfound=`/usr/bin/find /Users/"$loggedInUser"/Applications/ -maxdepth 3 -iname "$app"`
 				fi
-			done
-			if [[ "$foundappinalthpath" ]] || [[ "$userappfound" ]] || [[ "$appfound" ]]; then
-				#statements
-			log4_JSS "$package contains $app and app is already found. Classifying as an update"
-			checks+=" update"
-			break
+				
+		# 		altpathsfound=""
+				for altpath in "${altpaths[@]}" ; do
+					
+					if [[ "$altpath" == "~"* ]] ; then 
+						altpathshort=`echo $altpath | cut -c 2-`
+						altuserpath="/Users/${loggedInUser}${altpathshort}"
+						if [[ -e "$altuserpath" ]] ; then 
+							local foundappinalthpath=`/usr/bin/find "$altuserpath" -maxdepth 3 -iname "$app"`
+						fi
+					else
+						if [[ -e "$altpath" ]] ; then		
+							local foundappinalthpath=`/usr/bin/find "$altpath" -maxdepth 3 -iname "$app"`
+						fi
+					fi
+				done
+				if [[ "$foundappinalthpath" ]] || [[ "$userappfound" ]] || [[ "$appfound" ]]; then
+					#statements
+				log4_JSS "$package contains $app and app is already found. Classifying as an update"
+				checks+=" update"
+				break
+				fi
+				
+				
 			fi
-			
-			
-		fi
-	done
+		done
+	fi # package is not a zip or dmg
 done
 }
 
@@ -604,11 +606,11 @@ fn_check4ActiveScreenSharingInMicrosoftTeams () {
 msTeamsLogLocation=`lsof -p $(ps -A | grep -m1 'Microsoft Teams' | awk '{print $1}') | grep -m1 logs.txt | tail -n 1 | awk '{ print $9 " " $NF }'`
 if [[ -e "$msTeamsLogLocation" ]]; then
 	msTeamsScreensharing=`cat "$msTeamsLogLocation" | grep SharingIndicator | tail -n 1`
-	if [[ "$msTeamsScreensharing" != *"disposing"* ]] ; then
+	if [[ "$msTeamsScreensharing" ]] && [[ "$msTeamsScreensharing" != *"disposing"* ]] ; then
 		log4_JSS "User is sharing their screen on Microsoft Teams."
 		presentationRunning=true
 	fi
-fi
+fi 
 
 }
 
@@ -3134,7 +3136,7 @@ fi # No user is logged in
 if [[ $PostponeClickResult -gt 0 ]] ; then
 	
 	
-	if [[ $PostponeClickResult = 86400 ] ]; then
+	if [[ $PostponeClickResult = 86400 ]]; then
 		# get the time tomorrow at 9am and delay until that time.
 		tomorrow=`date -v+1d`
 		tomorrowTime=`echo $tomorrow | awk '{ print $4}'`
@@ -3273,7 +3275,7 @@ The restart will happpen after all software changes are complete."
 	fi
 
 
-	if [[ "$selfservicePackage" = true ]] && [[ $preApprovedInstall != true ]] || [[ $skipNotices != "true" ]] && [[ $preApprovedInstall != true ]]   ; then	
+	if [[ "$selfservicePackage" = true ]] && [[ $preApprovedInstall != true ]] && [[ $skipNotices != "true" ]] || [[ $skipNotices != "true" ]] && [[ $preApprovedInstall != true ]]   ; then	
 		status="$heading,
 starting $action..."
 		if [[ "$loggedInUser" ]] ; then 
@@ -3782,7 +3784,7 @@ EOT
 		
 	fi
 	
-	if [[ "$selfservicePackage" = true ]] || [[ $skipNotices != "true" ]]  ; then	
+	if [[ "$selfservicePackage" = true ]] && [[ $skipNotices != "true" ]] || [[ $skipNotices != "true" ]]  ; then	
 		status="$heading,
 $action completed."
 		if [[ "$loggedInUser" ]] ; then 

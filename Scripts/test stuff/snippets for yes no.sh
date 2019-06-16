@@ -3,19 +3,19 @@
 jhPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 
 
-checksOriginal="question button1default;button2default:Bitte"
+checksOriginal="question button1;button2:Yes"
 checks=`echo "$checksOriginal" | tr '[:upper:]' '[:lower:]'`
 
 
 triggers=${10}
-triggers="runme;button1:scsw"
+triggers="runme;button1:whydoyouneedit;button2:removeadminrights"
 
 
 
 checksarray=($checksOriginal)
 
 customMessage=${11}
-customMessage="Would you like this super cool software?"
+customMessage="You are an admin on this computer. Do you still need admin rights?"
 
 questionMessageDesc="$customMessage"
 if [[ "$checks" == *"button1default"* ]] && [[ "$checks" == *"button2default"* ]]; then
