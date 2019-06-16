@@ -381,6 +381,7 @@ fn_setPlistValue () {
 
 fn_checkPKGsForApps () {
 for package in "${packages[@]}"; do
+	# do not use pkgutil to scan .zip or .dmg files (issue #45)
 	if [[ $package != *".zip" ]] && [[ $package != *".dmg" ]] ;then
 		pathtopkg="$waitingRoomDIR"
 		pkg2install="$pathtopkg""$PKG"
@@ -603,11 +604,25 @@ fi
 
 fn_check4ActiveScreenSharingInMicrosoftTeams () {
 
-msTeamsLogLocation=`lsof -p $(ps -A | grep -m1 'Microsoft Teams' | awk '{print $1}') | grep -m1 logs.txt | tail -n 1 | awk '{ print $9 " " $NF }'`
+msTeamsLogLocation=`lsof -p $(ps -A | grep -m1 'Microsoft Teams' | awk '{print $1}') | grep -m1 "logs.txt" | tail -n 1 | awk '{ print $9 " " $NF }'`
 if [[ -e "$msTeamsLogLocation" ]]; then
 	msTeamsScreensharing=`cat "$msTeamsLogLocation" | grep SharingIndicator | tail -n 1`
 	if [[ "$msTeamsScreensharing" ]] && [[ "$msTeamsScreensharing" != *"disposing"* ]] ; then
 		log4_JSS "User is sharing their screen on Microsoft Teams."
+		presentationRunning=true
+	fi
+fi 
+
+}
+
+fn_check4ScreenSharingSessionInZoomUS () {
+
+zoomUSLogLocation=`lsof -p $(ps -A | grep -m1 'zoom.us' | awk '{print $1}') | grep -m1 "as.log" | tail -n 1 | awk '{ print $NF }'`
+if [[ -e "$zoomUSLogLocation" ]]; then
+	zoomUSScreensharing=`cat "$zoomUSLogLocation"`
+	# using if it's not empty because the file might be there but it will be empty 
+	if [[ ! -z "$zoomUSScreensharing" ]] ; then
+		log4_JSS "User has been sharing their screen on zoom.us."
 		presentationRunning=true
 	fi
 fi 
@@ -2616,6 +2631,8 @@ fn_check4ActiveScreenSharingInSkypeForBusiness
 fn_check4ActiveScreenSharingInMicrosoftTeams
 
 fn_check4ScreenSharingSessionInWebExMeetingCenter
+
+fn_check4ScreenSharingSessionInZoomUS
 
 for app in "${presentationApps[@]}" ; do
 	IFS=$'\n'
