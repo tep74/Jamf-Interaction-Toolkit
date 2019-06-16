@@ -27,6 +27,7 @@
 # logname=$(echo $packageName | sed 's/.\{4\}$//')
 # logfilename="$logname".log
 logdir="/Library/Application Support/JAMF/UEX/UEX_Logs/"
+compname=`scutil --get ComputerName`
 # resulttmp="$logname"_result.log
 ##########################################################################################
 
@@ -52,7 +53,12 @@ logInUEX4DebugMode () {
 }
 
 log4_JSS () {
-	echo $(date)	$compname	:	"$1"  | tee -a "$logfilepath"
+	# only put in the log if it exist
+	if [[ "$logfilepath" ]] ; then
+		echo $(date)	$compname	:	"$1"  | tee -a "$logfilepath"
+	else
+		echo $(date)	$compname	:	"$1"
+	fi
 }
 
 

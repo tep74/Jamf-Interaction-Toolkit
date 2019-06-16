@@ -74,6 +74,7 @@ fi
 # logname=$(echo $packageName | sed 's/.\{4\}$//')
 # logfilename="$logname".log
 logdir="/Library/Application Support/JAMF/UEX/UEX_Logs/"
+compname=`scutil --get ComputerName`
 # resulttmp="$logname"_result.log
 ##########################################################################################
 
