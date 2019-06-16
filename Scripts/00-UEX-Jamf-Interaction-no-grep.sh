@@ -55,7 +55,7 @@ ClearHelpTicketRequirementTrigger="remove_from_group_for_disk_space_help_ticket"
 # NEW SOFTWARE UPDTATE OPTIONS
 # use this to run a trigger to set your software update server via a policy 
 # Highly Recomend using Configuration Profiles though.
-# For a hand script to use API to calculate the SUS server check out:
+# For a handy script to use API to calculate the SUS server check out:
 # https://github.com/patchoo/patchoo/blob/master/extras/asucatalogset.sh
 susSetByTrigger=false
 susSettingTriggerName="set_sus_server"

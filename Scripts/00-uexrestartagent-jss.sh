@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# used for major debugging
+# set -x
+
 loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
 loggedInUserHome=`dscl . read /Users/$loggedInUser NFSHomeDirectory | awk '{ print $2 }'`
 
