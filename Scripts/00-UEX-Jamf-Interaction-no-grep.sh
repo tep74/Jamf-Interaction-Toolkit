@@ -103,7 +103,7 @@ jhPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamf
 ########################################################################################## 
 
 ##########################################################################################
-# 							Write Interaction to Plist 									 #
+# 						Write Jamf Interaction Configuration to Plist 					 #
 ##########################################################################################
 
 fn_write_uex_Preference () {
