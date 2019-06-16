@@ -11,7 +11,7 @@
 # Version Number: 4.2
 # 
 # Created Jan 18, 2016 by 
-# David Ramirez (https://github.com/cubandave)
+# cubandave(https://github.com/cubandave)
 # 
 # 
 # cubandave/Jamf-Interaction-Toolkit is licensed under the

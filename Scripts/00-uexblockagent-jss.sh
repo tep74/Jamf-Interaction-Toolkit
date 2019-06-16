@@ -29,7 +29,7 @@ SelfServiceIcon="$loggedInUserHome/Library/Application Support/com.jamfsoftware.
 # Version Number: 4.2
 # 
 # Created Jan 18, 2016 by 
-# David Ramirez (https://github.com/cubandave)
+# cubandave(https://github.com/cubandave)
 #
 # Updates found on github
 # https://github.com/cubandave/Jamf-Interaction-Toolkit/commits/master

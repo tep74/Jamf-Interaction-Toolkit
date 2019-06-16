@@ -10,7 +10,7 @@
 # Version Number: 4.2
 # 
 # Created Jan 18, 2016 by 
-# David Ramirez (https://github.com/cubandave)
+# cubandave(https://github.com/cubandave)
 #
 # Updates found on github
 # https://github.com/cubandave/Jamf-Interaction-Toolkit/commits/master
@@ -30,6 +30,7 @@ logdir="/Library/Application Support/JAMF/UEX/UEX_Logs/"
 # resulttmp="$logname"_result.log
 ##########################################################################################
 
+jamfBinary="/usr/local/jamf/bin/jamf"
 
 ##########################################################################################
 # 										Functions										 #
@@ -54,6 +55,12 @@ log4_JSS () {
 	echo $(date)	$compname	:	"$1"  | tee -a "$logfilepath"
 }
 
+
+triggerNgo ()
+{
+	$jamfBinary policy -forceNoRecon -trigger $1 &
+}
+
 ##########################################################################################
 ##					PROCESS PLISTS AND RESTARTING INSTALLS IF READY						##
 ##########################################################################################
@@ -70,6 +77,7 @@ runDate=`date +%s`
 
 IFS=$'\n'
 for i in $plists ; do
+	policyTriggerResult=""
 	BatteryTest=`pmset -g batt`
 	loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
 	logoutHookRunning=`ps aux | grep "JAMF/ManagementFrameworkScripts/logouthook.sh" | grep -v grep`
@@ -104,7 +112,8 @@ for i in $plists ; do
 		# Enough time has passed 
 		# start the install
 			log4_JSS "Enough time has passed starting the install"
-			/usr/local/bin/jamf policy -trigger "$policyTrigger"
+			log4_JSS "$jamfBinary policy -trigger $policyTrigger"
+			policyTriggerResult=`$jamfBinary policy -trigger "$policyTrigger"`
 		fi
 	elif [[ $loggedInUser == "" ]] && [[ $loginscreeninstall == false ]] ; then
 		# skipping install
@@ -121,11 +130,32 @@ for i in $plists ; do
 		logInUEX "Starting Install"
 
 		killall loginwindow
-		/usr/local/bin/jamf policy -trigger "$policyTrigger"
+		log4_JSS "Running: $jamfBinary policy -trigger $policyTrigger"
+		policyTriggerResult=`$jamfBinary policy -trigger "$policyTrigger"`
+	fi
+
+	# plist clean up if no policy found
+	# if [[ "$policyTriggerResult" == *"No policies were found for the \"$policyTrigger\" trigger."* ]] && [[ "$policyTriggerResult" != *"Could not connect to the JSS"* ]] ; then
+	if [[ "$policyTriggerResult" == *"No policies were found for the \"$policyTrigger\" trigger."* ]] ; then
+		log4_JSS "No policy found for: $policyTriggerResult"
+		log4_JSS "deleting $1"
+		/bin/rm "/Library/Application Support/JAMF/UEX/defer_jss/$i"
 	fi
 	
 done
 unset IFS
+
+# if the defer folder is now empty then you should do an inventory update to stop deferral service from running
+deferfolderContents=`ls "/Library/Application Support/JAMF/UEX/defer_jss/" | grep plist`
+if [[ -z "$deferfolderContents" ]]; then
+	log4_JSS "No more deferrals."
+	InventoryUpdateRequired=true
+fi
+
+if [[ "$InventoryUpdateRequired" = true ]] ;then 
+	log4_JSS "Inventory Update Required"
+	triggerNgo uex_inventory_update_agent
+fi
 
 ##########################################################################################
 exit 0
@@ -139,6 +169,6 @@ exit 0
 # May 22, 2016 	v1.3	--cubandave--	added considerations for loginscreeninstall (power reqs & time etc.)
 # Sep 5, 2016 	v2.0	--cubandave--	Logging added
 # Sep 5, 2016 	v2.0	--cubandave--	Debug mode added
-# Apr 24, 2018 	v3.7	--cubandave--	Funtctions added
+# Apr 24, 2018 	v3.7	--cubandave--	Functions added
 # Oct 24, 2018 	v4.0	--cubandave--	All Change logs are available now in the release notes on GITHUB
 # 

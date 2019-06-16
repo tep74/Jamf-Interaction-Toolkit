@@ -88,7 +88,7 @@ jhPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamf
 	uexvers=4.2
 # 
 # Created: January 23rd, 2017 by
-# DR = David Ramirez (https://github.com/cubandave)
+# cubandave(https://github.com/cubandave)
 # 
 # Updates found on github
 # https://github.com/cubandave/Jamf-Interaction-Toolkit/commits/master
@@ -3189,7 +3189,7 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 
 		log4_JSS "The next $action prompt is postponed until after $delayDateFriendly"
 		
-		#if the defer folder if empty and i'm creating the first deferal then invetory updates are needed to the comptuer is in scope of the deferral service
+		# if the defer folder if empty and i'm creating the first deferal then invetory updates are needed to the comptuer is in scope of the deferral service
 		deferfolderContents=`ls "/Library/Application Support/JAMF/UEX/defer_jss/" | grep plist`
 		if [[ -z "$deferfolderContents" ]]; then
 			InventoryUpdateRequired=true
