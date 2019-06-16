@@ -3,18 +3,21 @@ loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v ro
 loggedInUserHome=`dscl . read /Users/$loggedInUser NFSHomeDirectory | awk '{ print $2 }'`
 
 ##########################################################################################
-##								Paramaters for Customization 							##
+##						Get The Jamf Interaction Configuration 							##
 ##########################################################################################
 
-title="Your IT Department"
+fn_read_uex_Preference () {
+	local domain="$1"
+	defaults read /Library/Preferences/github.cubandave.uex.plist "$domain"
+}
 
-# Jamf Pro 10 icon if you want another custom one then please update it here.
-# or you can customize this with an image you've included in UEX resources or is already local on the computer
-customLogo="/Library/Application Support/JAMF/Jamf.app/Contents/Resources/AppIcon.icns"
+UEXFolderPath="$(fn_read_uex_Preference "UEXFolderPath")"
 
-# if you you jamf Pro 10 to brand the image with your self sevice icon will be here
-# or you can customize this with an image you've included in UEX resources or is already local on the computer
-SelfServiceIcon="$loggedInUserHome/Library/Application Support/com.jamfsoftware.selfservice.mac/Documents/Images/brandingimage.png"
+title="$(fn_read_uex_Preference "title")"
+
+customLogo="$(fn_read_uex_Preference "customLogo")"
+
+SelfServiceIcon="$(fn_read_uex_Preference "SelfServiceIcon")"
 
 ##########################################################################################
 ##########################################################################################
@@ -44,7 +47,7 @@ SelfServiceIcon="$loggedInUserHome/Library/Application Support/com.jamfsoftware.
 ##						STATIC VARIABLES FOR CocoaDialog DIALOGS						##
 ##########################################################################################
 
-CocoaDialog="/Library/Application Support/JAMF/UEX/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog"
+CocoaDialog="$UEXFolderPath/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog"
 
 ##########################################################################################
 
@@ -71,7 +74,7 @@ fi
 ##########################################################################################
 # logname=$(echo $packageName | sed 's/.\{4\}$//')
 # logfilename="$logname".log
-logdir="/Library/Application Support/JAMF/UEX/UEX_Logs/"
+logdir="$UEXFolderPath/UEX_Logs/"
 compname=`scutil --get ComputerName`
 # resulttmp="$logname"_result.log
 ##########################################################################################
@@ -81,7 +84,7 @@ compname=`scutil --get ComputerName`
 ##########################################################################################
 
 fn_getPlistValue () {
-	/usr/libexec/PlistBuddy -c "print $1" /Library/Application\ Support/JAMF/UEX/$2/"$3"
+	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath"/$2/"$3"
 }
 
 logInUEX () {
@@ -110,7 +113,7 @@ lastRebootFriendly=`date -r$lastReboot`
 
 rundate=`date +%s`
 
-blockPlists=`ls /Library/Application\ Support/JAMF/UEX/block_jss/ | grep ".plist"`
+blockPlists=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 
 set -- "$blockPlists"
 IFS=$'\n' ; declare -a blockPlists=($*)  
@@ -120,11 +123,11 @@ unset IFS
 # 		PLIST PROCESSING		 #
 ##################################
 
-runBlocking=`ls /Library/Application\ Support/JAMF/UEX/block_jss/ | grep ".plist"`
+runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 	while [ "$runBlocking" ] ; do
 	 
-	runBlocking=`ls /Library/Application\ Support/JAMF/UEX/block_jss/ | grep ".plist"`
-	blockPlists=`ls /Library/Application\ Support/JAMF/UEX/block_jss/ | grep ".plist"`
+	runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
+	blockPlists=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 	
 	set -- "$blockPlists"
 	IFS=$'\n' ; declare -a blockPlists=($*)  
@@ -132,11 +135,11 @@ runBlocking=`ls /Library/Application\ Support/JAMF/UEX/block_jss/ | grep ".plist
 	
 	for i in "${blockPlists[@]}" ; do
 	# Run through the plists and check for app blocking requirements
-		# name=`/usr/libexec/PlistBuddy -c "print name" "/Library/Application Support/JAMF/UEX/block_jss/$i"`
-		# packageName=`/usr/libexec/PlistBuddy -c "print packageName" "/Library/Application Support/JAMF/UEX/block_jss/$i"`
-		# apps=`/usr/libexec/PlistBuddy -c "print apps2block" "/Library/Application Support/JAMF/UEX/block_jss/$i"`
-		# checks=`/usr/libexec/PlistBuddy -c "print checks" "/Library/Application Support/JAMF/UEX/block_jss/$i"`	
-		# runDate=`/usr/libexec/PlistBuddy -c "print runDate" "/Library/Application Support/JAMF/UEX/block_jss/$i"`
+		# name=`/usr/libexec/PlistBuddy -c "print name" "$UEXFolderPath/block_jss/$i"`
+		# packageName=`/usr/libexec/PlistBuddy -c "print packageName" "$UEXFolderPath/block_jss/$i"`
+		# apps=`/usr/libexec/PlistBuddy -c "print apps2block" "$UEXFolderPath/block_jss/$i"`
+		# checks=`/usr/libexec/PlistBuddy -c "print checks" "$UEXFolderPath/block_jss/$i"`	
+		# runDate=`/usr/libexec/PlistBuddy -c "print runDate" "$UEXFolderPath/block_jss/$i"`
 
 		name=$(fn_getPlistValue "name" "block_jss" "$i")
 		packageName=$(fn_getPlistValue "packageName" "block_jss" "$i")
@@ -173,7 +176,7 @@ runBlocking=`ls /Library/Application\ Support/JAMF/UEX/block_jss/ | grep ".plist
 		##									SETTING FOR DEBUG MODE								##
 		##########################################################################################
 
-		debugDIR="/Library/Application Support/JAMF/UEX/debug/"
+		debugDIR="$UEXFolderPath/debug/"
 
 		if [ -e "$debugDIR""$packageName" ] ; then 
 			debug=true
@@ -201,7 +204,7 @@ runBlocking=`ls /Library/Application\ Support/JAMF/UEX/block_jss/ | grep ".plist
 		if [[ timeSinceReboot -gt 0 ]] ; then
 			# the computer has rebooted since $runDateFriendly
 			# Delete block requirement plist
-			rm /Library/Application\ Support/JAMF/UEX/block_jss/"$i"
+			rm "$UEXFolderPath"/block_jss/"$i"
 		else 
 			# the computer has NOT rebooted since $runDateFriendly
 			# Process the apps in the plist and kill and notify

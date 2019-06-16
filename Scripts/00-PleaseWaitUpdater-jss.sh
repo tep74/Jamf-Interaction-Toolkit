@@ -1,6 +1,17 @@
 #!/bin/bash
 
 ##########################################################################################
+##						Get The Jamf Interaction Configuration 							##
+##########################################################################################
+
+fn_read_uex_Preference () {
+	local domain="$1"
+	defaults read /Library/Preferences/github.cubandave.uex.plist "$domain"
+}
+
+UEXFolderPath="$(fn_read_uex_Preference "UEXFolderPath")"
+
+##########################################################################################
 ##########################################################################################
 # 
 # 
@@ -21,7 +32,7 @@
 ########################################################################################## 
 
 
-PleaseWaitApp="/Library/Application Support/JAMF/UEX/resources/PleaseWait.app"
+PleaseWaitApp="$UEXFolderPath/resources/PleaseWait.app"
 pleasewaitPhase="/private/tmp/com.pleasewait.phase"
 pleasewaitProgress="/private/tmp/com.pleasewait.progress"
 pleasewaitInstallProgress="/private/tmp/com.pleasewait.installprogress"
@@ -50,7 +61,7 @@ set -- "$plists"
 IFS=$'\n'; declare -a plists=($*)  
 unset IFS
 
-installjss="/Library/Application Support/JAMF/UEX/install_jss/"
+installjss="$UEXFolderPath/install_jss/"
 
 #Cycle through list of plists
 	for plist in "${plists[@]}" ; do

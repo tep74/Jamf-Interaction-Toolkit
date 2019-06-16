@@ -3,21 +3,29 @@ loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v ro
 loggedInUserHome=`dscl . read /Users/$loggedInUser NFSHomeDirectory | awk '{ print $2 }'`
 
 ##########################################################################################
-##								Paramaters for Customization 							##
+##						Manual Jamf Interaction Configuration 							##
 ##########################################################################################
 
-title="Your IT Department"
-
-# Jamf Pro 10 icon if you want another custom one then please update it here.
-# or you can customize this with an image you've included in UEX resources or is already local on the computer
-customLogo="/Library/Application Support/JAMF/Jamf.app/Contents/Resources/AppIcon.icns"
-
-# if you you jamf Pro 10 to brand the image with your self sevice icon will be here
-# or you can customize this with an image you've included in UEX resources or is already local on the computer
-SelfServiceIcon="$loggedInUserHome/Library/Application Support/com.jamfsoftware.selfservice.mac/Documents/Images/brandingimage.png"
-
-
 enable_filevault_reboot=false
+
+
+##########################################################################################
+##						Get The Jamf Interaction Configuration 							##
+##########################################################################################
+
+fn_read_uex_Preference () {
+	local domain="$1"
+	defaults read /Library/Preferences/github.cubandave.uex.plist "$domain"
+}
+
+UEXFolderPath="$(fn_read_uex_Preference "UEXFolderPath")"
+
+title="$(fn_read_uex_Preference "title")"
+
+customLogo="$(fn_read_uex_Preference "customLogo")"
+
+SelfServiceIcon="$(fn_read_uex_Preference "SelfServiceIcon")"
+
 
 ##########################################################################################
 ##########################################################################################
@@ -47,7 +55,7 @@ enable_filevault_reboot=false
 ##						STATIC VARIABLES FOR CocoaDialog DIALOGS						##
 ##########################################################################################
 
-CocoaDialog="/Library/Application Support/JAMF/UEX/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog"
+CocoaDialog="$UEXFolderPath/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog"
 
 ##########################################################################################
 
@@ -73,7 +81,7 @@ fi
 ##########################################################################################
 # logname=$(echo $packageName | sed 's/.\{4\}$//')
 # logfilename="$logname".log
-logdir="/Library/Application Support/JAMF/UEX/UEX_Logs/"
+logdir="$UEXFolderPath/UEX_Logs/"
 compname=`scutil --get ComputerName`
 # resulttmp="$logname"_result.log
 ##########################################################################################
@@ -83,7 +91,7 @@ compname=`scutil --get ComputerName`
 ##########################################################################################
 
 fn_getPlistValue () {
-	/usr/libexec/PlistBuddy -c "print $1" /Library/Application\ Support/JAMF/UEX/$2/"$3"
+	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath"/$2/"$3"
 }
 
 logInUEX () {
@@ -114,7 +122,7 @@ lastRebootFriendly=`date -r$lastReboot`
 
 rundate=`date +%s`
 
-plists=`ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist"`
+plists=`ls "$UEXFolderPath"/restart_jss/ | grep ".plist"`
 
 set -- "$plists" 
 IFS=$'\n' ; declare -a plists=($*)  
@@ -149,7 +157,7 @@ for i in "${plists[@]}" ; do
 		# the computer has rebooted since $runDateFriendly
 		#delete the plist
 		logInUEX "Deleting the restart plsit $i because the computer has rebooted since $runDateFriendly"
-		rm "/Library/Application Support/JAMF/UEX/restart_jss/$i"
+		rm "$UEXFolderPath/restart_jss/$i"
 	else 
 		# the computer has NOT rebooted since $runDateFriendly
 		lastline=`awk 'END{print}' "$logfilepath"`

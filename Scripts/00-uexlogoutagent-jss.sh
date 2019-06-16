@@ -3,18 +3,21 @@ loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v ro
 loggedInUserHome=`dscl . read /Users/$loggedInUser NFSHomeDirectory | awk '{ print $2 }'`
 
 ##########################################################################################
-##								Paramaters for Customization 							##
+##						Get The Jamf Interaction Configuration 							##
 ##########################################################################################
 
-title="Your IT Department"
+fn_read_uex_Preference () {
+	local domain="$1"
+	defaults read /Library/Preferences/github.cubandave.uex.plist "$domain"
+}
 
-# Jamf Pro 10 icon if you want another custom one then please update it here.
-# or you can customize this with an image you've included in UEX resources or is already local on the computer
-customLogo="/Library/Application Support/JAMF/Jamf.app/Contents/Resources/AppIcon.icns"
+UEXFolderPath="$(fn_read_uex_Preference "UEXFolderPath")"
 
-# if you you jamf Pro 10 to brand the image with your self sevice icon will be here
-# or you can customize this with an image you've included in UEX resources or is already local on the computer
-SelfServiceIcon="$loggedInUserHome/Library/Application Support/com.jamfsoftware.selfservice.mac/Documents/Images/brandingimage.png"
+title="$(fn_read_uex_Preference "title")"
+
+customLogo="$(fn_read_uex_Preference "customLogo")"
+
+SelfServiceIcon="$(fn_read_uex_Preference "SelfServiceIcon")"
 
 ##########################################################################################
 ##########################################################################################
@@ -44,7 +47,7 @@ SelfServiceIcon="$loggedInUserHome/Library/Application Support/com.jamfsoftware.
 ##						STATIC VARIABLES FOR CocoaDialog DIALOGS						##
 ##########################################################################################
 
-CocoaDialog="/Library/Application Support/JAMF/UEX/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog"
+CocoaDialog="$UEXFolderPath/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog"
 
 ##########################################################################################
 
@@ -71,7 +74,7 @@ fi
 ##########################################################################################
 # logname=$(echo $packageName | sed 's/.\{4\}$//')
 # logfilename="$logname".log
-logdir="/Library/Application Support/JAMF/UEX/UEX_Logs/"
+logdir="$UEXFolderPath/UEX_Logs/"
 compname=`scutil --get ComputerName`
 # resulttmp="$logname"_result.log
 ##########################################################################################
@@ -164,7 +167,7 @@ for i in "${resartPlists[@]}" ; do
 		# the computer has rebooted since $runDateFriendly
 		#delete the plist
 		logInUEX "Deleting the restart plsit $i because the computer has rebooted since $runDateFriendly"
-		rm "/Library/Application Support/JAMF/UEX/restart_jss/$i"
+		rm "$UEXFolderPath/restart_jss/$i"
 	else 
 		# the computer has NOT rebooted since $runDateFriendly
 		lastline=`awk 'END{print}' "$logfilepath"`
@@ -210,7 +213,7 @@ if [[ $restart != "true" ]] ; then
 		if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then
 			# the computer has rebooted since $runDateFriendly
 			#delete the plist
-			rm "/Library/Application Support/JAMF/UEX/logout_jss/$i"
+			rm "$UEXFolderPath/logout_jss/$i"
 			logInUEX "There are no restart interactions required"
 			logInUEX "Deleted logout plist because the user has restarted already"
 			
@@ -218,7 +221,7 @@ if [[ $restart != "true" ]] ; then
 		# if the user has a fresh login since then delete the plist
 		# if the plist has been touched once then the user has been logged out once
 		# then delete the plist
-			rm "/Library/Application Support/JAMF/UEX/logout_jss/$i"
+			rm "$UEXFolderPath/logout_jss/$i"
 			logInUEX "Deleted logout plist because the user has logged out already"
 		elif [[ "$plistloggedInUser" != "$loggedInUser" ]] ; then
 		# if the user in the plist is not the user as the one currently logged in do not force a logout
@@ -228,7 +231,7 @@ if [[ $restart != "true" ]] ; then
 		# the user has NOT logged out since $plistrunDateFriendly
 		# change the plist state to checked=true so that it's deleted the next time.
 			sleep 1
-			/usr/libexec/PlistBuddy -c "set checked true" "/Library/Application Support/JAMF/UEX/logout_jss/$i"
+			/usr/libexec/PlistBuddy -c "set checked true" "$UEXFolderPath/logout_jss/$i"
 			lastline=`awk 'END{print}' "$logfilepath"`
 			if [[ "$lastline" != *"Notifying the user"* ]] ; then 
 				logInUEX "There are no restart interactions required."

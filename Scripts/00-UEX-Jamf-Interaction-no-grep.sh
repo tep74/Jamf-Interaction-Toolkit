@@ -11,6 +11,8 @@ loggedInUserHome=`dscl . read /Users/$loggedInUser NFSHomeDirectory | awk '{ pri
 ##								Jamf Interaction Configuration 							##
 ##########################################################################################
 
+UEXFolderPath="/Library/Application Support/JAMF/UEX"
+
 title="Your IT Department"
 
 # Jamf Pro 10 icon if you want another custom one then please update it here.
@@ -39,7 +41,7 @@ helpTicketsEnabledViaTrigger=false
 helpTicketsEnabledViaFunction=false
 
 # If you move the UEX Resources to another location or use a difffernt app then change this.
-restrictedAppName="/Library/Application Support/JAMF/UEX/resources/User Needs Helps Clearing Space.app"
+restrictedAppName="$UEXFolderPath/resources/User Needs Helps Clearing Space.app"
 
 # Change this to your own trigger if you want to use a custom policy to notify you
 # NOTE if you make it blank then it assumes you're creating a policy for each UEX policy using  
@@ -100,6 +102,27 @@ jhPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamf
 ##########################################################################################
 ########################################################################################## 
 
+##########################################################################################
+# 							Write Interaction to Plist 									 #
+##########################################################################################
+
+fn_write_uex_Preference () {
+	local domain="$1"
+	local key="$2"
+	defaults write /Library/Preferences/github.cubandave.uex.plist "$domain" "$key" 
+}
+
+fn_write_uex_Preference "UEXFolderPath" "$UEXFolderPath"
+
+fn_write_uex_Preference "title" "$title"
+
+fn_write_uex_Preference "customLogo" "$customLogo"
+
+fn_write_uex_Preference "SelfServiceIcon" "$SelfServiceIcon"
+
+
+
+##########################################################################################
 jamfBinary="/usr/local/jamf/bin/jamf"
 osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. {'print $2'} )
 
@@ -160,20 +183,20 @@ customMessage=${11}
 
 
 # fordebugging
-# NameConsolidated="Adobe;After Effects CC 2018;15.1.1"
-# checks=`echo "block update" | tr '[:upper:]' '[:lower:]'`
-# apps="Adobe After Effects CC 2018.app;Adobe After Effects CC 2017.app;Adobe Premiere Pro CC 2017.app;Adobe Bridge CC 2017.app;ExtendScript Toolkit.app;Adobe Extension Manager CC.app"
-# installDuration=15
-# maxdeferConsolidated="3"
-# packages="aG-Adobe-AfterEffectsCC2018-15.1.1-MAC-EN-SR05172-1.0.pkg.zip"
-# triggers="After_Effects_CC_2018"
-# # customMessage=""
-# selfservicePackage="false"
-# debug="true"
-# helpTicketsEnabled="false"
-# helpTicketsEnabledViaAppRestriction="false"
-# helpTicketsEnabledViaTrigger="false"
-# helpTicketsEnabledViaFunction="false"
+NameConsolidated="Adobe;After Effects CC 2018;15.1.1"
+checks=`echo "block update" | tr '[:upper:]' '[:lower:]'`
+apps="Adobe After Effects CC 2018.app;Adobe After Effects CC 2017.app;Adobe Premiere Pro CC 2017.app;Adobe Bridge CC 2017.app;ExtendScript Toolkit.app;Adobe Extension Manager CC.app"
+installDuration=15
+maxdeferConsolidated="3"
+packages="aG-Adobe-AfterEffectsCC2018-15.1.1-MAC-EN-SR05172-1.0.pkg.zip"
+triggers="After_Effects_CC_2018"
+# customMessage=""
+selfservicePackage="false"
+debug="true"
+helpTicketsEnabled="false"
+helpTicketsEnabledViaAppRestriction="false"
+helpTicketsEnabledViaTrigger="false"
+helpTicketsEnabledViaFunction="false"
 
 ##########################################################################################
 #								Package name Processing									 #
@@ -191,7 +214,7 @@ pathToFolder=`dirname "$pathToPackage"`
 ##									SETTING FOR DEBUG MODE								##
 ##########################################################################################
 
-debugDIR="/Library/Application Support/JAMF/UEX/debug/"
+debugDIR="$UEXFolderPath/debug/"
 
 if [[ -e "$debugDIR""$packageName" ]] ; then 
 	debug=true
@@ -360,18 +383,18 @@ fn_waitForUserToLogout () {
 }
 
 fn_getPlistValue () {
-	/usr/libexec/PlistBuddy -c "print $1" /Library/Application\ Support/JAMF/UEX/$2/"$3"
+	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath"/$2/"$3"
 }
 
 fn_addPlistValue () {
-	/usr/libexec/PlistBuddy -c "add $1 $2 ${3}" /Library/Application\ Support/JAMF/UEX/"$4"/"$5" > /dev/null 2>&1
+	/usr/libexec/PlistBuddy -c "add $1 $2 ${3}" "$UEXFolderPath"/"$4"/"$5" > /dev/null 2>&1
 
 	# log the values of the plist
 	logInUEX4DebugMode "Plist Details: $1 $2 $3"
 }
 
 fn_setPlistValue () {
-	/usr/libexec/PlistBuddy -c "set $1 ${2}" /Library/Application\ Support/JAMF/UEX/"$3"/"$4" > /dev/null 2>&1
+	/usr/libexec/PlistBuddy -c "set $1 ${2}" "$UEXFolderPath"/"$3"/"$4" > /dev/null 2>&1
 
 	# log the values of the plist
 	logInUEX4DebugMode "Plist Details Updated: $1 $2 $3"
@@ -634,12 +657,12 @@ fn_check4PendingRestartsOrLogout () {
 	lastReboot=`date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s"`
 	lastRebootFriendly=`date -r$lastReboot`
 
-	resartPlists=`ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist"`
+	resartPlists=`ls "$UEXFolderPath"/restart_jss/ | grep ".plist"`
 	set -- "$resartPlists"
 	IFS=$'\n' ; declare -a resartPlists=($*)  
 	unset IFS
 
-	logoutPlists=`ls /Library/Application\ Support/JAMF/UEX/logout_jss/ | grep ".plist"`
+	logoutPlists=`ls "$UEXFolderPath"/logout_jss/ | grep ".plist"`
 	set -- "$logoutPlists" 
 	IFS=$'\n' ; declare -a logoutPlists=($*)  
 	unset IFS
@@ -667,7 +690,7 @@ fn_check4PendingRestartsOrLogout () {
 			# the computer has rebooted since $runDateFriendly
 			#delete the plist
 			logInUEX "Deleting the restart plsit $i because the computer has rebooted since $runDateFriendly"
-			rm "/Library/Application Support/JAMF/UEX/restart_jss/$i"
+			rm "$UEXFolderPath/restart_jss/$i"
 		else 
 			# the computer has NOT rebooted since $runDateFriendly
 			log4_JSS "Other restarts are queued"
@@ -709,7 +732,7 @@ fn_check4PendingRestartsOrLogout () {
 			if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then
 				# the computer has rebooted since $runDateFriendly
 				#delete the plist
-				rm "/Library/Application Support/JAMF/UEX/logout_jss/$i"
+				rm "$UEXFolderPath/logout_jss/$i"
 				logInUEX "There are no restart interactions required"
 				logInUEX "Deleted logout plist because the user has restarted already"
 				
@@ -717,7 +740,7 @@ fn_check4PendingRestartsOrLogout () {
 			# if the user has a fresh login since then delete the plist
 			# if the plist has been touched once then the user has been logged out once
 			# then delete the plist
-				rm "/Library/Application Support/JAMF/UEX/logout_jss/$i"
+				rm "$UEXFolderPath/logout_jss/$i"
 				logInUEX "Deleted logout plist because the user has logged out already"
 			elif [[ "$plistloggedInUser" != "$loggedInUser" ]] ; then
 			# if the user in the plist is not the user as the one currently logged in do not force a logout
@@ -834,7 +857,7 @@ fi
 ##								STATIC VARIABLES FOR CD DIALOGS							##
 ##########################################################################################
 
-CocoaDialog="/Library/Application Support/JAMF/UEX/resources/CocoaDialog.app/Contents/MacOS/CocoaDialog"
+CocoaDialog="$UEXFolderPath/resources/CocoaDialog.app/Contents/MacOS/CocoaDialog"
 sCocoaDialog_App="$CocoaDialog"
 
 ##########################################################################################
@@ -1384,9 +1407,9 @@ resources=(
 "$SelfServiceIconCheck"
 "$diskiconCheck"
 "$restrictedAppNameCheck"
-"/Library/Application Support/JAMF/UEX/resources/cocoaDialog.app"
-"/Library/Application Support/JAMF/UEX/resources/battery_white.png"
-"/Library/Application Support/JAMF/UEX/resources/PleaseWait.app"
+"$UEXFolderPath/resources/cocoaDialog.app"
+"$UEXFolderPath/resources/battery_white.png"
+"$UEXFolderPath/resources/PleaseWait.app"
 )
 for i in "${resources[@]}"; do
 	resourceName="$(echo "$i" | sed 's@.*/@@')"
@@ -1442,7 +1465,7 @@ runDateFriendly=`date -r$runDate`
 ##########################################################################################
 packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
 pathToFolder=`dirname "$pathToPackage"`
-SSplaceholderDIR="/Library/Application Support/JAMF/UEX/selfservice_jss/"
+SSplaceholderDIR="$UEXFolderPath/selfservice_jss/"
 
 
 
@@ -1452,12 +1475,12 @@ SSplaceholderDIR="/Library/Application Support/JAMF/UEX/selfservice_jss/"
 ##########################################################################################
 ##								MAKE DIRECTORIES FOR PLISTS								##
 ##########################################################################################
-blockJSSfolder="/Library/Application Support/JAMF/UEX/block_jss/"
-deferJSSfolder="/Library/Application Support/JAMF/UEX/defer_jss/"
-logoutJSSfolder="/Library/Application Support/JAMF/UEX/logout_jss/"
-restartJSSfolder="/Library/Application Support/JAMF/UEX/restart_jss/"
+blockJSSfolder="$UEXFolderPath/block_jss/"
+deferJSSfolder="$UEXFolderPath/defer_jss/"
+logoutJSSfolder="$UEXFolderPath/logout_jss/"
+restartJSSfolder="$UEXFolderPath/restart_jss/"
 selfServiceJSSfolder="$SSplaceholderDIR"
-installJSSfolder="/Library/Application Support/JAMF/UEX/install_jss/"
+installJSSfolder="$UEXFolderPath/install_jss/"
 
 plistFolders=(
 "$blockJSSfolder"
@@ -1480,7 +1503,7 @@ done
 ##								FIX	PERMISSIONS ON RESOURCES							##
 ##########################################################################################
 chmod 644 /Library/LaunchDaemons/github.cubandave.UEX-*  > /dev/null 2>&1
-chmod -R 755 /Library/Application\ Support/JAMF/UEX  > /dev/null 2>&1
+chmod -R 755 "$UEXFolderPath"  > /dev/null 2>&1
 ##########################################################################################
 
 
@@ -1488,7 +1511,7 @@ chmod -R 755 /Library/Application\ Support/JAMF/UEX  > /dev/null 2>&1
 ##								FIX	ONWERSHIP ON RESOURCES								##
 ##########################################################################################
 chown root:wheel /Library/LaunchDaemons/github.cubandave.UEX-* > /dev/null 2>&1
-chown -R root:wheel /Library/Application\ Support/JAMF/UEX > /dev/null 2>&1
+chown -R root:wheel "$UEXFolderPath" > /dev/null 2>&1
 ##########################################################################################
 
 ##########################################################################################
@@ -1496,7 +1519,7 @@ chown -R root:wheel /Library/Application\ Support/JAMF/UEX > /dev/null 2>&1
 ##########################################################################################
 logname=$(echo $packageName | sed 's/.\{4\}$//')
 logfilename="$logname".log
-logdir="/Library/Application Support/JAMF/UEX/UEX_Logs/"
+logdir="$UEXFolderPath/UEX_Logs/"
 resulttmp="$logname"_result.log
 
 
@@ -1800,8 +1823,8 @@ if [[ $badvariable != true ]] ; then
 ##									 Please Wait Variables								##
 ##########################################################################################
 
-#PleaseWaitApp="/Library/Application Support/JAMF/UEX/resources/PleaseWait.app/Contents/MacOS/PleaseWait"
-PleaseWaitApp="/Library/Application Support/JAMF/UEX/resources/PleaseWait.app"
+#PleaseWaitApp="$UEXFolderPath/resources/PleaseWait.app/Contents/MacOS/PleaseWait"
+PleaseWaitApp="$UEXFolderPath/resources/PleaseWait.app"
 pleasewaitPhase="/private/tmp/com.pleasewait.phase"
 pleasewaitProgress="/private/tmp/com.pleasewait.progress"
 pleasewaitInstallProgress="/private/tmp/com.pleasewait.installprogress"
@@ -1818,7 +1841,7 @@ if [[ "$VmTest" ]] ; then
 fi
 BatteryTest=`pmset -g batt`
 
-batteryCustomIcon="/Library/Application Support/JAMF/UEX/resources/battery_white.png"
+batteryCustomIcon="$UEXFolderPath/resources/battery_white.png"
 
 #if the icon file doesn't exist then set to a standard icon
 if [[ -e "$batteryCustomIcon" ]] ; then
@@ -2048,8 +2071,8 @@ fi
 
 #get the delay number form the plist or set it to zero
 
-if [ -e /Library/Application\ Support/JAMF/UEX/defer_jss/"$packageName".plist ] ; then 
-	# delayNumber=`/usr/libexec/PlistBuddy -c "print delayNumber" /Library/Application\ Support/JAMF/UEX/defer_jss/"$packageName".plist 2>/dev/null`
+if [ -e "$UEXFolderPath"/defer_jss/"$packageName".plist ] ; then 
+	# delayNumber=`/usr/libexec/PlistBuddy -c "print delayNumber" "$UEXFolderPath"/defer_jss/"$packageName".plist 2>/dev/null`
 	delayNumber=$(fn_getPlistValue "delayNumber" "defer_jss" "$packageName.plist")
 else
 	delayNumber=0
@@ -2543,7 +2566,7 @@ fi
 PostponeClickResult=""
 skipNotices="false"
 
-if [ -e /Library/Application\ Support/JAMF/UEX/defer_jss/"$packageName".plist ] ; then 
+if [ -e "$UEXFolderPath"/defer_jss/"$packageName".plist ] ; then 
 
 	delayNumber=$(fn_getPlistValue "delayNumber" "defer_jss" "$packageName.plist")
 	presentationDelayNumber=$(fn_getPlistValue "presentationDelayNumber" "defer_jss" "$packageName.plist")
@@ -3099,9 +3122,9 @@ fi
 else # loginuser is null therefore no one is logged in and 
 
 	logInUEX "No one is logged in"
-	if [[ -a /Library/Application\ Support/JAMF/UEX/defer_jss/"$packageName".plist ]] ; then
+	if [[ -a "$UEXFolderPath"/defer_jss/"$packageName".plist ]] ; then
 		echo delay exists
-		# installNow=`/usr/libexec/PlistBuddy -c "print loginscreeninstall" /Library/Application\ Support/JAMF/UEX/defer_jss/"$packageName".plist 2>/dev/null`
+		# installNow=`/usr/libexec/PlistBuddy -c "print loginscreeninstall" "$UEXFolderPath"/defer_jss/"$packageName".plist 2>/dev/null`
 		installNow=$(fn_getPlistValue "loginscreeninstall" "defer_jss" "$packageName.plist")
 		echo $installNow
 		if [[ $installNow == "true" ]] ; then 
@@ -3190,7 +3213,7 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 		log4_JSS "The next $action prompt is postponed until after $delayDateFriendly"
 		
 		# if the defer folder if empty and i'm creating the first deferal then invetory updates are needed to the comptuer is in scope of the deferral service
-		deferfolderContents=`ls "/Library/Application Support/JAMF/UEX/defer_jss/" | grep plist`
+		deferfolderContents=`ls "$UEXFolderPath/defer_jss/" | grep plist`
 		if [[ -z "$deferfolderContents" ]]; then
 			InventoryUpdateRequired=true
 		fi
@@ -3198,7 +3221,7 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 		watingroomdir="/Library/Application Support/JAMF/Waiting Room/"
 
 		
-		if [[ -a /Library/Application\ Support/JAMF/UEX/defer_jss/"$packageName".plist ]] ; then
+		if [[ -a "$UEXFolderPath"/defer_jss/"$packageName".plist ]] ; then
 			# Create Plist with postpone properties 
 			fn_setPlistValue "package" "$packageName" "defer_jss" "$packageName.plist"
 			fn_setPlistValue "folder" "$deferpackages" "defer_jss" "$packageName.plist"
@@ -3472,7 +3495,7 @@ fi # no on logged in
 		# added username and run time as safety measure to put in just in case
 		# added checked variable to allow for clearring the plist so that the second stage can change it then delete it.
 		
-		if [[ -a /Library/Application\ Support/JAMF/UEX/logout_jss/"$packageName".plist ]] ; then
+		if [[ -a "$UEXFolderPath"/logout_jss/"$packageName".plist ]] ; then
 			fn_setPlistValue "name" "$heading" "logout_jss" "$packageName.plist"
 			fn_setPlistValue "packageName" "$packageName" "logout_jss" "$packageName.plist"
 			fn_setPlistValue "runDate" "$runDate" "logout_jss" "$packageName.plist"
@@ -3505,7 +3528,7 @@ fi # no on logged in
 		
 		# Create plist with Restart required
 		# Added date to allow for clearing and fail safe in case the user restart manually
-		if [[ -a /Library/Application\ Support/JAMF/UEX/restart_jss/"$packageName".plist ]] ; then
+		if [[ -a "$UEXFolderPath"/restart_jss/"$packageName".plist ]] ; then
 			fn_setPlistValue "name" "$heading" "restart_jss" "$packageName.plist"
 			fn_setPlistValue "packageName" "$packageName" "restart_jss" "$packageName.plist"
 			fn_setPlistValue "runDate" "$runDate" "restart_jss" "$packageName.plist"
@@ -3559,7 +3582,7 @@ cat <<EOT >> "$pleaseWaitDaemon"
 	<string>github.cubandave.UEX-PleaseWait</string>
 	<key>ProgramArguments</key>
 	<array>
-		<string>/Library/Application Support/JAMF/UEX/resources/PleaseWait.app/Contents/MacOS/PleaseWait</string>
+		<string>$UEXFolderPath/resources/PleaseWait.app/Contents/MacOS/PleaseWait</string>
 	</array>
 	<key>RunAtLoad</key>
 	<false/>
@@ -3622,8 +3645,8 @@ EOT
 	/bin/rm "$installJSSfolder"* 2> /dev/null
 	
 	# Install notification Place holder
-	# /usr/libexec/PlistBuddy -c "add name string ${heading}" /Library/Application\ Support/JAMF/UEX/install_jss/"$packageName".plist > /dev/null 2>&1
-	# /usr/libexec/PlistBuddy -c "add checks string ${checks}" /Library/Application\ Support/JAMF/UEX/install_jss/"$packageName".plist > /dev/null 2>&1
+	# /usr/libexec/PlistBuddy -c "add name string ${heading}" "$UEXFolderPath"/install_jss/"$packageName".plist > /dev/null 2>&1
+	# /usr/libexec/PlistBuddy -c "add checks string ${checks}" "$UEXFolderPath"/install_jss/"$packageName".plist > /dev/null 2>&1
 
 	fn_addPlistValue "name" "string" "$heading" "install_jss" "$packageName.plist"
 	fn_addPlistValue "checks" "string" "$checks" "install_jss" "$packageName.plist"
@@ -3734,14 +3757,14 @@ EOT
 	logInUEX "Deleting defer plist so the agent doesn not start it again"
 	
 	# go thourgh all the deferal plist and if any of them mention the same triggr then delete them
-	plists=`ls /Library/Application\ Support/JAMF/UEX/defer_jss/ | grep ".plist"`
+	plists=`ls "$UEXFolderPath"/defer_jss/ | grep ".plist"`
 	IFS=$'\n'
 	for i in $plists ; do
-		# deferPolicyTrigger=`/usr/libexec/PlistBuddy -c "print policyTrigger" /Library/Application\ Support/JAMF/UEX/defer_jss/"$i"`
+		# deferPolicyTrigger=`/usr/libexec/PlistBuddy -c "print policyTrigger" "$UEXFolderPath"/defer_jss/"$i"`
 		deferPolicyTrigger=$(fn_getPlistValue "policyTrigger" "defer_jss" "$i")
 		if [[ "$deferPolicyTrigger" == "$UEXpolicyTrigger" ]]; then
 			log4_JSS "Deleting $i"
-			/bin/rm /Library/Application\ Support/JAMF/UEX/defer_jss/"$i" > /dev/null 2>&1
+			/bin/rm "$UEXFolderPath"/defer_jss/"$i" > /dev/null 2>&1
 		fi
 	done
 	
@@ -3787,7 +3810,7 @@ EOT
 	/bin/rm $pleasewaitInstallProgress > /dev/null 2>&1
 	
 	# delete place holder
-	/bin/rm /Library/Application\ Support/JAMF/UEX/install_jss/"$packageName".plist > /dev/null 2>&1
+	/bin/rm "$UEXFolderPath"/install_jss/"$packageName".plist > /dev/null 2>&1
 
 
 	###########################
@@ -3834,7 +3857,7 @@ $action completed."
 	if [[ "$checks" == *"block"* ]] ; then
 		# delete the plist with properties to stop blocking
 		logInUEX "Deleting the blocking plist"
-		/bin/rm "/Library/Application Support/JAMF/UEX/block_jss/${packageName}.plist" > /dev/null 2>&1
+		/bin/rm "$UEXFolderPath/block_jss/${packageName}.plist" > /dev/null 2>&1
 		
 		#kill all cocoaDialog windows 
 		logInUEX "Killing cocoadialog window"

@@ -1,4 +1,15 @@
 #!/bin/bash
+# set -x 
+##########################################################################################
+##								Jamf Interaction Configuration 							##
+##########################################################################################
+
+fn_read_uex_Preference () {
+	local domain="$1"
+	defaults read /Library/Preferences/github.cubandave.uex.plist "$domain"
+}
+
+UEXFolderPath="$(fn_read_uex_Preference "UEXFolderPath")"
 
 ##########################################################################################
 ##########################################################################################
@@ -26,7 +37,7 @@
 ##########################################################################################
 # logname=$(echo $packageName | sed 's/.\{4\}$//')
 # logfilename="$logname".log
-logdir="/Library/Application Support/JAMF/UEX/UEX_Logs/"
+logdir="$UEXFolderPath/UEX_Logs/"
 compname=`scutil --get ComputerName`
 # resulttmp="$logname"_result.log
 ##########################################################################################
@@ -38,7 +49,7 @@ jamfBinary="/usr/local/jamf/bin/jamf"
 ##########################################################################################
 
 fn_getPlistValue () {
-	/usr/libexec/PlistBuddy -c "print $1" /Library/Application\ Support/JAMF/UEX/$2/"$3"
+	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath"/$2/"$3"
 }
 
 logInUEX () {
@@ -78,7 +89,7 @@ if [ "$logoutHookRunning" ] ; then
 	loggedInUser=""
 fi
 
-plists=`ls /Library/Application\ Support/JAMF/UEX/defer_jss/ | grep ".plist"`
+plists=`ls "$UEXFolderPath"/defer_jss/ | grep ".plist"`
 runDate=`date +%s`
 
 IFS=$'\n'
@@ -94,7 +105,7 @@ for i in $plists ; do
 	
 	# Process the plist	
 	delayDate=$(fn_getPlistValue "delayDate" "defer_jss" "$i")
-	packagename=$(fn_getPlistValue "package" "defer_jss" "$i")
+	packageName=$(fn_getPlistValue "package" "defer_jss" "$i")
 	folder=$(fn_getPlistValue "folder" "defer_jss" "$i")
 	loginscreeninstall=$(fn_getPlistValue "loginscreeninstall" "defer_jss" "$i")
 	checks=$(fn_getPlistValue "checks" "defer_jss" "$i")
@@ -143,16 +154,16 @@ for i in $plists ; do
 	# plist clean up if no policy found
 	# if [[ "$policyTriggerResult" == *"No policies were found for the \"$policyTrigger\" trigger."* ]] && [[ "$policyTriggerResult" != *"Could not connect to the JSS"* ]] ; then
 	if [[ "$policyTriggerResult" == *"No policies were found for the \"$policyTrigger\" trigger."* ]] ; then
-		log4_JSS "No policy found for: $policyTriggerResult"
-		log4_JSS "deleting $1"
-		/bin/rm "/Library/Application Support/JAMF/UEX/defer_jss/$i"
+		log4_JSS "No policy found for: $policyTrigger"
+		log4_JSS "Deleting $i"
+		/bin/rm "$UEXFolderPath/defer_jss/$i"
 	fi
 	
 done
 unset IFS
 
 # if the defer folder is now empty then you should do an inventory update to stop deferral service from running
-deferfolderContents=`ls "/Library/Application Support/JAMF/UEX/defer_jss/" | grep plist`
+deferfolderContents=`ls "$UEXFolderPath/defer_jss/" | grep plist`
 if [[ -z "$deferfolderContents" ]]; then
 	log4_JSS "No more deferrals."
 	InventoryUpdateRequired=true
