@@ -7,16 +7,17 @@ jamfBinary="/usr/local/jamf/bin/jamf"
 # 
 # This can be used for UEX and non-UEX Policies to trigger the install policy.
 # 
-# Version Number: 4.1
+# Version Number: 4.2
 # 
 # Created January 31st, 2017 by
-# DR = David Ramirez (David.Ramirez@adidas.com) 
+# cubandave (https://github.com/cubandave) 
 # 
-# Updated September 2tth, 2017 by
-# DR = David Ramirez (David.Ramirez@adidas.com) 
+# Updates found on github
+# https://github.com/cubandave/Jamf-Interaction-Toolkit/commits/master
 # 
-# Copyright (c) 2018 the adidas Group
-# All rights reserved.
+# cubandave/Jamf-Interaction-Toolkit is licensed under the
+# Apache License 2.0
+# https://github.com/cubandave/Jamf-Interaction-Toolkit/blob/master/LICENSE
 ##########################################################################################
 ########################################################################################## 
 
@@ -53,8 +54,8 @@ fi
 ##########################################################################################
 # 
 # 
-# Jan 31, 2017 	v1.0	--DR--	Version 1 Created
-# Sep 11, 2017 	v2.0	--DR--	Added checking for status of installation
-# Sep 26, 2017 	v3.2	--DR--	Added Support for multiple trigger names seperated by ;
-# Oct 24, 2018 	v4.0	--DR--	All Change logs are available now in the release notes on GITHUB
+# Jan 31, 2017 	v1.0	--cubandave--	Version 1 Created
+# Sep 11, 2017 	v2.0	--cubandave--	Added checking for status of installation
+# Sep 26, 2017 	v3.2	--cubandave--	Added Support for multiple trigger names seperated by ;
+# Oct 24, 2018 	v4.0	--cubandave--	All Change logs are available now in the release notes on GITHUB
 #

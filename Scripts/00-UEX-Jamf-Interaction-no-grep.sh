@@ -84,20 +84,19 @@ jhPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamf
 # 
 # User experience Post installation script to be bundled with PKG.
 # 
-# Version Number: 4.1
+# Version Number: 4.2
 	uexvers=4.2
 # 
-# Created Jan 18, 2016 by David Ramirez
-#
-# January 23rd, 2017 by
-# DR = David Ramirez (David.Ramirez@adidas.com)
+# Created: January 23rd, 2017 by
+# DR = David Ramirez (https://github.com/cubandave)
 # 
-# Updated: Aug 27th, 2018 by
-# DR = David Ramirez (David.Ramirez@adidas.com)
+# Updates found on github
+# https://github.com/cubandave/Jamf-Interaction-Toolkit/commits/master
 # 
 # 
-# Copyright (c) 2018 the adidas Group
-# All rights reserved.
+# cubandave/Jamf-Interaction-Toolkit is licensed under the
+# Apache License 2.0
+# https://github.com/cubandave/Jamf-Interaction-Toolkit/blob/master/LICENSE
 ##########################################################################################
 ########################################################################################## 
 
@@ -1480,7 +1479,7 @@ done
 ##########################################################################################
 ##								FIX	PERMISSIONS ON RESOURCES							##
 ##########################################################################################
-chmod 644 /Library/LaunchDaemons/com.adidas-group.UEX-*  > /dev/null 2>&1
+chmod 644 /Library/LaunchDaemons/github.cubandave.UEX-*  > /dev/null 2>&1
 chmod -R 755 /Library/Application\ Support/JAMF/UEX  > /dev/null 2>&1
 ##########################################################################################
 
@@ -1488,7 +1487,7 @@ chmod -R 755 /Library/Application\ Support/JAMF/UEX  > /dev/null 2>&1
 ##########################################################################################
 ##								FIX	ONWERSHIP ON RESOURCES								##
 ##########################################################################################
-chown root:wheel /Library/LaunchDaemons/com.adidas-group.UEX-* > /dev/null 2>&1
+chown root:wheel /Library/LaunchDaemons/github.cubandave.UEX-* > /dev/null 2>&1
 chown -R root:wheel /Library/Application\ Support/JAMF/UEX > /dev/null 2>&1
 ##########################################################################################
 
@@ -3305,14 +3304,14 @@ starting $action..."
 		if [[ -z "$loggedInUser" ]] ; then 
 # 		"$jhPath" -icon "$icon" -windowType hud -windowPosition lr -startlaunchd -title "$title" -description "$status" -timeout 5 > /dev/null 2>&1 &
 
-/bin/rm /Library/LaunchAgents/com.adidas.jamfhelper.plist > /dev/null 2>&1 
-cat <<EOT >> /Library/LaunchAgents/com.adidas.jamfhelper.plist 
+/bin/rm /Library/LaunchAgents/github.cubandave.UEX-jamfhelper.plist > /dev/null 2>&1 
+cat <<EOT >> /Library/LaunchAgents/github.cubandave.UEX-jamfhelper.plist 
 <?xml version="1.0" encoding="UTF-8"?> 
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"> 
 <plist version="1.0"> 
 <dict> 
 <key>Label</key> 
-<string>com.jamfsoftware.jamfhelper.plist</string> 
+<string>github.cubandave.UEX-jamfhelper</string> 
 <key>RunAtLoad</key> 
 <true/> 
 <key>LimitLoadToSessionType</key> 
@@ -3336,15 +3335,15 @@ cat <<EOT >> /Library/LaunchAgents/com.adidas.jamfhelper.plist
 </plist>
 EOT
 
-chown root:wheel /Library/LaunchAgents/com.adidas.jamfhelper.plist
-chmod 644 /Library/LaunchAgents/com.adidas.jamfhelper.plist
+chown root:wheel /Library/LaunchAgents/github.cubandave.UEX-jamfhelper.plist
+chmod 644 /Library/LaunchAgents/github.cubandave.UEX-jamfhelper.plist
 
-launchctl load /Library/LaunchAgents/com.adidas.jamfhelper.plist
+launchctl load /Library/LaunchAgents/github.cubandave.UEX-jamfhelper.plist
 
 sleep 5
 killall loginwindow > /dev/null 2>&1
 sleep 1
-rm /Library/LaunchAgents/com.adidas.jamfhelper.plist
+rm /Library/LaunchAgents/github.cubandave.UEX-jamfhelper.plist
 
 fi # no on logged in
 
@@ -3528,7 +3527,7 @@ fi # no on logged in
 	# progress bar #
 	################
 	# echo skipNotices is $skipNotices
-	pleaseWaitDaemon="/Library/LaunchDaemons/com.adidas-group.UEX-PleaseWait.plist"
+	pleaseWaitDaemon="/Library/LaunchDaemons/github.cubandave.UEX-PleaseWait.plist"
 	if  [ $installDuration -ge 5 ] && [[ $skipNotices != "true" ]] && [[ $preApprovedInstall != true ]] ; then
 	# only run the progress indicator if the duration is 5 minutes or longer 
 		
@@ -3557,7 +3556,7 @@ cat <<EOT >> "$pleaseWaitDaemon"
 		<true/>
 	</dict>
 	<key>Label</key>
-	<string>com.adidas-group.UEX-PleaseWait</string>
+	<string>github.cubandave.UEX-PleaseWait</string>
 	<key>ProgramArguments</key>
 	<array>
 		<string>/Library/Application Support/JAMF/UEX/resources/PleaseWait.app/Contents/MacOS/PleaseWait</string>
@@ -3765,7 +3764,7 @@ EOT
 
 	#only kill the pleaseWaitDaemon if it's running
 	launchcltList=`launchctl list`
-	if [[ "$launchcltList" == *"com.adidas-group.UEX-PleaseWait"* ]]; then
+	if [[ "$launchcltList" == *"github.cubandave.UEX-PleaseWait"* ]]; then
 		#statements
 		fn_execute_log4_JSS "launchctl unload -w $pleaseWaitDaemon"
 	fi
@@ -3943,7 +3942,7 @@ fi # Installations ''
 ##########################################################################################
 rm "$resultlogfilepath" > /dev/null 2>&1 
 
-/bin/rm /Library/LaunchAgents/com.adidas.jamfhelper.plist > /dev/null 2>&1 
+/bin/rm /Library/LaunchAgents/github.cubandave.UEX-jamfhelper.plist > /dev/null 2>&1 
 
 if [[ "$InventoryUpdateRequired" = true ]] ;then 
 	log4_JSS "Inventory Update Required"
@@ -3966,43 +3965,43 @@ fi
 ##########################################################################################
 # 
 # 
-# Jan 18, 2016 	v1.0	--DR--	Stage 1 Delivered
-# Apr 4, 2016 	v1.1 	--DR--	Updated PKG system for multiple PKG file Installation 
-# May 9, 2016 	v1.2 	--DR--	Adding silence to notices in case no one is logged in. 
-# May 22, 2016	v1.3	--DR--	deferral-service-1.3 added
-# May 22, 2016	v1.3	--DR--	Added Power check for laptop with intelligence on connection
-# May 22, 2016	v1.3	--DR-- 	Added maxdefer option for multiple postpones
-# May 22, 2016	v1.3	--DR--	Added descriptors for UEX Parameters
-# May 22, 2016	v1.3	--DR--	Standardized title on windows
-# May 22, 2016	v1.3	--DR--	added install at logout feature with deferral-service-1.3
-# Jul 29, 2016	v2.0	--DR--	**** ADDED LOGGING*** -- see logging templates for more info
-# Jul 29, 2016	v2.0	--DR--	added block application for smarter blocking in case applications are not installed.
-# Jul 29, 2016	v2.0	--DR--	^^^^^^^ see UEX paramaters for more details on block detection 
-# Jul 29, 2016	v2.0	--DR--	change to hud view until JAMF can fix the utility window on postpones 
-# Aug 24, 2016	v2.0	--DR--	selfservicePackage skip option added use place holder script with PKG name to enable.
-# Sep 5, 2016	v2.0	--DR--	Debug mode now has a place holder script with PKG name to enable.
-# Sep 5, 2016	v2.0	--DR--	all daemons updated to v2.0 to add logging
+# Jan 18, 2016 	v1.0	--cubandave--	Stage 1 Delivered
+# Apr 4, 2016 	v1.1 	--cubandave--	Updated PKG system for multiple PKG file Installation 
+# May 9, 2016 	v1.2 	--cubandave--	Adding silence to notices in case no one is logged in. 
+# May 22, 2016	v1.3	--cubandave--	deferral-service-1.3 added
+# May 22, 2016	v1.3	--cubandave--	Added Power check for laptop with intelligence on connection
+# May 22, 2016	v1.3	--cubandave-- 	Added maxdefer option for multiple postpones
+# May 22, 2016	v1.3	--cubandave--	Added descriptors for UEX Parameters
+# May 22, 2016	v1.3	--cubandave--	Standardized title on windows
+# May 22, 2016	v1.3	--cubandave--	added install at logout feature with deferral-service-1.3
+# Jul 29, 2016	v2.0	--cubandave--	**** ADDED LOGGING*** -- see logging templates for more info
+# Jul 29, 2016	v2.0	--cubandave--	added block application for smarter blocking in case applications are not installed.
+# Jul 29, 2016	v2.0	--cubandave--	^^^^^^^ see UEX paramaters for more details on block detection 
+# Jul 29, 2016	v2.0	--cubandave--	change to hud view until JAMF can fix the utility window on postpones 
+# Aug 24, 2016	v2.0	--cubandave--	selfservicePackage skip option added use place holder script with PKG name to enable.
+# Sep 5, 2016	v2.0	--cubandave--	Debug mode now has a place holder script with PKG name to enable.
+# Sep 5, 2016	v2.0	--cubandave--	all daemons updated to v2.0 to add logging
 # 
 # 
 # 
 # Insert TONS of Updates for update 3.0 ;-)
-# Jan 23, 2017 	v3.0	--DR--	Stage 3 Delivered to run from Jamf Pro directly
-# Jul 12, 2017	v3.1	--DR--	added new icons and support for custom notification (check = custom)
-# Sep 22, 2017	v3.2	--DR--	Added Support for Catching in the script
-# Sep 30, 2017	v3.3	--DR--	added suport for choosing if inventory updates should apply
-# Nov 30, 2017	v3.4	--DR--	updated with world of apps icons
-# Feb 08, 2018	v3.5	--DR--	added macosupgrade and elements for lock and saveallwork, & loginwindow
-# Feb 08, 2018	v3.5	--DR--	fixed elements where pollies run at loginwidow if notify is specified
-# Feb 08, 2018	v3.5	--DR--	added countdown to are you sure
-# Mar 26, 2018	v3.5	--DR--	added deferal clears all pospones by the trigger name instead to prevent repeated runs
-# Apr 24, 2018 	v3.7	--DR--	Funtctions added for plist processing
-# Jun 3, 2018 	v3.7.2	--DR--	Names are generic and self service app name is dynamic
-# Jun 3, 2018 	v3.7.3	--DR--	Dynamic detection of Self Service locaiton for messaging
-# Aug 26, 2018	v3.8	--DR--	Added a compliance and force install mechanism for force instllatation, 
-# Aug 26, 2018	v3.8	--DR--	Security, macOS and Firmware added as complance policies
-# Aug 26, 2018	v3.8	--DR--	Quitting Jamf helper now acts as if you've ignored it triggering inactivity delay.
-# Aug 26, 2018	v3.8	--DR--	moved some logging to debug mode only and increase logging on UEX dialogs
-# Sep 11, 2018	v3.8	--DR--	making reopen apps function built in
-# Oct 24, 2018 	v4.0	--DR--	All Change logs are available now in the release notes on GITHUB
+# Jan 23, 2017 	v3.0	--cubandave--	Stage 3 Delivered to run from Jamf Pro directly
+# Jul 12, 2017	v3.1	--cubandave--	added new icons and support for custom notification (check = custom)
+# Sep 22, 2017	v3.2	--cubandave--	Added Support for Catching in the script
+# Sep 30, 2017	v3.3	--cubandave--	added suport for choosing if inventory updates should apply
+# Nov 30, 2017	v3.4	--cubandave--	updated with world of apps icons
+# Feb 08, 2018	v3.5	--cubandave--	added macosupgrade and elements for lock and saveallwork, & loginwindow
+# Feb 08, 2018	v3.5	--cubandave--	fixed elements where pollies run at loginwidow if notify is specified
+# Feb 08, 2018	v3.5	--cubandave--	added countdown to are you sure
+# Mar 26, 2018	v3.5	--cubandave--	added deferal clears all pospones by the trigger name instead to prevent repeated runs
+# Apr 24, 2018 	v3.7	--cubandave--	Funtctions added for plist processing
+# Jun 3, 2018 	v3.7.2	--cubandave--	Names are generic and self service app name is dynamic
+# Jun 3, 2018 	v3.7.3	--cubandave--	Dynamic detection of Self Service locaiton for messaging
+# Aug 26, 2018	v3.8	--cubandave--	Added a compliance and force install mechanism for force instllatation, 
+# Aug 26, 2018	v3.8	--cubandave--	Security, macOS and Firmware added as complance policies
+# Aug 26, 2018	v3.8	--cubandave--	Quitting Jamf helper now acts as if you've ignored it triggering inactivity delay.
+# Aug 26, 2018	v3.8	--cubandave--	moved some logging to debug mode only and increase logging on UEX dialogs
+# Sep 11, 2018	v3.8	--cubandave--	making reopen apps function built in
+# Oct 24, 2018 	v4.0	--cubandave--	All Change logs are available now in the release notes on GITHUB
 # 
 # 

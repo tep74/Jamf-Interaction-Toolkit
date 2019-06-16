@@ -26,16 +26,17 @@ SelfServiceIcon="$loggedInUserHome/Library/Application Support/com.jamfsoftware.
 # It run through the list of apps checks to see if they are running and then kills them.
 # 
 # Name: Block-notification.sh
-# Version Number: 4.1
+# Version Number: 4.2
 # 
 # Created Jan 18, 2016 by 
-# David Ramirez (David.Ramirez@adidas.com)
+# David Ramirez (https://github.com/cubandave)
 #
-# Updates January 23rd, 2016 by
-# DR = David Ramirez (D avid.Ramirez@adidas-group.com) 
+# Updates found on github
+# https://github.com/cubandave/Jamf-Interaction-Toolkit/commits/master
 # 
-# Copyright (c) 2018 the adidas Group
-# All rights reserved.
+# cubandave/Jamf-Interaction-Toolkit is licensed under the
+# Apache License 2.0
+# https://github.com/cubandave/Jamf-Interaction-Toolkit/blob/master/LICENSE
 ##########################################################################################
 ########################################################################################## 
 
@@ -260,10 +261,10 @@ exit 0
 ##########################################################################################
 # 
 # 
-# Jan 18, 2016 	v1.0	--DR--	Stage 1 Delivered
-# Sep 1, 2016 	v2.0	--DR--	Logging added
-# Sep 1, 2016 	v2.0	--DR--	Debug mode added
-# Sep 7, 2016 	v2.0	--DR--	Updated to clean up Application quitting and only target process from /$app/Contents/MacOS/
-# Apr 24, 2018 	v3.7	--DR--	Funtctions added
-# Oct 24, 2018 	v4.0	--DR--	All Change logs are available now in the release notes on GITHUB
+# Jan 18, 2016 	v1.0	--cubandave--	Stage 1 Delivered
+# Sep 1, 2016 	v2.0	--cubandave--	Logging added
+# Sep 1, 2016 	v2.0	--cubandave--	Debug mode added
+# Sep 7, 2016 	v2.0	--cubandave--	Updated to clean up Application quitting and only target process from /$app/Contents/MacOS/
+# Apr 24, 2018 	v3.7	--cubandave--	Funtctions added
+# Oct 24, 2018 	v4.0	--cubandave--	All Change logs are available now in the release notes on GITHUB
 # 
