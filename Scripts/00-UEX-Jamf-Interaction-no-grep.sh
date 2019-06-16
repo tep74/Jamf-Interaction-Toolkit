@@ -183,20 +183,20 @@ customMessage=${11}
 
 
 # fordebugging
-NameConsolidated="Microsoft;Microsoft Office Update;1.0"
-checks=`echo "msupdate" | tr '[:upper:]' '[:lower:]'`
-apps=""
-installDuration=15
-maxdeferConsolidated="3"
-packages=""
-triggers="msupdate"
-customMessage=""
-selfservicePackage="true"
-debug="true"
-helpTicketsEnabled="false"
-helpTicketsEnabledViaAppRestriction="false"
-helpTicketsEnabledViaTrigger="false"
-helpTicketsEnabledViaFunction="false"
+# NameConsolidated="Microsoft;Microsoft Office Update;1.0"
+# checks=`echo "msupdate" | tr '[:upper:]' '[:lower:]'`
+# apps=""
+# installDuration=15
+# maxdeferConsolidated="3"
+# packages=""
+# triggers="msupdate"
+# customMessage=""
+# selfservicePackage="true"
+# debug="true"
+# helpTicketsEnabled="false"
+# helpTicketsEnabledViaAppRestriction="false"
+# helpTicketsEnabledViaTrigger="false"
+# helpTicketsEnabledViaFunction="false"
 
 ##########################################################################################
 #								Package name Processing									 #
