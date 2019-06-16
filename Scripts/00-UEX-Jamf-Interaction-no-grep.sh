@@ -220,7 +220,7 @@ logdir="$UEXFolderPath/UEX_Logs/"
 resulttmp="$logname"_result.log
 
 
-mkdir "$logdir" > /dev/null 2>&1
+mkdir -p "$logdir" > /dev/null 2>&1
 chmod -R 755 "$logdir"
 
 logfilepath="$logdir""$logfilename"
@@ -1052,7 +1052,7 @@ fn_downloadMSupdatePackages () {
 		if [[ ! -f "$MSupdateDownloadDestination" ]] ; then
 
 			# delete the temp file just in case
-			if [[ "$tmpMSupdateDownloadDestination" ]]; then rm "$tmpMSupdateDownloadDestination" ; fi
+			if [[ -e "$tmpMSupdateDownloadDestination" ]]; then rm "$tmpMSupdateDownloadDestination" ; fi
 			
 			# download to temp directory first
 			curl -o "$tmpMSupdateDownloadDestination" --silent --remote-name --location "$msUpdatePackage"
