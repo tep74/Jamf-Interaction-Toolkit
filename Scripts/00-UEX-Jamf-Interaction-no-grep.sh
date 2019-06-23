@@ -183,17 +183,17 @@ customMessage=${11}
 
 
 # fordebugging
-NameConsolidated="Apple;Software Updates;1.0"
-checks=`echo "macosupgrade restart" | tr '[:upper:]' '[:lower:]'`
-apps=""
+NameConsolidated="UEX;Compliance Test;1.0"
+checks=`echo "compliance quit" | tr '[:upper:]' '[:lower:]'`
+apps="Safari.app"
 installDuration=15
-maxdeferConsolidated="3"
+maxdeferConsolidated="0"
 packages=""
 triggers="msupdate"
 customMessage=""
-selfservicePackage="true"
-logoutQueued="false"
-restartQueued="true"
+# selfservicePackage="true"
+# logoutQueued="true"
+# restartQueued="true"
 debug="true"
 helpTicketsEnabled="false"
 helpTicketsEnabledViaAppRestriction="false"
@@ -1964,6 +1964,7 @@ pleasewaitInstallProgress="/private/tmp/com.pleasewait.installprogress"
 
 
 Laptop=`system_profiler SPHardwareDataType | grep -E "MacBook"`
+modelName=$( system_profiler SPHardwareDataType | grep "Model Name" | awk -F ': ' '{ print $2 }' )
 VmTest=`ioreg -l | grep -e Manufacturer -e 'Vendor Name' | grep 'Parallels\|VMware\|Oracle\|VirtualBox' | grep -v IOAudioDeviceManufacturerName`
 if [[ "$VmTest" ]] ; then 
 	Laptop="MacBook" 
@@ -2160,7 +2161,6 @@ fi
 if [[ "$checks" == *"suspackage"* ]] && [[ "$checks" == *"restart"* ]] && [[ "$restartQueued" == true ]] || [[ "$checks" == *"macosupgrade"* ]] && [[ "$checks" == *"restart"* ]] && [[ "$restartQueued" == true ]] ; then
 	log4_JSS "Overwriting preApprovedInstall for $checks"
 	preApprovedInstall=false
-
 else
 	if [[ "$restartQueued" == true ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ; then
 		log4_JSS "If install is only a restart requirement the user has already approved a restart previously in this session"
@@ -2342,7 +2342,7 @@ else
 	action="install"
 fi
 
-if [[ "$checks" == *"critical"* ]] ; then
+if [[ "$checks" == *"critical"* ]] || [[ "$checks" == *"compliance"* ]] ; then
 	PostponeMsg+="This is a critical $action.
 "
 fi
@@ -2641,10 +2641,14 @@ You have until tomorrow, then you will prompted again about the $action."
 ##########################################################################################
 ##								CHARGER REQUIRED MESSAGE								##
 ##########################################################################################
-battMessage="Please note that the MacBook must be connected to a charger for successful $action. Please connect it now. 
+battMessage="Please note that the $modelName must be connected to a charger for a successful $action. Please connect it now. 
 "
 
-if [[ "$checks" != *"critical"* ]] && [[ $delayNumber -lt $maxdefer ]] ; then
+if [[ "$postponesLeft" -gt 0 ]] || [[ "$checks" != *"critical"* ]] ; then
+	battMessage+="
+Click 'No Charger' if you do not have it with you."
+
+elif [[ "$checks" != *"critical"* ]] && [[ $delayNumber -lt $maxdefer ]] ; then
 	battMessage+="
 Otherwise click OK and choose a delay time."
 fi
@@ -2958,11 +2962,21 @@ while [ $reqlooper = 1 ] ; do
 
 	if [ -z $PostponeClickResult ] ; then
 
-		# Check if the user has ignored the the install prompt and exhased all delays
-		if [ $inactivityDelay -ge 3 ] && [[ $delayNumber -ge $maxdefer ]] && [[ "$checks" == *"compliance"* ]] && [[ $insufficientSpace != true ]] ; then 
-			log4_JSS "User has exhausted delay options and ignored the prompt 3 times further."
-			log4_JSS "This is a compliance policy and will be forced to install."
-			forceInstall=true
+		# new safety override for not having the charger
+		BatteryTest=`pmset -g batt`
+		if [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" != *"AC"* ]] ; then 
+			if [ $inactivityDelay -ge 3 ] && [[ $delayNumber -ge $maxdefer ]] && [[ "$checks" == *"compliance"* ]] && [[ $insufficientSpace != true ]] ; then 
+				log4_JSS "User has exhausted delay options and ignored the prompt 3 times further."
+				log4_JSS "User does not have power connected and a power connection is required."
+				log4_JSS "Unable to force install."
+			fi
+		# Check if the user has ignored the the install prompt and exhausted all delays
+		else
+			if [ $inactivityDelay -ge 3 ] && [[ $delayNumber -ge $maxdefer ]] && [[ "$checks" == *"compliance"* ]] && [[ $insufficientSpace != true ]] ; then 
+				log4_JSS "User has exhausted delay options and ignored the prompt 3 times further."
+				log4_JSS "This is a compliance policy and will be forced to install."
+				forceInstall=true
+			fi
 		fi
 
 		## compliance Checks are the only software titles that install without user choosing to install
@@ -3135,6 +3149,7 @@ Current work may be lost if you do not save before proceeding."
 			# 	areYouSure=$( "$jhPath" -windowType hud -lockHUD -icon "$icon" -title "$title" -heading "$areyousureHeading" -description "$areyousureMessage" -button1 "Continue" -button2 "Go Back" -timeout 600 -countdown)
 			# fi
 			rm "$areYouSureClickResultFile"
+			showAreYouSureWindow=true
 			if [[ "$checks" == *"critical"* ]] || [[ $delayNumber -ge $maxdefer ]] ; then
 				"$jhPath" -windowType hud -lockHUD -icon "$icon" -title "$title" -heading "$areyousureHeading" -description "$areyousureMessage" -button1 "Continue" -timeout 300 -countdown > "$areYouSureClickResultFile" &
 			else
@@ -3142,46 +3157,53 @@ Current work may be lost if you do not save before proceeding."
 			fi
 
 
-		fi # ARE YOU SURE? if apps are still running 
-		areYouSureLooper=0
-		while [[ "$areYouSureLooper" = 0 ]]; do
-			#statements
-			if [[ -e "$areYouSureClickResultFile" ]]; then
-				#statements
-				areYouSure=$(cat "$areYouSureClickResultFile")
+		fi # ARE YOU SURE? if apps are still running
 
-				# log4_JSS "areYouSure Button result was: $areYouSure"
-				if [[ -z "$areYouSure" ]] ; then
-					areYouSureLooper=0
-				elif [[ "$areYouSure" = "2" ]] ; then
-					reqlooper=1
-					areYouSureLooper=1
-					skipOver=true
-				else
-					reqlooper=0
-					areYouSureLooper=1
-					if [[ $areYouSure = 0 ]] ; then 
-						log4_JSS "User Clicked continue or timer ran out on are you sure."
+		##only loop the are for an are you sure response if it's supposed to show
+		if [[ "$showAreYouSureWindow" == true ]] ; then
+
+			areYouSureLooper=0
+			while [[ "$areYouSureLooper" = 0 ]] ; do
+				#statements
+				if [[ -e "$areYouSureClickResultFile" ]]; then
+					#statements
+					areYouSure=$(cat "$areYouSureClickResultFile")
+
+					# log4_JSS "areYouSure Button result was: $areYouSure"
+					if [[ -z "$areYouSure" ]] ; then
+						areYouSureLooper=0
+					elif [[ "$areYouSure" = "2" ]] ; then
+						reqlooper=1
 						areYouSureLooper=1
-					fi
-					if [[ $areYouSure = 239 ]] ; then 
-						log4_JSS "User Quit are you sure jamfHelper."
+						skipOver=true
+					else
+						reqlooper=0
 						areYouSureLooper=1
+						if [[ $areYouSure = 0 ]] ; then 
+							log4_JSS "User Clicked continue or timer ran out on are you sure."
+							areYouSureLooper=1
+						fi
+						if [[ $areYouSure = 239 ]] ; then 
+							log4_JSS "User Quit are you sure jamfHelper."
+							areYouSureLooper=1
+						fi
 					fi
 				fi
-			fi
-			
+				
 
-			if  [[ "$checks" == *"quit"* ]] ; then
-				# Start the function to kill jamfHelper and start the install if apps are quit
-				fn_waitForApps2Quit4areYouSure
+				if  [[ "$checks" == *"quit"* ]] ; then
+					# Start the function to kill jamfHelper and start the install if apps are quit
+					fn_waitForApps2Quit4areYouSure
 
-			elif [[ "$checks" == *"block"* ]] && [[ "${apps2ReOpen[@]}" == *".app"*  ]] ; then
-				# Start the function to kill jamfHelper and start the install if apps are quit
-				fn_waitForApps2Quit4areYouSure
-			fi
+				elif [[ "$checks" == *"block"* ]] && [[ "${apps2ReOpen[@]}" == *".app"*  ]] ; then
+					# Start the function to kill jamfHelper and start the install if apps are quit
+					fn_waitForApps2Quit4areYouSure
+				fi
 
-		done
+			done
+
+		fi ##only loop the are for an are you sure response if it's supposed to show
+
 	fi #SkipOver is not true
 
 
@@ -3191,12 +3213,26 @@ Current work may be lost if you do not save before proceeding."
 	BatteryTest=`pmset -g batt`
 	if [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" != *"AC"* ]] && [[ -z $PostponeClickResult ]] && [[ "$skipOver" != true ]] ; then
 		reqlooper=1
-		"$jhPath" -windowType hud -lockHUD -icon "$baticon" -title "$title" -heading "Charger Required" -description "$battMessage" -button1 "OK" -timeout 60 > /dev/null 2>&1 &
+		# /bin/echo postponesLeft is "$postponesLeft"
+		if [[ "$postponesLeft" -gt 0 ]] && [[ "$checks" != *"critical"* ]] ; then
+			"$jhPath" -windowType hud -lockHUD -icon "$baticon" -title "$title" -heading "Charger Required" -description "$battMessage" -button1 "OK" -timeout 60 > /dev/null 2>&1 &
+		else
+			batteryClickResultFile="/tmp/batteryClickResult$UEXpolicyTrigger.txt"
+			##clear the previous response 
+			if [[ -f "$batteryClickResultFile" ]] ; then 
+				/bin/rm "$batteryClickResultFile"
+			fi
+			"$jhPath" -windowType hud -lockHUD -icon "$baticon" -title "$title" -heading "Charger Required" -description "$battMessage" -button1 "No Charger" -timeout 60 > "$batteryClickResultFile" &
+		fi
+
+
+
 		batlooper=1
 		jamfHelperOn=`ps aux | grep jamfHelper | grep -v grep`
 		while [ $batlooper = 1 ] && [[ $jamfHelperOn != "" ]] ; do
 			BatteryTest=`pmset -g batt`
 			jamfHelperOn=`ps aux | grep jamfHelper | grep -v grep`
+			# /bin/echo batteryClickResult is $batteryClickResult
 
 			if [[ "$BatteryTest" != *"AC"* ]] && [[ "$checks" == *"critical"* ]] ; then 
 				# charger still not connected
@@ -3213,6 +3249,22 @@ Current work may be lost if you do not save before proceeding."
 				sleep 1
 			fi
 		done
+
+		##new Override for if the user doesn't have the charger available 
+		if [[ -f "$batteryClickResultFile" ]] ; then
+			batteryClickResult=$( cat "$batteryClickResultFile" )
+			if [[ "$postponesLeft" -eq 0 ]] && [[ "$batteryClickResult" == 0 ]] ; then
+				batlooper=0
+				batteryOveride=true
+				echo 3600 > $PostponeClickResultFile
+				PostponeClickResult=3600
+				killall jamfHelper
+				log4_JSS "User does not have AC power available"
+				sleep 1
+			fi
+		fi # check for battery click button
+
+
 	elif [[ "$skipOver" != true ]] ; then 
 		reqlooper=0
 	fi # if power required and  on AC and PostPoneClickResult is Empty 
@@ -3224,7 +3276,7 @@ Current work may be lost if you do not save before proceeding."
 # 		echo skipOver $skipOver
 
 	BatteryTest=`pmset -g batt`
-	if [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" != *"AC"* ]] && [[ -z $PostponeClickResult ]] ; then
+	if [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" != *"AC"* ]] && [[ -z $PostponeClickResult ]] && [[ "$batteryOveride" != true ]] ; then
 		reqlooper=1
 	else 
 		if [[ $logoutClickResult == *"2" ]] ; then 
