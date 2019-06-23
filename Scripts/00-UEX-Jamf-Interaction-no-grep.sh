@@ -183,22 +183,22 @@ customMessage=${11}
 
 
 # fordebugging
-NameConsolidated="UEX;Compliance Test;1.0"
-checks=`echo "compliance quit" | tr '[:upper:]' '[:lower:]'`
-apps="Safari.app"
-installDuration=15
-maxdeferConsolidated="0"
-packages=""
-triggers="msupdate"
-customMessage=""
+# NameConsolidated="UEX;Compliance Test;1.0"
+# checks=`echo "compliance quit" | tr '[:upper:]' '[:lower:]'`
+# apps="Safari.app"
+# installDuration=15
+# maxdeferConsolidated="0"
+# packages=""
+# triggers="msupdate"
+# customMessage=""
 # selfservicePackage="true"
 # logoutQueued="true"
 # restartQueued="true"
-debug="true"
-helpTicketsEnabled="false"
-helpTicketsEnabledViaAppRestriction="false"
-helpTicketsEnabledViaTrigger="false"
-helpTicketsEnabledViaFunction="false"
+# debug="true"
+# helpTicketsEnabled="false"
+# helpTicketsEnabledViaAppRestriction="false"
+# helpTicketsEnabledViaTrigger="false"
+# helpTicketsEnabledViaFunction="false"
 
 ##########################################################################################
 #								Package name Processing									 #
