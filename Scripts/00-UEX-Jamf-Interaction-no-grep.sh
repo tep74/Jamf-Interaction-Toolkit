@@ -165,7 +165,7 @@ installDuration=$7
 
 # default is 1
 # maxdefer="1"
-# LABEL: "Maximum Deferral of Posponements;Service Desk Disk Space Limit - Must be integer"
+# LABEL: "Maximum Deferral of Postponements;Service Desk Disk Space Limit - Must be integer"
 maxdeferConsolidated="$8"
 
 # Insert name of PKG files here that are copying to /private/tmp/ during install
@@ -182,16 +182,16 @@ triggers=${10}
 customMessage=${11}
 
 
-# fordebugging
-NameConsolidated="UEX;Compliance Test;1.0"
-checks=`echo "quit" | tr '[:upper:]' '[:lower:]'`
-apps="Safari.app"
-installDuration=15
-maxdeferConsolidated="0"
-packages=""
-triggers="msupdate"
-customMessage=""
-debug="true"
+# for debugging
+# NameConsolidated="UEX;Compliance Test;1.0"
+# checks=`echo "quit" | tr '[:upper:]' '[:lower:]'`
+# apps="Safari.app"
+# installDuration=15
+# maxdeferConsolidated="0"
+# packages=""
+# triggers="msupdate"
+# customMessage=""
+# debug="true"
 
 
 # selfservicePackage="true"
