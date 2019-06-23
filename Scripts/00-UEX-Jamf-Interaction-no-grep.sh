@@ -183,8 +183,8 @@ customMessage=${11}
 
 
 # fordebugging
-NameConsolidated="Microsoft;Microsoft Office Update;1.0"
-checks=`echo "msupdate" | tr '[:upper:]' '[:lower:]'`
+NameConsolidated="Apple;Software Updates;1.0"
+checks=`echo "macosupgrade restart" | tr '[:upper:]' '[:lower:]'`
 apps=""
 installDuration=15
 maxdeferConsolidated="3"
@@ -192,6 +192,8 @@ packages=""
 triggers="msupdate"
 customMessage=""
 selfservicePackage="true"
+logoutQueued="false"
+restartQueued="true"
 debug="true"
 helpTicketsEnabled="false"
 helpTicketsEnabledViaAppRestriction="false"
@@ -267,7 +269,7 @@ if [[ -e "$debugDIR""$packageName" ]] ; then
 	debug=true
 fi
 
-if [[ -z $debug ]] && [[ "$checks" == *"debug"* ]] ; then 
+if [[ "$debug" == true ]] || [[ "$checks" == *"debug"* ]] ; then 
 	echo debug on
 	debug=true
 else
@@ -1099,7 +1101,7 @@ checking for updates..."
 
 	msupdatesUpdatesList=`cat $msupdateLog`
 
-	if [[ "$msupdatesUpdatesList" == *"Updates available:"* ]] ; then
+	if [[ "$msupdatesUpdatesList" == *"Updates available:"* ]] || [[ "$debug" == true ]] ; then
 		msupdateUpdatesAvail=true
 	else
 		msupdateUpdatesAvail=false
@@ -1135,7 +1137,7 @@ No updates available."
 
 				msupdatesUpdatesList=`cat $msupdateLog`
 
-				if [[ "$msupdatesUpdatesList" == *"Updates available:"* ]] ; then
+				if [[ "$msupdatesUpdatesList" == *"Updates available:"* ]] || [[ "$debug" == true ]] ; then
 					msupdateUpdatesAvail=true
 				else
 					msupdateUpdatesAvail=false
@@ -1366,7 +1368,20 @@ checking for updates..."
 
 	appleUpdates=`cat $appleSUSlog`
 
-	if [[ "$appleUpdates" != *"*"* ]] ; then
+
+		
+	if [[ "$appleUpdates" == *"*"* ]] || [[ "$debug" == true ]] ; then # update are avlaible
+		appleUpdatesAvail=true
+		installDuration=5
+		if [[ "$selfservicePackage" = true ]] ; then	
+			status="Software Updates,
+Downloading updates."
+			"$CocoaDialog" bubble --title "$title" --text "$status" --icon-file "$icon"
+		fi # selfservice package
+		# pre download updates
+		fn_execute_log4_JSS "softwareupdate -d --all"
+
+	else 
 		appleUpdatesAvail=false
 	# 	echo No new software available.
 	# 	echo No new software available no interacton required no notice to show
@@ -1382,17 +1397,6 @@ No updates available."
 			"$CocoaDialog" bubble --title "$title" --text "$status" --icon-file "$icon"
 			sleep 5
 		fi # selfservice package
-		
-	else # update are avlaible
-		appleUpdatesAvail=true
-		installDuration=5
-		if [[ "$selfservicePackage" = true ]] ; then	
-			status="Software Updates,
-Downloading updates."
-			"$CocoaDialog" bubble --title "$title" --text "$status" --icon-file "$icon"
-		fi # selfservice package
-		# pre download updates
-		fn_execute_log4_JSS "softwareupdate -d --all"
 	fi
 
 	if [[ $appleUpdatesAvail = true ]] ; then 
@@ -2134,14 +2138,14 @@ if [[ "$checks" == *"quit"* ]] && [[ "$checks" == *"restart"* ]] && [[ $apps2qui
 fi
 
 ##########################################################################################
-##							Check for peding Restarts or Logouts						##
+##							Check for pending Restarts or Logouts						##
 ##########################################################################################
 fn_check4PendingRestartsOrLogout
-if [[ "$restartQueued" = true ]] && [[ "$checks" == *"restart"* ]] ; then
+if [[ "$restartQueued" == true ]] && [[ "$checks" == *"restart"* ]] ; then
 	log4_JSS "Other restarts are queued"
 fi
 
-if [[ "$restartQueued" = true ]] && [[ "$checks" == *"logout"* ]] ; then
+if [[ "$restartQueued" == true ]] && [[ "$checks" == *"logout"* ]] ; then
 	log4_JSS "There are restarts are queued"
 fi
 
@@ -2149,45 +2153,41 @@ if [[ "$logoutQueued" = true ]] && [[ "$checks" == *"logout"* ]] ; then
 	log4_JSS "Other logouts are queued"
 fi
 
-# if there are no apps to quit/block and a lobout or restart is already queud 
+# if there are no apps to quit/block and a logout or restart is already queued 
 # if the user has a restart or log out pending and there is a quit/block there then change the restart/logout message 
 
-# options 1 of the following (quit,block,restart,logout)
-# can also be (quit restart) or (quit logout)
-# can also be (block restart) or (block logout)
-# NEW individual checks (macosupgrade) (saveallwork)
-# Coming soon (lock) (loginwindow)
-# aditional options (power)
-# if the install is critical add "critical"
-# if the app is available in Self Service add "ssavail"
-# LABEL: Checks
+# safety checks for suspackage && macOS Upgrade since it queues an immediate rebooted
+if [[ "$checks" == *"suspackage"* ]] && [[ "$checks" == *"restart"* ]] && [[ "$restartQueued" == true ]] || [[ "$checks" == *"macosupgrade"* ]] && [[ "$checks" == *"restart"* ]] && [[ "$restartQueued" == true ]] ; then
+	log4_JSS "Overwriting preApprovedInstall for $checks"
+	preApprovedInstall=false
 
-if [[ "$restartQueued" = true ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"quit"* ]]  && [[ "$checks" != *"block"* ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ; then
-	log4_JSS "If install is only a restart requirement the user has already approved a restart previously in this session"
-	preApprovedInstall=true
-elif [ "$logoutQueued" = true ] && [[ "$checks" == *"logout"* ]] && [[ "$checks" != *"restart"* ]] && [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]]  && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ; then
-	log4_JSS "If install is only a logout requirement the user has already approved a logout previously in this session"
-	preApprovedInstall=true
-elif [[ "$checks" == *"logout"* ]] && [[ "$restartQueued" = true ]] && [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]]  && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ; then
-	log4_JSS "If install is only a logout requirement the user has already approved a restart previously in this session"
-	preApprovedInstall=true
-elif [[ $restartQueued = true ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" =~ *"AC"* ]] &&  [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ;then
-	log4_JSS "If install is only a restart requirement with a power requiremnet but power is connected and the the user has already approved a restart previously in this session"
-	preApprovedInstall=true
-elif [[ "$restartQueued" = true ]] && [[ "$checks" == *"quit"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" =~ *"AC"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
-	log4_JSS "if the install has a quit and restart requirement with power required and conencted. Also, none of apps are running that need to be quit and the user has already approved a restart previously in this session"
-	preApprovedInstall=true
-elif [[ "$restartQueued" = true ]] && [[ "$checks" == *"quit"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
-	log4_JSS "if the install has a quit and restart requirement but none of apps are running that need to be quit and the user has already approved a restart previously in this session"
-	preApprovedInstall=true
-elif [[ "$restartQueued" = true ]] && [[ "$checks" == *"logout"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
-	log4_JSS "if the install has a quit and logout requirement but none of apps are running that need to be quit and the user has already approved a logout previously in this session "
-	preApprovedInstall=true
-elif [ "$logoutQueued" = true ] && [[ "$checks" == *"logout"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
-	log4_JSS "if the install has a quit and logout requirement but none of apps are running that need to be quit and the user has already approved a logout previously in this session "
-	preApprovedInstall=true
-fi
-
+else
+	if [[ "$restartQueued" == true ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ; then
+		log4_JSS "If install is only a restart requirement the user has already approved a restart previously in this session"
+		preApprovedInstall=true
+	elif [ "$logoutQueued" = true ] && [[ "$checks" == *"logout"* ]] && [[ "$checks" != *"restart"* ]] && [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]]  && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ; then
+		log4_JSS "If install is only a logout requirement the user has already approved a logout previously in this session"
+		preApprovedInstall=true
+	elif [[ "$checks" == *"logout"* ]] && [[ "$restartQueued" == true ]] && [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]]  && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ; then
+		log4_JSS "If install is only a logout requirement the user has already approved a restart previously in this session"
+		preApprovedInstall=true
+	elif [[ $restartQueued = true ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" =~ *"AC"* ]] &&  [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ;then
+		log4_JSS "If install is only a restart requirement with a power requiremnet but power is connected and the the user has already approved a restart previously in this session"
+		preApprovedInstall=true
+	elif [[ "$restartQueued" == true ]] && [[ "$checks" == *"quit"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" =~ *"AC"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
+		log4_JSS "if the install has a quit and restart requirement with power required and conencted. Also, none of apps are running that need to be quit and the user has already approved a restart previously in this session"
+		preApprovedInstall=true
+	elif [[ "$restartQueued" == true ]] && [[ "$checks" == *"quit"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
+		log4_JSS "if the install has a quit and restart requirement but none of apps are running that need to be quit and the user has already approved a restart previously in this session"
+		preApprovedInstall=true
+	elif [[ "$restartQueued" == true ]] && [[ "$checks" == *"logout"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
+		log4_JSS "if the install has a quit and logout requirement but none of apps are running that need to be quit and the user has already approved a logout previously in this session "
+		preApprovedInstall=true
+	elif [ "$logoutQueued" = true ] && [[ "$checks" == *"logout"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
+		log4_JSS "if the install has a quit and logout requirement but none of apps are running that need to be quit and the user has already approved a logout previously in this session "
+		preApprovedInstall=true
+	fi
+fi #Suspackage && macOS upgrade safety net
 
 
 ##########################################################################################
@@ -2291,7 +2291,7 @@ if [[ $packageMissing = true ]] && [[ $selfservicePackage != true ]] && [[ $insu
 fi
 
 ##########################################################################################
-##								Automatic Detction of updatesfiltered 						##
+##							Automatic Detection of updatesfiltered 						##
 ##########################################################################################
 
 if [[ "$suspackage" != true ]] && [[ "$checks" != *"uninstall"* ]] && [[ "$checks" != *"msupdate"* ]]; then
@@ -2300,7 +2300,7 @@ fi
 
 
 ##########################################################################################
-##								Settiing heading and verbs								##
+##								Setting heading and verbs								##
 ##########################################################################################
 if [[ "$checks" == *"install"* ]] && [[ "$checks" != *"uninstall"* ]] ; then
 	action="install"
@@ -2326,7 +2326,7 @@ fi
 
 
 ##########################################################################################
-## 									BUILDING DIALOGS FOR POSTPONE								##
+## 							BUILDING DIALOGS FOR POSTPONE								##
 ##########################################################################################
 if [[ "$checks" == *"install"* ]] && [[ "$checks" != *"uninstall"* ]] ; then
 	heading="Installing $AppName"
@@ -2423,13 +2423,13 @@ if [[ "$checks" == *"power"* ]] && [[ "$checks" != *"block"* ]] && [[ "$checks" 
 "
 fi
 
-if [[ "$checks" == *"restart"* ]] && [[ "$restartQueued" = true ]] && [[ "$checks" != *"custom"* ]] ; then
+if [[ "$checks" == *"restart"* ]] && [[ "$restartQueued" == true ]] && [[ "$checks" != *"custom"* ]] && [[ "$checks" != *"suspackage"* ]] && [[ "$checks" != *"macosupgrade"* ]] ; then
 	PostponeMsg+="Please note:
 "
 elif [[ "$checks" == *"logout"* ]] && [ "$logoutQueued" = true ] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="Please note:
 "
-elif [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] ; then 
+elif [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] && [[ "$checks" != *"suspackage"* ]] && [[ "$checks" != *"macosupgrade"* ]] ; then 
 	PostponeMsg+="After the $action completes:
 "
 elif [[ "$checks" == *"logout"* ]] && [[ "$checks" != *"custom"* ]] ; then
@@ -2437,25 +2437,25 @@ elif [[ "$checks" == *"logout"* ]] && [[ "$checks" != *"custom"* ]] ; then
 "
 fi
 
-if [[ "$checks" == *"macosupgrade"* ]] && [[ "$checks" != *"custom"* ]] ; then
+if [[ "$checks" == *"macosupgrade"* ]] && [[ "$checks" != *"custom"* ]] || [[ "$checks" == *"suspackage"* ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="After the preparation completes:
 "
 fi
 
-if [[ "$checks" == *"macosupgrade"* ]] && [[ "$checks" != *"custom"* ]] ; then
+if [[ "$checks" == *"macosupgrade"* ]] && [[ "$checks" != *"custom"* ]] || [[ "$checks" == *"suspackage"* ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="• Your computer will restart automatically.
 "
 fi
 
-if [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] && [[ "$restartQueued" = true ]] ;then
+if [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] && [[ "$restartQueued" == true ]] && [[ "$checks" != *"suspackage"* ]] && [[ "$checks" != *"macosupgrade"* ]] ;then
 PostponeMsg+="• You have a pending restart within 1 hour.
 "
-elif [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] ; then
+elif [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] && [[ "$checks" != *"suspackage"* ]] && [[ "$checks" != *"macosupgrade"* ]] ; then
 	PostponeMsg+="• You will need to restart within 1 hour.
 "
 fi
 
-if [[ "$checks" == *"logout"* ]] && [[ "$checks" != *"custom"* ]] && [[ "$restartQueued" = true ]] ; then
+if [[ "$checks" == *"logout"* ]] && [[ "$checks" != *"custom"* ]] && [[ "$restartQueued" == true ]] ; then
 PostponeMsg+="• You have a pending restart within 1 hour.
 "
 elif [[ "$checks" == *"logout"* ]] && [[ "$checks" != *"custom"* ]] && [ "$logoutQueued" = true ] ; then
@@ -2477,7 +2477,7 @@ if [[ $postponesLeft -gt 1 ]]; then
 	PostponeMsg+="
 Start now or select a reminder. You may delay $postponesLeft more times.
 "
-else # no posptonse aviailable
+else # no postpones available
 	PostponeMsg+="
 Start now or select a reminder. You may delay $postponesLeft more time.
 "
@@ -2585,7 +2585,7 @@ if [[ $diskRemindersLeft -gt 1 ]]; then
 	spaceMsg+="
 You have $diskRemindersLeft more attempts left to clear up the space.
 "
-else # no posptonse aviailable
+else # no postpones available
 	spaceMsg+="
 You have $diskRemindersLeft more attempt left to clear up the space.
 "
@@ -3057,7 +3057,7 @@ fi
 
 
 	##########################################################################################
-	##									ARE YOU SURE SAFTEY NET								##
+	##									ARE YOU SURE SAFETY NET								##
 	##########################################################################################
 	#Generate list of apps that are running that need to be quit
 	fn_generatateApps2quit
@@ -3186,7 +3186,7 @@ Current work may be lost if you do not save before proceeding."
 
 
 	##########################################################################################
-	##										BATTERY SAFTEY NET	 							##
+	##										BATTERY SAFETY NET	 							##
 	##########################################################################################
 	BatteryTest=`pmset -g batt`
 	if [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" != *"AC"* ]] && [[ -z $PostponeClickResult ]] && [[ "$skipOver" != true ]] ; then
