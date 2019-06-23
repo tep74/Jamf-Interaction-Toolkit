@@ -183,18 +183,21 @@ customMessage=${11}
 
 
 # fordebugging
-# NameConsolidated="UEX;Compliance Test;1.0"
-# checks=`echo "compliance quit" | tr '[:upper:]' '[:lower:]'`
-# apps="Safari.app"
-# installDuration=15
-# maxdeferConsolidated="0"
-# packages=""
-# triggers="msupdate"
-# customMessage=""
+NameConsolidated="UEX;Compliance Test;1.0"
+checks=`echo "quit" | tr '[:upper:]' '[:lower:]'`
+apps="Safari.app"
+installDuration=15
+maxdeferConsolidated="0"
+packages=""
+triggers="msupdate"
+customMessage=""
+debug="true"
+
+
 # selfservicePackage="true"
+
 # logoutQueued="true"
 # restartQueued="true"
-# debug="true"
 # helpTicketsEnabled="false"
 # helpTicketsEnabledViaAppRestriction="false"
 # helpTicketsEnabledViaTrigger="false"
@@ -2359,7 +2362,7 @@ if [[ $installDuration -gt 10 ]] ; then
 "
 fi
 
-if [[ "$checks" == *"quit"* ]] && [[ "${apps2quit[@]}" == *".app"*  ]] || [[ "$checks" == *"saveallwork"* ]] || [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]]  ; then
+if [[ "$checks" == *"quit"* ]] && [[ "${apps2quit[@]}" == *".app"*  ]] || [[ "$checks" == *"saveallwork"* ]] || [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] || [[ "$apps2ReOpen" ]]  ; then
 	PostponeMsg+="Before the $action starts:
 "
 elif [[ "$Laptop" ]] && [[ "$checks" == *"power"* ]] && [[ "$checks" != *"custom"* ]] ; then
@@ -2378,13 +2381,20 @@ if [[ "$checks" == *"saveallwork"* ]] && [[ "$checks" != *"custom"* ]] ; then
 fi
 
 
+if [[ "$checks" != *"nopreclose"* ]] ; then
+	quittingDesc="Apps will be safely quit"
+else
+	quittingDesc="Please quit"
+fi
+
 
 if [[ "${apps2quit[@]}" == *".app"*  ]] && [[ "$checks" != *"custom"* ]] ; then
-	PostponeMsg+="• Please quit:
+	PostponeMsg+="• $quittingDesc:
 $apps4dialogquit
 
 "
 fi
+
 
 if [[ "${apps2quit[@]}" == *".app"*  ]] && [[ "$checks" != *"custom"* ]] && [[ "$apps2ReOpen" ]] && [[ "$checks" == *"restart"* ]] ;then
 	PostponeMsg+="$apps4dialogreopen
@@ -2393,18 +2403,17 @@ elif [[ "${apps2quit[@]}" == *".app"* ]] && [[ "$checks" != *"custom"* ]] && [[ 
 	PostponeMsg+="$apps4dialogreopen
 "
 elif [[ "$apps2ReOpen" ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] ;then
-	PostponeMsg+="• Please quit:
+	PostponeMsg+="• $quittingDesc:
 $apps4dialogreopen
 
 "
 elif [[ "$apps2ReOpen" ]] && [[ "$checks" == *"logout"* ]] && [[ "$checks" != *"custom"* ]] ; then
-	PostponeMsg+="• Please quit:
+	PostponeMsg+="• $quittingDesc:
 $apps4dialogreopen
 
 "
-
 elif [[ "$apps2ReOpen" ]] && [[ "$checks" != *"custom"* ]] ; then
-	PostponeMsg+="• These apps will reopen after the $action:
+	PostponeMsg+="• Apps will quit then reopen after:
 $apps4dialogreopen
 
 "
