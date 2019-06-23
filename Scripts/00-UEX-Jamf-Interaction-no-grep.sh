@@ -184,7 +184,7 @@ customMessage=${11}
 
 # for debugging
 # NameConsolidated="UEX;Compliance Test;1.0"
-# checks=`echo "quit" | tr '[:upper:]' '[:lower:]'`
+# checks=`echo "quit power" | tr '[:upper:]' '[:lower:]'`
 # apps="Safari.app"
 # installDuration=15
 # maxdeferConsolidated="0"
@@ -815,18 +815,47 @@ fn_check4PendingRestartsOrLogout () {
 
 }
 
+##for #38 Check and unmount previous update disks 
+fn_EjectPreviouslyMountedUpdateDisks () {
+	knownDisks=(
+	"Apple_HFS OS X Base System"
+	"Apple_HFS macOS High Sierra"
+	"Apple_HFS macOS Base System"
+	"Apple_HFS RecoveryHDMeta"
+	)
+
+	## Eject disks with known names for containing macOS Updates"
+	for disk2Eject in "${knownDisks[@]}" ; do
+		knownDisksFound=( $( /usr/sbin/diskutil list | grep "$disk2Eject" | awk '{print$NF}' | sed 's/.\{2\}$//' ))
+		for eachKnownDisk in "${knownDisksFound[@]}" ; do
+			if [[ "$eachKnownDisk" == *"disk"* ]] ; then
+				echo "ejecting disk $eachKnownDisk"
+				fn_execute_log4_JSS "/usr/sbin/diskutil eject $eachKnownDisk"
+			fi
+		done
+	done
+
+	## Eject disks with the naming convetion "Apple_HFS macOS 10.1* Update"
+	commonDiskNames=( $( /usr/sbin/diskutil list | grep "Apple_HFS macOS 10.1" | grep "Update" | awk '{print$NF}' | sed 's/.\{2\}$//' ))
+	for eachFoundDisk in "${commonDiskNames[@]}" ; do
+		if [[ "$eachFoundDisk" == *"disk"* ]] ; then
+			echo "ejecting disk $eachFoundDisk"
+			fn_execute_log4_JSS "/usr/sbin/diskutil eject $eachFoundDisk"
+		fi
+	done
+}
+
 ##########################################################################################
 ##								Initial Required Stuff 									##
 ##########################################################################################
 
-# user
 DetermineLoginState
 
 ##########################################################################################
 ##									SSD Calculations									##
 ##########################################################################################
 
-solidstate=`diskutil info / | grep "Solid State" | awk 'BEGIN { FS=":" } ; { print $2}'`
+solidstate=`/usr/sbin/diskutil info / | grep "Solid State" | awk 'BEGIN { FS=":" } ; { print $2}'`
 
 if [[ "$solidstate" == *"Yes"* ]] ; then
 	# log computer has a solid state drive
@@ -1972,7 +2001,10 @@ VmTest=`ioreg -l | grep -e Manufacturer -e 'Vendor Name' | grep 'Parallels\|VMwa
 if [[ "$VmTest" ]] ; then 
 	Laptop="MacBook" 
 fi
-BatteryTest=`pmset -g batt`
+fn_BatteryStatus () {
+
+pmset -g batt
+}
 
 batteryCustomIcon="$UEXFolderPath/resources/battery_white.png"
 
@@ -1983,7 +2015,7 @@ else
 	baticon="/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/AlertNoteIcon.icns"
 fi
 
-if [[ "$BatteryTest" =~ "AC" ]] ; then
+if [[ "$( fn_BatteryStatus )" =~ "AC" ]] ; then
 	#on AC power
 	power=true
 	log4_JSS "Computer on AC power"
@@ -2174,10 +2206,10 @@ else
 	elif [[ "$checks" == *"logout"* ]] && [[ "$restartQueued" == true ]] && [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]]  && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ; then
 		log4_JSS "If install is only a logout requirement the user has already approved a restart previously in this session"
 		preApprovedInstall=true
-	elif [[ $restartQueued = true ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" =~ *"AC"* ]] &&  [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ;then
+	elif [[ $restartQueued = true ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" =~ *"AC"* ]] &&  [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ;then
 		log4_JSS "If install is only a restart requirement with a power requiremnet but power is connected and the the user has already approved a restart previously in this session"
 		preApprovedInstall=true
-	elif [[ "$restartQueued" == true ]] && [[ "$checks" == *"quit"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" =~ *"AC"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
+	elif [[ "$restartQueued" == true ]] && [[ "$checks" == *"quit"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" =~ *"AC"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
 		log4_JSS "if the install has a quit and restart requirement with power required and conencted. Also, none of apps are running that need to be quit and the user has already approved a restart previously in this session"
 		preApprovedInstall=true
 	elif [[ "$restartQueued" == true ]] && [[ "$checks" == *"quit"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lock"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
@@ -2239,13 +2271,13 @@ if [[ "$spaceRequired" ]] ; then
 	
 	#####
 	# Disk Space Check
-	free=`diskutil info / | grep "Free Space"`
+	free=`/usr/sbin/diskutil info / | grep "Free Space"`
 	if [ -z "$free" ] ; then
-		free=`diskutil info / | grep "Available" | awk '{print $4}'`
-		unit=`diskutil info / | grep "Available" | awk '{print $5}'`
+		free=`/usr/sbin/diskutil info / | grep "Available" | awk '{print $4}'`
+		unit=`/usr/sbin/diskutil info / | grep "Available" | awk '{print $5}'`
 	else
-		free=`diskutil info / | grep "Free Space" | awk '{print $4}'`
-		unit=`diskutil info / | grep "Free Space" | awk '{print $5}'`
+		free=`/usr/sbin/diskutil info / | grep "Free Space" | awk '{print $4}'`
+		unit=`/usr/sbin/diskutil info / | grep "Free Space" | awk '{print $5}'`
 	fi
 
 	space=${free%.*}
@@ -2972,8 +3004,8 @@ while [ $reqlooper = 1 ] ; do
 	if [ -z $PostponeClickResult ] ; then
 
 		# new safety override for not having the charger
-		BatteryTest=`pmset -g batt`
-		if [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" != *"AC"* ]] ; then 
+		# BatteryTest=`pmset -g batt`
+		if [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" != *"AC"* ]] ; then 
 			if [ $inactivityDelay -ge 3 ] && [[ $delayNumber -ge $maxdefer ]] && [[ "$checks" == *"compliance"* ]] && [[ $insufficientSpace != true ]] ; then 
 				log4_JSS "User has exhausted delay options and ignored the prompt 3 times further."
 				log4_JSS "User does not have power connected and a power connection is required."
@@ -3219,8 +3251,8 @@ Current work may be lost if you do not save before proceeding."
 	##########################################################################################
 	##										BATTERY SAFETY NET	 							##
 	##########################################################################################
-	BatteryTest=`pmset -g batt`
-	if [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" != *"AC"* ]] && [[ -z $PostponeClickResult ]] && [[ "$skipOver" != true ]] ; then
+	# BatteryTest=`pmset -g batt`
+	if [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" != *"AC"* ]] && [[ -z $PostponeClickResult ]] && [[ "$skipOver" != true ]] ; then
 		reqlooper=1
 		# /bin/echo postponesLeft is "$postponesLeft"
 		if [[ "$postponesLeft" -gt 0 ]] && [[ "$checks" != *"critical"* ]] ; then
@@ -3239,15 +3271,15 @@ Current work may be lost if you do not save before proceeding."
 		batlooper=1
 		jamfHelperOn=`ps aux | grep jamfHelper | grep -v grep`
 		while [ $batlooper = 1 ] && [[ $jamfHelperOn != "" ]] ; do
-			BatteryTest=`pmset -g batt`
+			# BatteryTest=`pmset -g batt`
 			jamfHelperOn=`ps aux | grep jamfHelper | grep -v grep`
 			# /bin/echo batteryClickResult is $batteryClickResult
 
-			if [[ "$BatteryTest" != *"AC"* ]] && [[ "$checks" == *"critical"* ]] ; then 
+			if [[ "$( fn_BatteryStatus )" != *"AC"* ]] && [[ "$checks" == *"critical"* ]] ; then 
 				# charger still not connected
 				batlooper=1 
 				sleep 1
-			elif [[ "$BatteryTest" != *"AC"* ]] ; then
+			elif [[ "$( fn_BatteryStatus )" != *"AC"* ]] ; then
 				# charger still not connected
 				batlooper=1 
 				sleep 1
@@ -3284,8 +3316,8 @@ Current work may be lost if you do not save before proceeding."
 # 		echo PostponeClickResult $PostponeClickResult
 # 		echo skipOver $skipOver
 
-	BatteryTest=`pmset -g batt`
-	if [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" != *"AC"* ]] && [[ -z $PostponeClickResult ]] && [[ "$batteryOveride" != true ]] ; then
+	# BatteryTest=`pmset -g batt`
+	if [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" != *"AC"* ]] && [[ -z $PostponeClickResult ]] && [[ "$batteryOveride" != true ]] ; then
 		reqlooper=1
 	else 
 		if [[ $logoutClickResult == *"2" ]] ; then 
@@ -3317,8 +3349,8 @@ else # loginuser is null therefore no one is logged in and
 			log4_JSS "Install at login permitted"
 			# install at login permitted
 			
-			BatteryTest=`pmset -g batt`
-			if [[ "$checks" == *"power"* ]] && [[ "$BatteryTest" != *"AC"* ]] ; then
+			# BatteryTest=`pmset -g batt`
+			if [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" != *"AC"* ]] ; then
 				log4_JSS "Power not connected postponing 24 hours"
 				echo power not connected postponing 24 hours
 				delayNumber=$((delayNumber+0))
@@ -3847,6 +3879,9 @@ EOT
 				fn_trigger "diagblock"
 			fi
 			
+			##for #38 Check and unmount previous update disks 
+			fn_EjectPreviouslyMountedUpdateDisks
+
 			fn_execute_log4_JSS "softwareupdate -i --all -R"
 		else
 			logInUEX "Skipping uex no updates required"
