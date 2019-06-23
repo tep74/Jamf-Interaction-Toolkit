@@ -183,11 +183,11 @@ customMessage=${11}
 
 
 # for debugging
-# NameConsolidated="UEX;Compliance Test;1.0"
-# checks=`echo "quit power" | tr '[:upper:]' '[:lower:]'`
-# apps="Safari.app"
+# NameConsolidated="UEX;MSUpdate Quit;1.0"
+# checks=`echo "merp quit nopreclose" | tr '[:upper:]' '[:lower:]'`
+# apps="Microsoft Word.app"
 # installDuration=15
-# maxdeferConsolidated="0"
+# maxdeferConsolidated="1"
 # packages=""
 # triggers="msupdate"
 # customMessage=""
@@ -595,7 +595,7 @@ fn_generatateApps2quit () {
 				log4_JSS "$app is stil running. Loading Are You Sure Window"
 			elif [[ $logMode = beforedialog ]] ;then
 				log4_JSS "$app is running. Notification Required"
-			elif [[ $logMode = safequit ]] ;then
+			elif [[ $logMode = safequit ]] && [[ "$checks" != *"nopreclose"* ]];then
 				log4_JSS "$app is stil running. Attempting to safely quit the App."
 			fi
 
@@ -3152,7 +3152,7 @@ Current work may be lost if you do not save before proceeding."
 			# Safe quit options
 			if [[ $apps2kill != "" ]] && [[ "$checks" != *"nopreclose"* ]] ; then
 
-				# if the app to re launc is not blank it means the apps wer quit manuaully when the install window was up
+				# if the app to re launch is not blank it means the apps were quit manually when the install window was up
 				if 	[ -z "${apps2Relaunch[@]}" ] ; then
 					apps2Relaunch=()
 				fi
@@ -3197,6 +3197,7 @@ Current work may be lost if you do not save before proceeding."
 				"$jhPath" -windowType hud -lockHUD -icon "$icon" -title "$title" -heading "$areyousureHeading" -description "$areyousureMessage" -button1 "Continue" -button2 "Go Back" -timeout 600 -countdown > "$areYouSureClickResultFile" &
 			fi
 
+			sleep 1
 
 		fi # ARE YOU SURE? if apps are still running
 
@@ -3594,22 +3595,23 @@ fi # no on logged in
 ##									STARTING ACTIONS									##
 ##########################################################################################
 
-	#####################
-	# 		Quit	 	#
-	#####################
+	#############################################
+	# 		Quit & Blocking Actions Merged	 	#
+	#############################################
 
-	if [[ "$checks" == *"quit"* ]] ; then
-	# Quit all the apps2quit that were running at the time of the notifcation 
+	if [[ "$checks" == *"quit"* ]] || [[ "$checks" == *"block"* ]] ; then
+	# Quit all the apps2quit that were running at the time of the notification 
 		
 		# Generate the list of apps still running that need to
 		fn_generatateApps2quit
 
 		if [[ $apps2kill != "" ]] ; then
 
-			# if the app to re launc is not blank it means the apps wer quit manuaully when the install window was up
+			# if the app to relaunch is not blank it means the apps were quit manually when the install window was up
 			if 	[ -z "${apps2Relaunch[@]}" ] ; then
 				apps2Relaunch=()
 			fi
+
 			for app in "${apps2kill[@]}" ; do
 				IFS=$'\n'
 				appid=`ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'}`
@@ -3623,14 +3625,26 @@ fi # no on logged in
 						for id in $appid; do
 							# Application  $app is still running.
 							# Killing $app. pid is $id 
-							log4_JSS "$app is still running. Killing process id $id."
-							# log4_JSS "Re-opening $app"
-							# osascript -e "activate app \"$app\""
-							# osascript -e "quit app \"$app\""
-							kill $id
-							sleep 1
+
+							if [[ "$checks" == *"merp"* ]] ; then
+								log4_JSS "Trying to safe quit $app to avoid Microsoft Error Reporting"
+								sudo -u "$loggedInUser" -H osascript -e "activate app \"$app\""
+								sudo -u "$loggedInUser" -H osascript -e "quit app \"$app\""
+								sleep 2
+							fi
+
 							processstatus=`ps -p $id`
-							if [[ "$processstatus" == *"$id"* ]]; then
+							if [[ "$processstatus" == *"$app"* ]]; then
+								log4_JSS "$app is still running. Killing process id $id."
+								# log4_JSS "Re-opening $app"
+								# osascript -e "activate app \"$app\""
+								# osascript -e "quit app \"$app\""
+								kill $id
+								sleep 1
+							fi
+
+							processstatus=`ps -p $id`
+							if [[ "$processstatus" == *"$app"* ]]; then
 								#statements
 								log4_JSS "The process $id was still running for application $app. Force killing Application."
 								kill -9 $id
@@ -3645,34 +3659,6 @@ fi # no on logged in
 	#####################
 	# 		Block	 	#
 	#####################
-
-	if [[ "$checks" == *"block"* ]] ; then
-		# Quit all the apps
-		for app in "${apps[@]}" ; do
-			IFS=$'\n'
-			appid=`ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v jamfgg | awk {'print $2'}`
-			# Processing application $app
-				if  [[ $appid != "" ]] ; then
-					
-					#add to the relaunch list once
-					#testing for #36
-					apps2Relaunch+=($app)
-
-					for id in $appid; do
-						# Application  $app is still running.
-						# Killing $app. pid is $id 
-						log4_JSS "$app is still running. Quitting app."
-						kill $id
-						processstatus=`ps -p $id`
-							if [[ "$processstatus" == *"$id"* ]]; then
-								#statements
-								log4_JSS "The process $id was still running for application $app. Force killing Application."
-								kill -9 $id
-							fi 
-					done 
-				fi
-		done
-		unset IFS
 		
 		# calculate time and date just before plist creation
 		runDate=`date +%s`

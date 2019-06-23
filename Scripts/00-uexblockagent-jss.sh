@@ -218,9 +218,9 @@ runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 			# Process the apps in the plist and kill and notify
 			for app in "${apps[@]}" ; do
 				IFS=$'\n'
-				appid=`ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v PleaseWaitUpdater.sh | grep -v PleaseWait | grep -v sed | grep -v jamf | grep -v cocoaDialog | awk {'print $2'}`
+				id=`ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v PleaseWaitUpdater.sh | grep -v PleaseWait | grep -v sed | grep -v jamf | grep -v cocoaDialog | awk {'print $2'}`
 	# 			echo Processing application $app
-					if  [[ $appid != "" ]] ; then
+					if  [[ $id != "" ]] ; then
 						# app was running so kill it then give the notification
 					
 						################################
@@ -235,11 +235,26 @@ runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 						# Debugging applications kills END #
 						####################################
 					
-						for id in $appid; do
-	# 						echo Killing $app. pid is $id 
-							echo $(date)	$compname	:	App "$app" was found running, killing process. pid is $id | /usr/bin/tee -a "$logfilepath"
+						if [[ "$checks" == *"merp"* ]] ; then
+							log4_JSS "Trying to safe quit $app to avoid Microsoft Error Reporting"
+							sudo -u "$loggedInUser" -H osascript -e "activate app \"$app\""
+							sudo -u "$loggedInUser" -H osascript -e "quit app \"$app\""
+							sleep 2
+						fi
+							
+						processstatus=`ps -p $id`
+						if [[ "$processstatus" == *"$app"* ]]; then
+							log4_JSS "$app is still running. Killing process id $id."
 							kill $id
-						done 
+							sleep 1
+						fi
+
+						processstatus=`ps -p $id`
+						if [[ "$processstatus" == *"$app"* ]]; then
+							#statements
+							log4_JSS "The process $id was still running for application $app. Force killing Application."
+							kill -9 $id
+						fi 
 #################
 # MESSAGE START #
 #################
