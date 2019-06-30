@@ -63,15 +63,17 @@ sleep 10
 # while PleaseWait.app is running 
 while [ ! -z "$( pgrep PleaseWait )" ] ; do 
 
-# Get a list of plist from the UEX folder
-plists=$( find "/Library/Application Support/JAMF/UEX" -name '*.plist' | grep -v resources )
-
-set -- "$plists" 
 IFS=$'\n'
-##This works because i'm setting the seperator
-# shellcheck disable=SC2048
-declare -a plists=($*)
+# Get a list of plist from the UEX folder
+plists=($( find "/Library/Application Support/JAMF/UEX" -name '*.plist' | grep -v resources ))
 unset IFS
+
+# set -- "$plists" 
+# IFS=$'\n'
+# ##This works because i'm setting the seperator
+# # shellcheck disable=SC2048
+# declare -a plists=($*)
+# unset IFS
 
 installjss="$UEXFolderPath/install_jss/"
 
@@ -139,7 +141,7 @@ installjss="$UEXFolderPath/install_jss/"
 	
 	# 	if there are logout plist present then notify that a logout will be required
 		if [[ "$plist" == *"UEX/logout"* ]] ;then
-			plistName=${plist##*/}" )"
+			plistName="${plist##*/}"
 			if [ -e "$installjss""$plistName" ] ; then
 				echo "A logout will be required..." > $pleasewaitPhase
 				echo "after $action completes." > $pleasewaitProgress

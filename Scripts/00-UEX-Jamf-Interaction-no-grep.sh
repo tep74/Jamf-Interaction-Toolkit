@@ -153,11 +153,11 @@ apps=$6
 
 # Theres are alternate paths that the applications
 # if the path is the user folder then use the ~/ sign
+##Needed to indicate home folders
+# shellcheck disable=SC2088
 altpaths=(
 "/Users/Shared/"
 "/Library/Application Support/"
-##Needed to indicate home folders
-# shellcheck disable=SC2088 
 "~/Library/Application Support/"
 )
 
@@ -215,7 +215,8 @@ NameConsolidated4plist="$NameConsolidated"
 waitingRoomDIR="/Library/Application Support/JAMF/Waiting Room/"
 
 pathToPackage="$waitingRoomDIR""$NameConsolidated4plist".pkg
-packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
+# packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
+packageName="${pathToPackage##*/}"
 pathToFolder=$( dirname "$pathToPackage" )
 
 
@@ -290,7 +291,8 @@ if [[ $debug = true ]] ; then
 		# for testing paths
 	if [[ $pathToPackage == "" ]] ; then
 		pathToPackage="/Users/ramirdai/Desktop/aG - Google - Google Chrome 47.0.2526.73 - OSX EN - SRXXXXX - 1.0.pkg"
-		packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
+		# packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
+		packageName="${pathToPackage##*/}"
 		pathToFolder=$( dirname "$pathToPackage" )
 	fi
 	
@@ -613,7 +615,7 @@ fn_waitForApps2Quit () {
 
 	if [[ "${appsRunning[@]}" != *".app"* ]] ; then
 		log4_JSS "User has closed all apps needed. Continuing $action"
-		echo 1 > $PostponeClickResultFile
+		echo 1 > "$PostponeClickResultFile"
 		apps2Relaunch=("${apps2ReOpen[@]}")
 		killall jamfHelper
 	fi
@@ -635,7 +637,7 @@ fn_waitForApps2Quit4areYouSure () {
 
 	if [[ "${appsRunning[@]}" != *".app"* ]] ; then
 		log4_JSS "User has closed all apps needed. Continuing $action"
-		echo 0 > $areYouSureClickResultFile
+		echo 0 > "$areYouSureClickResultFile"
 		apps2Relaunch=("${apps2ReOpen[@]}")
 		killall jamfHelper
 	fi
@@ -662,6 +664,8 @@ fi
 }
 
 fn_check4ActiveScreenSharingInSkypeForBusiness () {
+## This is needed to get the parent proccess and prevent unwanted blocking
+# shellcheck disable=SC2009
 S4Bscreensharing=$( lsof -p "$(ps -A | grep -m1 'Skype for Business' | awk '{print $1}')" | grep "Resources/ScreenSharingIndicator.storyboardc" )
 if [[ "$S4Bscreensharing" == *"ScreenSharingIndicator.storyboardc"* ]] ; then
 	log4_JSS "User is sharing their screen on Skype for Business."
@@ -671,6 +675,8 @@ fi
 
 
 fn_check4ScreenSharingSessionInWebExMeetingCenter () {
+## This is needed to get the parent proccess and prevent unwanted blocking
+# shellcheck disable=SC2009
 webExScreenSharing=$( lsof -p "$(ps -A | grep -m1 'Meeting Center.app' | awk '{print $1}')" | grep "NF_Button_Stop_default.tiff" )
 if [[ "$webExScreenSharing" == *"NF_Button_Stop_default.tiff"* ]] ; then
 	log4_JSS "User has been sharing their screen on WebEx Meeting Center."
@@ -680,7 +686,8 @@ fi
 
 
 fn_check4ActiveScreenSharingInMicrosoftTeams () {
-
+## This is needed to get the parent proccess and prevent unwanted blocking
+# shellcheck disable=SC2009
 msTeamsLogLocation=$( lsof -p "$(ps -A | grep -m1 'Microsoft Teams' | awk '{print $1}')" | grep -m1 "logs.txt" | tail -n 1 | awk '{ print $9 " " $NF }' )
 if [[ -e "$msTeamsLogLocation" ]] ; then
 	msTeamsScreensharing=$( cat "$msTeamsLogLocation" | grep SharingIndicator | tail -n 1 )
@@ -693,7 +700,8 @@ fi
 }
 
 fn_check4ScreenSharingSessionInZoomUS () {
-
+## This is needed to get the parent proccess and prevent unwanted blocking
+# shellcheck disable=SC2009
 zoomUSLogLocation=$( lsof -p "$(ps -A | grep -m1 'zoom.us' | awk '{print $1}')" | grep -m1 "as.log" | tail -n 1 | awk '{ print $NF }' )
 if [[ -e "$zoomUSLogLocation" ]] ; then
 	zoomUSScreensharing=$( cat "$zoomUSLogLocation" )
@@ -1062,8 +1070,8 @@ autoUpdateLogFile="/Library/Logs/Microsoft/autoupdate.log"
 fn_check_4_msupdate () {
 	echo "" > "$msupdateLog"
 	echo "" > "$msupdateLogPlist"
-	sudo -u "$currentConsoleUserName" "$msupdateBinary" -l > $msupdateLog
-	sudo -u "$currentConsoleUserName" "$msupdateBinary" -l -f p > $msupdateLogPlist
+	sudo -u "$currentConsoleUserName" "$msupdateBinary" -l > "$msupdateLog"
+	sudo -u "$currentConsoleUserName" "$msupdateBinary" -l -f p > "$msupdateLogPlist"
 }
 
 
@@ -1413,7 +1421,7 @@ checking for updates..."
 	fi #
 
 
-	softwareupdate -l > $appleSUSlog
+	softwareupdate -l > "$appleSUSlog"
 
 	appleUpdates=$( cat $appleSUSlog )
 
@@ -1595,7 +1603,8 @@ resources=(
 "$UEXFolderPath/resources/PleaseWait.app"
 )
 for i in "${resources[@]}"; do
-	resourceName="$(echo "$i" | sed 's@.*/@@')"
+	# resourceName="$(echo "$i" | sed 's@.*/@@')"
+	resourceName="${i##*/}"
 	pathToResource=$( dirname "$i" )
    if [[ ! -e "$i" ]] && [[ "$i" ]] ; then
       # does not exist...
@@ -1646,7 +1655,8 @@ runDateFriendly=$( date -r$runDate )
 ##########################################################################################
 #								Package name Processing									 #
 ##########################################################################################
-packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
+# packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
+packageName="${pathToPackage##*/}"
 pathToFolder=$( dirname "$pathToPackage" )
 SSplaceholderDIR="$UEXFolderPath/selfservice_jss/"
 
@@ -2074,7 +2084,7 @@ if [[ "$checks" == *"block"* ]] ; then
 		for altpath in "${altpaths[@]}" ; do
 			
 			if [[ "$altpath" == "~"* ]] ; then 
-				altpathshort=$( echo $altpath | cut -c 2- )
+				altpathshort=$( echo "$altpath" | cut -c 2- )
 				altuserpath="/Users/${loggedInUser}${altpathshort}"
 				
 				if [[ -e "$altuserpath" ]] ; then 
@@ -2899,7 +2909,7 @@ reqlooper=1
 while [ $reqlooper = 1 ] ; do
 	
 	PostponeClickResultFile=/tmp/$UEXpolicyTrigger.txt
-	echo > $PostponeClickResultFile
+	echo > "$PostponeClickResultFile"
 	
 	jhTimeOut=1200 # keep the JH window on for 20 mins
 	timeLimit=900 #15 mins
@@ -2921,7 +2931,7 @@ while [ $reqlooper = 1 ] ; do
 			log4_JSS "User clicked the 'Find Clutter Button'"
 			fn_find_Clutter
 		fi
-		echo 86400 > $PostponeClickResultFile
+		echo 86400 > "$PostponeClickResultFile"
 		PostponeClickResult=86400
 		diskCheckDelayNumber=$((diskCheckDelayNumber+1))
 
@@ -2941,7 +2951,7 @@ while [ $reqlooper = 1 ] ; do
 
 	elif [ $silentPackage = true ] ; then
 		log4_JSS "Slient packge install deployment."
-		echo 0 > $PostponeClickResultFile
+		echo 0 > "$PostponeClickResultFile"
 		PostponeClickResult=0
 		checks="${checks/quit/}"
 		checks="${checks/block/}"
@@ -2952,18 +2962,18 @@ while [ $reqlooper = 1 ] ; do
 	elif [[ $preApprovedInstall = true ]] ; then
 		#statements
 		log4_JSS "User has a previous approval for a restart of logout."
-		echo 0 > $PostponeClickResultFile
+		echo 0 > "$PostponeClickResultFile"
 		PostponeClickResult=0
 
 	elif [ -z "$apps2quit" ] && [ -z "$apps2ReOpen" ] && [[ "$checks" == *"quit"* ]] && [[ "$checks" != *"restart"* ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"notify"* ]] ; then
 		log4_JSS "No apps need to be quit so $action can occur."
-		echo 0 > $PostponeClickResultFile
+		echo 0 > "$PostponeClickResultFile"
 		PostponeClickResult=0
 		skipNotices=true
 		# Only run presetation dely if the user is alllowed to postpone and has postponse avalable
 		# this means that if they exhaust postpones its because they chose to and we only wiat a max of 3 hour for them to be try and delay after that presetaion delay is not possible
 	elif [[ "$presentationRunning" = true ]] && [[ $presentationDelayNumber -lt 3 ]] && [[ $selfservicePackage != true ]] && [[ "$checks" != *"critical"* ]] && [[ $maxdefer -ge 1 ]] && [[ $delayNumber -lt $maxdefer ]] ; then
-		echo 3600 > $PostponeClickResultFile
+		echo 3600 > "$PostponeClickResultFile"
 		PostponeClickResult=3600
 		presentationDelayNumber=$((presentationDelayNumber+1))
 		log4_JSS "Presentation running, delaying the install for 1 hour."
@@ -2973,7 +2983,7 @@ while [ $reqlooper = 1 ] ; do
 		skipOver=true
 		# if an presetation presentation is running and the max defer is 0 or critical then allow only one presentaion delay
 	elif [[ "$presentationRunning" = true ]] && [[ $presentationDelayNumber -lt 1 ]] && [[ $selfservicePackage != true ]] && [[ $maxdefer = 0 ]] ; then
-		echo 3600 > $PostponeClickResultFile
+		echo 3600 > "$PostponeClickResultFile"
 		PostponeClickResult=3600
 		presentationDelayNumber=$((presentationDelayNumber+1))
 		log4_JSS "Presentation running, delaying the install for 1 hour."
@@ -2982,7 +2992,7 @@ while [ $reqlooper = 1 ] ; do
 		skipNotices=true
 		skipOver=true
 	elif [[ "$presentationRunning" = true ]] && [[ $presentationDelayNumber -lt 1 ]] && [[ $selfservicePackage != true ]] && [[ "$checks" == *"critical"* ]] ; then
-		echo 3600 > $PostponeClickResultFile
+		echo 3600 > "$PostponeClickResultFile"
 		PostponeClickResult=3600
 		presentationDelayNumber=$((presentationDelayNumber+1))
 		log4_JSS "Presentation running, delaying the install for 1 hour."
@@ -2996,22 +3006,22 @@ while [ $reqlooper = 1 ] ; do
 		# log4_JSS "Showing the $action window"
 		if [[ "$checks" == *"critical"* ]] ; then
 			log4_JSS "Showing the $action window. Critical"
-			"$jhPath" -windowType hud -lockHUD -title "$title" -heading "$heading" -description "$PostponeMsg" -button1 "OK" -icon "$icon" -windowPosition center -timeout $jhTimeOut | grep -v 239 > $PostponeClickResultFile &
+			"$jhPath" -windowType hud -lockHUD -title "$title" -heading "$heading" -description "$PostponeMsg" -button1 "OK" -icon "$icon" -windowPosition center -timeout $jhTimeOut | grep -v 239 > "$PostponeClickResultFile" &
 		
 		else
 			if [[ "$selfservicePackage" = true ]] ; then 
-				"$jhPath" -windowType hud -lockHUD -title "$title" -heading "$heading" -description "$PostponeMsg" -button1 "Start now" -button2 "Cancel" -icon "$icon" -windowPosition center -timeout $jhTimeOut | grep -v 239 > $PostponeClickResultFile &
+				"$jhPath" -windowType hud -lockHUD -title "$title" -heading "$heading" -description "$PostponeMsg" -button1 "Start now" -button2 "Cancel" -icon "$icon" -windowPosition center -timeout $jhTimeOut | grep -v 239 > "$PostponeClickResultFile" &
 			else
 
 				if [[ $delayNumber -ge $maxdefer ]] ; then 
 					log4_JSS "Showing the $action window. No postpones left"
-					"$jhPath" -windowType hud -lockHUD -title "$title" -heading "$heading" -description "$PostponeMsg" -button1 "OK" -icon "$icon" -windowPosition center -timeout $jhTimeOut | grep -v 239 > $PostponeClickResultFile &
+					"$jhPath" -windowType hud -lockHUD -title "$title" -heading "$heading" -description "$PostponeMsg" -button1 "OK" -icon "$icon" -windowPosition center -timeout $jhTimeOut | grep -v 239 > "$PostponeClickResultFile" &
 				elif [[ "$checks" == *"restart"* ]] || [[ "$checks" == *"logout"* ]] || [[ "$checks" == *"macosupgrade"* ]] || [[ "$checks" == *"loginwindow"* ]] || [[ "$checks" == *"lockmac"* ]] || [[ "$checks" == *"saveallwork"* ]] ; then
 					log4_JSS "Showing the $action window. Allowing for $action at logout. $postponesLeft postpones left"
-					"$jhPath" -windowType hud -lockHUD -title "$title" -heading "$heading" -description "$PostponeMsg" -showDelayOptions "$delayOptions" -button1 "OK" -button2 "at Logout" -icon "$icon" -windowPosition center -timeout $jhTimeOut | grep -v 239 > $PostponeClickResultFile &
+					"$jhPath" -windowType hud -lockHUD -title "$title" -heading "$heading" -description "$PostponeMsg" -showDelayOptions "$delayOptions" -button1 "OK" -button2 "at Logout" -icon "$icon" -windowPosition center -timeout $jhTimeOut | grep -v 239 > "$PostponeClickResultFile" &
 				else
 					log4_JSS "Showing the $action window. $postponesLeft postpones left."
-					"$jhPath" -windowType hud -lockHUD -title "$title" -heading "$heading" -description "$PostponeMsg" -showDelayOptions "$delayOptions" -button1 "OK" -icon "$icon" -windowPosition center -timeout $jhTimeOut | grep -v 239 > $PostponeClickResultFile &
+					"$jhPath" -windowType hud -lockHUD -title "$title" -heading "$heading" -description "$PostponeMsg" -showDelayOptions "$delayOptions" -button1 "OK" -icon "$icon" -windowPosition center -timeout $jhTimeOut | grep -v 239 > "$PostponeClickResultFile" &
 				fi # Max defer exceeded
 			fi # self service true
 
@@ -3349,7 +3359,7 @@ Current work may be lost if you do not save before proceeding."
 			if [[ "$postponesLeft" -eq 0 ]] && [[ "$batteryClickResult" == 0 ]] ; then
 				batlooper=0
 				batteryOveride=true
-				echo 3600 > $PostponeClickResultFile
+				echo 3600 > "$PostponeClickResultFile"
 				PostponeClickResult=3600
 				killall jamfHelper
 				log4_JSS "User does not have AC power available"
@@ -3860,25 +3870,25 @@ EOT
 		triggerNgo PleaseWaitUpdater
 		
 		# Sets the Initial Values 
-		echo "Installation in progress..." > $pleasewaitPhase
-		echo "Please Wait..." > $pleasewaitProgress
-		echo "100" > $pleasewaitInstallProgress
+		echo "Installation in progress..." > "$pleasewaitPhase"
+		echo "Please Wait..." > "$pleasewaitProgress"
+		echo "100" > "$pleasewaitInstallProgress"
 		
 		# Sets the Initial Values 
 		if [[ "$suspackage" = true ]] ; then
-			echo "Software Updates in progress" > $pleasewaitPhase
+			echo "Software Updates in progress" > "$pleasewaitPhase"
 			# chflags uchg $pleasewaitPhase > /dev/null 2>&1
  			# chflags schg $pleasewaitPhase > /dev/null 2>&1
 		fi
 		
 		sleep 2
-		echo "$actioncap in progress..." > $pleasewaitPhase
-		echo "Now $actioning" "$heading" > $pleasewaitProgress
+		echo "$actioncap in progress..." > "$pleasewaitPhase"
+		echo "Now $actioning" "$heading" > "$pleasewaitProgress"
 		
 		# reset failsafe to change to the name of the installation
 		# gives an indication of progress 
 
-		echo "100" > $pleasewaitInstallProgress
+		echo "100" > "$pleasewaitInstallProgress"
 	
 	fi # long install with skipnotices off
 	
