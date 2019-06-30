@@ -571,7 +571,7 @@ fn_generatateApps2quit () {
 	apps2kill=()
 	for app in "${apps[@]}" ; do
 		IFS=$'\n'
-		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
+		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
 				app2Open=""
@@ -608,7 +608,7 @@ fn_waitForApps2Quit () {
 	appsRunning=()
 	for app in "${apps[@]}" ; do
 		IFS=$'\n'
-		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
+		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
 			appsRunning+=(${app})
@@ -628,7 +628,7 @@ fn_waitForApps2Quit4areYouSure () {
 	appsRunning=()
 	for app in "${apps[@]}" ; do
 		IFS=$'\n'
-		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
+		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
 			appsRunning+=(${app})
@@ -1014,8 +1014,8 @@ fi
 # splash Buddy for DEP
 #####
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
-splashBuddyRunning=$( ps aux | grep SplashBuddy.app/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
-DEPNotifyRunning=$( ps aux | grep DEPNotify.app/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
+splashBuddyRunning=$( ps aux | grep SplashBuddy.app/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
+DEPNotifyRunning=$( ps aux | grep DEPNotify.app/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 
 AppleSetupDoneFile="/var/db/.AppleSetupDone"
 
@@ -1215,7 +1215,7 @@ No updates available."
 			OutlookUpdateID=$( echo "$msupdatesUpdatesList" | grep Outlook | awk '{ print $1 }' )
 	 		OutlookNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Outlook" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 	
-	 		outLookappid=$( ps aux | grep "Microsoft Outlook.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
+	 		outLookappid=$( ps aux | grep "Microsoft Outlook.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 			# if [[ "$outLookappid" ]] && [[ "$OutlookNoteSilentInstallQueued" ]] ;then
 			if [[ "$outLookappid" ]] ;then
 				checks+=" block"
@@ -1236,7 +1236,7 @@ No updates available."
 	 		WordUpdateName=$( echo "$msupdatesUpdatesList" | grep Word | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# WordSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$WordUpdateName\"" )
 
-	 		Wordappid=$( ps aux | grep "Microsoft Word.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
+	 		Wordappid=$( ps aux | grep "Microsoft Word.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 			# if [[ "$Wordappid" ]] && [[ "$WordSilentInstallQueued" ]] ;then
 			if [[ "$Wordappid" ]] ;then
 				checks+=" block"
@@ -1256,7 +1256,7 @@ No updates available."
 			PowerPointUpdateID=$( echo "$msupdatesUpdatesList" | grep PowerPoint | awk '{ print $1 }' )
 	 		PowerPointNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "PowerPoint" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 
-	 		PowerPointappid=$( ps aux | grep "Microsoft PowerPoint.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
+	 		PowerPointappid=$( ps aux | grep "Microsoft PowerPoint.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 			# if [[ "$PowerPointappid" ]] && [[ "$PowerPointNoteSilentInstallQueued" ]] ;then
 			if [[ "$PowerPointappid" ]] ;then
 				checks+=" block"
@@ -1277,7 +1277,7 @@ No updates available."
 			ExcelUpdateName=$( echo "$msupdatesUpdatesList" | grep Excel | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# ExcelSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$ExcelUpdateName\"" )
 
-	 		Excelappid=$( ps aux | grep "Microsoft Excel.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
+	 		Excelappid=$( ps aux | grep "Microsoft Excel.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 			# if [[ "$Excelappid" ]] && [[ "$ExcelSilentInstallQueued" ]];then
 			if [[ "$Excelappid" ]];then
 				checks+=" block"
@@ -1296,7 +1296,7 @@ No updates available."
 			
 		# 	#extract ID of update for msupdate
 		# 	TeamsUpdateID=$( echo "$msupdatesUpdatesList" | grep Teams | awk '{ print $1 }' )
-	 # 		Teamsappid=$( ps aux | grep "Microsoft Teams.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
+	 # 		Teamsappid=$( ps aux | grep "Microsoft Teams.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# 	if [[ "$Teamsappid" ]] ;then
 		# 		checks+=" block"
 		installDuration=20
@@ -1314,7 +1314,7 @@ No updates available."
 			
 		# 	#extract ID of update for msupdate
 		# 	OneDriveUpdateID=$( echo "$msupdatesUpdatesList" | grep OneDrive | awk '{ print $1 }' )
-	 # 		OneDriveappid=$( ps aux | grep "OneDrive.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
+	 # 		OneDriveappid=$( ps aux | grep "OneDrive.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# 	if [[ "$OneDriveappid" ]] ;then
 		# 		checks+=" block"
 		installDuration=20
@@ -1334,7 +1334,7 @@ No updates available."
 	 		OneNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep OneNote | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# OneNoteSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OneNoteUpdateName\"" )
 
-	 		OneNoteappid=$( ps aux | grep "Microsoft OneNote.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
+	 		OneNoteappid=$( ps aux | grep "Microsoft OneNote.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 			# if [[ "$OneNoteappid" ]] && [[ "$OneNoteSilentInstallQueued" ]] ;then
 			if [[ "$OneNoteappid" ]] ;then
 				checks+=" block"
@@ -1355,7 +1355,7 @@ No updates available."
 	 		SFBNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Skype For Business" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# SFBNoteSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OneNoteUpdateName\"" )
 
-	 		SFBappid=$( ps aux | grep "Skype for Business.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
+	 		SFBappid=$( ps aux | grep "Skype for Business.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 			# if [[ "$SFBappid" ]] && [[ "$SFBNoteSilentInstallQueued" ]] ;then
 			if [[ "$SFBappid" ]] ;then
 				checks+=" block"
@@ -2866,7 +2866,7 @@ fn_check4ScreenSharingSessionInZoomUS
 
 for app in "${presentationApps[@]}" ; do
 	IFS=$'\n'
-	appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
+	appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 # 	echo Processing application $app
 	if  [ "$appid" != "" ] ; then
 		log4_JSS "Application $app is Running"
@@ -3196,7 +3196,7 @@ Current work may be lost if you do not save before proceeding."
 				fi
 				for app in "${apps2kill[@]}" ; do
 					IFS=$'\n'
-					appid=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
+					appid=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 					# Processing application $app
 						if  [[ $appid != "" ]] ; then
 							# testing #36 for multiple quitting
@@ -3652,7 +3652,7 @@ fi # no on logged in
 
 			for app in "${apps2kill[@]}" ; do
 				IFS=$'\n'
-				appid=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
+				appid=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 				# Processing application $app
 					if  [[ $appid != "" ]] ; then
 						

@@ -205,7 +205,7 @@ runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 			# Process the apps in the plist and kill and notify
 			for app in "${apps[@]}" ; do
 				IFS=$'\n'
-				id=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v PleaseWaitUpdater.sh | grep -v PleaseWait | grep -v sed | grep -v jamf | grep -v cocoaDialog | awk {'print $2'} )
+				id=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v PleaseWaitUpdater.sh | grep -v PleaseWait | grep -v sed | grep -v jamf | grep -v cocoaDialog | awk '{ print $2 }' )
 	# 			echo Processing application $app
 					if  [[ $id != "" ]] ; then
 						# app was running so kill it then give the notification
