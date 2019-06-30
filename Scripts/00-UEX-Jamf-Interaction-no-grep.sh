@@ -478,7 +478,7 @@ for package in "${packages[@]}"; do
 				for altpath in "${altpaths[@]}" ; do
 					
 					if [[ "$altpath" == "~"* ]] ; then 
-						altpathshort=$( echo $altpath | cut -c 2- )
+						altpathshort=$( echo "$altpath" | cut -c 2- )
 						altuserpath="/Users/${loggedInUser}${altpathshort}"
 						if [[ -e "$altuserpath" ]] ; then 
 							local foundappinalthpath
@@ -524,7 +524,8 @@ log4_JSS () {
 fn_execute_log4_JSS () {
 	local dateOfCommand
 	dateOfCommand=$( date )
-	local TMPresultlogfilepath="/private/tmp/resultsOfCommand_$dateOfCommand.log"
+	local TMPresultlogfilepath
+	TMPresultlogfilepath="/private/tmp/resultsOfCommand_$dateOfCommand.log"
 	
 	log4_JSS "Running command: $1"
 	$1 >>"$TMPresultlogfilepath"
@@ -558,7 +559,8 @@ fn_check4Packages () {
 }
 
 fn_generatateApps2quit () {
-	local logMode="$1"
+	local logMode
+	logMode="$1"
 	apps2quit=()
 	apps2ReOpen=()
 	apps2kill=()
@@ -690,7 +692,7 @@ fn_check4ActiveScreenSharingInMicrosoftTeams () {
 # shellcheck disable=SC2009
 msTeamsLogLocation=$( lsof -p "$(ps -A | grep -m1 'Microsoft Teams' | awk '{print $1}')" | grep -m1 "logs.txt" | tail -n 1 | awk '{ print $9 " " $NF }' )
 if [[ -e "$msTeamsLogLocation" ]] ; then
-	msTeamsScreensharing=$( cat "$msTeamsLogLocation" | grep SharingIndicator | tail -n 1 )
+	msTeamsScreensharing=$( grep SharingIndicator "$msTeamsLogLocation" | tail -n 1 )
 	if [[ "$msTeamsScreensharing" ]] && [[ "$msTeamsScreensharing" != *"disposing"* ]] ; then
 		log4_JSS "User is sharing their screen on Microsoft Teams."
 		presentationRunning=true
@@ -718,20 +720,22 @@ fi
 
 fn_check4PendingRestartsOrLogout () {
 	lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s" )
-	lastRebootFriendly=$( date -r$lastReboot )
+	# lastRebootFriendly=$( date -r$lastReboot )
 
 	resartPlists=$( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" )
 	set -- "$resartPlists"
+	IFS=$'\n'
 	##This works because i'm setting the seperator
 	# shellcheck disable=SC2048
-	IFS=$'\n' ; declare -a resartPlists=($*)  
+	declare -a resartPlists=($*)  
 	unset IFS
 
 	logoutPlists=$( ls "$UEXFolderPath"/logout_jss/ | grep ".plist" )
 	set -- "$logoutPlists" 
+	IFS=$'\n'
 	##This works because i'm setting the seperator
 	# shellcheck disable=SC2048
-	IFS=$'\n' ; declare -a logoutPlists=($*)  
+	declare -a logoutPlists=($*)  
 	unset IFS
 
 	# check for any plist that are scheduled to have a restart
@@ -740,18 +744,27 @@ fn_check4PendingRestartsOrLogout () {
 		# if the user has already had a fresh restart then delete the plist
 		# other wise the advise and schedule the logout.
 
-		local name=$(fn_getPlistValue "name" "restart_jss" "$i")
-		local packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
-		local plistrunDate=$(fn_getPlistValue "runDate" "restart_jss" "$i")
+		local name
+		name=$(fn_getPlistValue "name" "restart_jss" "$i")
+		local packageName
+		packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
+		local plistrunDate
+		plistrunDate=$(fn_getPlistValue "runDate" "restart_jss" "$i")
 
-		local timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
+		local timeSinceReboot
+		timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 		logInUEX "timeSinceReboot is $timeSinceReboot"
 		
-		local logname="${packageName##*/}"
-		local logfilename="$logname".log
-		local resulttmp="$logname"_result.log
-		local logfilepath="$logdir""$logfilename"
-		local resultlogfilepath="$logdir""$resulttmp"
+		local logname
+		logname="${packageName##*/}"
+		local logfilename
+		logfilename="$logname".log
+		local resulttmp
+		resulttmp="$logname"_result.log
+		local logfilepath
+		logfilepath="$logdir""$logfilename"
+		local resultlogfilepath
+		resultlogfilepath="$logdir""$resulttmp"
 		
 		if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then
 			# the computer has rebooted since $runDateFriendly
@@ -775,25 +788,37 @@ fn_check4PendingRestartsOrLogout () {
 		# OR if the user has already had a fresh login then delete the plist
 		# other wise the advise and schedule the logout.
 
-			local name=$(fn_getPlistValue "name" "logout_jss" "$i")
-			local packageName=$(fn_getPlistValue "packageName" "logout_jss" "$i")
-			local plistloggedInUser=$(fn_getPlistValue "loggedInUser" "logout_jss" "$i")
-			local checked=$(fn_getPlistValue "checked" "logout_jss" "$i")
-			local plistrunDate=$(fn_getPlistValue "runDate" "logout_jss" "$i")
+			local name
+			name=$(fn_getPlistValue "name" "logout_jss" "$i")
+			local packageName
+			packageName=$(fn_getPlistValue "packageName" "logout_jss" "$i")
+			local plistloggedInUser
+			plistloggedInUser=$(fn_getPlistValue "loggedInUser" "logout_jss" "$i")
+			local checked
+			checked=$(fn_getPlistValue "checked" "logout_jss" "$i")
+			local plistrunDate
+			plistrunDate=$(fn_getPlistValue "runDate" "logout_jss" "$i")
 
-			local plistrunDateFriendly=$( date -r $plistrunDate )
+			local plistrunDateFriendly
+			plistrunDateFriendly=$( date -r $plistrunDate )
 			
 			# local timeSinceLogin=$((lastLogin-plistrunDate))
-			local timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
+			local timeSinceReboot
+			timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 			
 			#######################
 			# Logging files setup #
 			#######################
-			local logname="${packageName##*/}"
-			local logfilename="$logname".log
-			local resulttmp="$logname"_result.log
-			local logfilepath="$logdir""$logfilename"
-			local resultlogfilepath="$logdir""$resulttmp"
+			local logname
+			logname="${packageName##*/}"
+			local logfilename
+			logfilename="$logname".log
+			local resulttmp
+			resulttmp="$logname"_result.log
+			local logfilepath
+			logfilepath="$logdir""$logfilename"
+			local resultlogfilepath
+			resultlogfilepath="$logdir""$resulttmp"
 			
 			
 			if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then
@@ -1015,7 +1040,8 @@ fi
 
 ## This is needed to get the exact proccess
 # shellcheck disable=SC2009
-deploymentpolicyRunning=$( ps aux | grep "00-UEX-Deploy-via-Trigger" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
+# deploymentpolicyRunning=$( ps aux | grep "00-UEX-Deploy-via-Trigger" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
+
 
 ## This is needed to get the exact proccess
 # shellcheck disable=SC2009
@@ -1100,8 +1126,10 @@ fn_downloadMSupdatePackages () {
 		log4_JSS "msUpdatePackageFileName is: $msUpdatePackageFileName"
 
 
-		local MSupdateDownloadDestination="$waitingRoomDIR""$msUpdatePackageFileName"
-		local tmpMSupdateDownloadDestination="/tmp/""$msUpdatePackageFileName"
+		local MSupdateDownloadDestination
+		MSupdateDownloadDestination="$waitingRoomDIR""$msUpdatePackageFileName"
+		local tmpMSupdateDownloadDestination
+		tmpMSupdateDownloadDestination="/tmp/""$msUpdatePackageFileName"
 		# create the folder if it's not there
 		if [[ ! -d "waitingRoomDIR" ]] ; then 
 			mkdir -p "$waitingRoomDIR" 
