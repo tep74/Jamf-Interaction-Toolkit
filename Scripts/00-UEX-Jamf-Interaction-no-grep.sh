@@ -23,15 +23,15 @@ customLogo="/Library/Application Support/JAMF/Jamf.app/Contents/Resources/AppIco
 # or you can customize this with an image you've included in UEX resources or is already local on the computer
 SelfServiceIcon="$loggedInUserHome/Library/Application Support/com.jamfsoftware.selfservice.mac/Documents/Images/brandingimage.png"
 
-# if you want to customize the icon users see when they have insufficeien sapce you can specif the path
+# if you want to customize the icon users see when they have insufficient space you can specif the path
 # if you include it in your UEX resources it will install there 
 diskicon="/System/Library/Extensions/IOStorageFamily.kext/Contents/Resources/Internal.icns"
 
 # use this to customize the name of your IT Support team when space notification tickets are created 
 ServiceDeskName="IT Support"
 
-# Use this to customize the name of your jamf admin team signure in the compliance notification
-jamfOpsTeamName="Sytem Administrator"
+# Use this to customize the name of your jamf admin team signature in the compliance notification
+jamfOpsTeamName="System Administrator"
 
 # This enables the interaction for Help Disk Tickets
 # by default it is disabled. For more info on how to use this check the wiki in the Help Desk Ticket Section
