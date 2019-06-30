@@ -125,7 +125,7 @@ fn_write_uex_Preference "SelfServiceIcon" "$SelfServiceIcon"
 
 ##########################################################################################
 jamfBinary="/usr/local/jamf/bin/jamf"
-osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. {'print $2'} )
+osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. '{print $2}' )
 
 ##########################################################################################
 ##									Paramaters for UEX									##
@@ -156,7 +156,8 @@ apps=$6
 altpaths=(
 "/Users/Shared/"
 "/Library/Application Support/"
-# shellcheck disable=SC2088 ##Needed to indicate home folders
+##Needed to indicate home folders
+# shellcheck disable=SC2088 
 "~/Library/Application Support/"
 )
 
@@ -563,7 +564,7 @@ fn_generatateApps2quit () {
 		IFS=$'\n'
 		## This is needed to get the parent proccess and prevent unwanted blocking
 		# shellcheck disable=SC2009
-		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
+		appid=$( ps aux | grep "$app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
 				app2Open=""
@@ -602,7 +603,7 @@ fn_waitForApps2Quit () {
 		IFS=$'\n'
 		## This is needed to get the parent proccess and prevent unwanted blocking
 		# shellcheck disable=SC2009
-		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
+		appid=$( ps aux | grep "$app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
 			appsRunning+=(${app})
@@ -624,7 +625,7 @@ fn_waitForApps2Quit4areYouSure () {
 		IFS=$'\n'
 		## This is needed to get the parent proccess and prevent unwanted blocking
 		# shellcheck disable=SC2009
-		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
+		appid=$( ps aux | grep "$app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
 			appsRunning+=(${app})
@@ -661,7 +662,7 @@ fi
 }
 
 fn_check4ActiveScreenSharingInSkypeForBusiness () {
-S4Bscreensharing=$( lsof -p $(ps -A | grep -m1 'Skype for Business' | awk '{print $1}') | grep "Resources/ScreenSharingIndicator.storyboardc" )
+S4Bscreensharing=$( lsof -p "$(ps -A | grep -m1 'Skype for Business' | awk '{print $1}')" | grep "Resources/ScreenSharingIndicator.storyboardc" )
 if [[ "$S4Bscreensharing" == *"ScreenSharingIndicator.storyboardc"* ]] ; then
 	log4_JSS "User is sharing their screen on Skype for Business."
 	presentationRunning=true
@@ -670,7 +671,7 @@ fi
 
 
 fn_check4ScreenSharingSessionInWebExMeetingCenter () {
-webExScreenSharing=$( lsof -p $(ps -A | grep -m1 'Meeting Center.app' | awk '{print $1}') | grep "NF_Button_Stop_default.tiff" )
+webExScreenSharing=$( lsof -p "$(ps -A | grep -m1 'Meeting Center.app' | awk '{print $1}')" | grep "NF_Button_Stop_default.tiff" )
 if [[ "$webExScreenSharing" == *"NF_Button_Stop_default.tiff"* ]] ; then
 	log4_JSS "User has been sharing their screen on WebEx Meeting Center."
 	presentationRunning=true
@@ -680,7 +681,7 @@ fi
 
 fn_check4ActiveScreenSharingInMicrosoftTeams () {
 
-msTeamsLogLocation=$( lsof -p $(ps -A | grep -m1 'Microsoft Teams' | awk '{print $1}') | grep -m1 "logs.txt" | tail -n 1 | awk '{ print $9 " " $NF }' )
+msTeamsLogLocation=$( lsof -p "$(ps -A | grep -m1 'Microsoft Teams' | awk '{print $1}')" | grep -m1 "logs.txt" | tail -n 1 | awk '{ print $9 " " $NF }' )
 if [[ -e "$msTeamsLogLocation" ]] ; then
 	msTeamsScreensharing=$( cat "$msTeamsLogLocation" | grep SharingIndicator | tail -n 1 )
 	if [[ "$msTeamsScreensharing" ]] && [[ "$msTeamsScreensharing" != *"disposing"* ]] ; then
@@ -693,7 +694,7 @@ fi
 
 fn_check4ScreenSharingSessionInZoomUS () {
 
-zoomUSLogLocation=$( lsof -p $(ps -A | grep -m1 'zoom.us' | awk '{print $1}') | grep -m1 "as.log" | tail -n 1 | awk '{ print $NF }' )
+zoomUSLogLocation=$( lsof -p "$(ps -A | grep -m1 'zoom.us' | awk '{print $1}')" | grep -m1 "as.log" | tail -n 1 | awk '{ print $NF }' )
 if [[ -e "$zoomUSLogLocation" ]] ; then
 	zoomUSScreensharing=$( cat "$zoomUSLogLocation" )
 	# using if it's not empty because the file might be there but it will be empty 
@@ -2876,7 +2877,7 @@ for app in "${presentationApps[@]}" ; do
 	IFS=$'\n'
 	## This is needed to get the parent proccess and prevent unwanted blocking
 	# shellcheck disable=SC2009
-	appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
+	appid=$( ps aux | grep "$app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 # 	echo Processing application $app
 	if  [ "$appid" != "" ] ; then
 		log4_JSS "Application $app is Running"

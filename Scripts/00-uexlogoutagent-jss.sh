@@ -48,16 +48,6 @@ SelfServiceIcon="$(fn_read_uex_Preference "SelfServiceIcon")"
 # Apache License 2.0
 # https://github.com/cubandave/Jamf-Interaction-Toolkit/blob/master/LICENSE
 ##########################################################################################
-########################################################################################## 
-
-##########################################################################################
-##						STATIC VARIABLES FOR CocoaDialog DIALOGS						##
-##########################################################################################
-
-CocoaDialog="$UEXFolderPath/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog"
-
-##########################################################################################
-
 
 ##########################################################################################
 ##							STATIC VARIABLES FOR JH DIALOGS								##
@@ -92,18 +82,11 @@ compname=$( scutil --get ComputerName )
 ##########################################################################################
 
 fn_getPlistValue () {
-	/usr/libexec/PlistBuddy -c "print $1" /Library/Application\ Support/JAMF/UEX/$2/"$3"
+	/usr/libexec/PlistBuddy -c "print $1" /Library/Application\ Support/JAMF/UEX/"$2"/"$3"
 }
 
 logInUEX () {
 	echo "$(date)"	"$compname"	:	"$1" >> "$logfilepath"
-}
-
-logInUEX4DebugMode () {
-	if [[ "$debug" = true ]] ; then	
-		logMessage="-DEBUG- $1"
-		logInUEX "$logMessage"
-	fi
 }
 
 log4_JSS () {
@@ -116,13 +99,11 @@ log4_JSS () {
 
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' )
 
-lastLogin=$( syslog -F raw -k Facility com.apple.system.lastlog | grep $loggedInUser | grep -v tty | awk 'END{print}' | awk '{ print $4 }' | sed -e 's/]//g' )
-lastLoginFriendly=$( date -r$lastLogin )
+lastLogin=$( syslog -F raw -k Facility com.apple.system.lastlog | grep "$loggedInUser" | grep -v tty | awk 'END{print}' | awk '{ print $4 }' | sed -e 's/]//g' )
+# lastLoginFriendly=$( date -r$lastLogin )
 
 lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s" )
-lastRebootFriendly=$( date -r$lastReboot )
-
-rundate=$( date +%s )
+# lastRebootFriendly=$( date -r$lastReboot )
 
 IFS=$'\n' 
 resartPlists=( $( ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist" ) )
@@ -276,7 +257,7 @@ unset IFS
 # no login  RUN NOW
 # (skip to install stage)
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
-osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. {'print $2'} )
+osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. '{print $2}' )
 ##########################################################################################
 ##					Notification if there are scheduled logouts							##
 ##########################################################################################
@@ -289,7 +270,7 @@ if [ $loggedInUser ] ; then
     Your user will be automatically logged out at the end of the countdown.'
  
         # dialog with 10 minute countdown
-        logoutclickbutton=$( "$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Logout Now" )
+		"$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Logout Now"
      
        
         if [[ "$osMajor" -ge 14 ]] ; then

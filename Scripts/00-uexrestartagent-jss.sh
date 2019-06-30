@@ -109,13 +109,6 @@ fn_getPassword () {
 	"$CocoaDialog" standard-inputbox --no-show --title "$title" --informative-text "Please enter in your password" -no-newline --icon-file "$icon" | tail +2
 }
 
-logInUEX4DebugMode () {
-	if [[ "$debug" = true ]] ; then	
-		logMessage="-DEBUG- $1"
-		logInUEX "$logMessage"
-	fi
-}
-
 log4_JSS () {
 	echo "$(date)"	"$compname"	:	"$1"  | tee -a "$logfilepath"
 }
@@ -194,7 +187,7 @@ loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v 
 ##					Notification if there are scheduled restarts						##
 ##########################################################################################
 
-osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. {'print $2'} )
+osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. '{print $2}' )
 
 sleep 15
 ## This is needed to rule out only what's needed
@@ -217,17 +210,17 @@ if [[ $otherJamfprocess == "" ]] ; then
 
 
 ##########################################################################################
-##						FileVautl Authenticated reboot									##
+##						FileVault Authenticated reboot									##
 ##########################################################################################
 
 		fvUsers=($(fdesetup list | awk -F',' '{ print $1}'))
 		fvAutrestartSupported=$( fdesetup supportsauthrestart )
 
 		for user2Check in "${fvUsers[@]}"; do
-			# Check if the logged in user can unlock the disk by lopping through the user that are abel to unlock it
+			# Check if the logged in user can unlock the disk by lopping through the user that are able to unlock it
 
 			if [[ "$loggedInUser" == "$user2Check" ]] ; then
-				# set the unlock disk variable so that the user can be proompted if they want to do an authenticated restart
+				# set the unlock disk variable so that the user can be prompted if they want to do an authenticated restart
 				userCanUnLockDisk=true
 				break
 			fi
@@ -289,7 +282,7 @@ Note: Automatic unlock does not always occur.'
 
 			fi # if the user chose to try an authenticated restart
 
-		fi # if user can unlock a disk supporting autheciated restart
+		fi # if user can unlock a disk supporting authenticated restart
 
 ##########################################################################################
 ##									Standard reboot										##
@@ -302,7 +295,7 @@ Note: Automatic unlock does not always occur.'
 Your computer will be automatically restarted at the end of the countdown.'
 	
 		#notice
-		restartclickbutton=$( "$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Restart Now" )
+		"$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Restart Now"
 	
 			if [[ "$authenticatedRestart" = true ]] ;then
 				log4_JSS "ENTRY 2: User chose to restart with an authenticatedRestart"
