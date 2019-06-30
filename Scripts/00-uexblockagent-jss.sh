@@ -79,7 +79,6 @@ fi
 # logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 compname=$( scutil --get ComputerName )
-# resulttmp="$logname"_result.log
 ##########################################################################################
 
 ##########################################################################################
@@ -179,7 +178,6 @@ runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 		#######################
 		logname="${packageName##*/}"
 		logfilename="$logname".log
-		resulttmp="$logname"_result.log
 		logfilepath="$logdir""$logfilename"
 	
 		# Create array of apps to run through checks

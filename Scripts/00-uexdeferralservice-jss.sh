@@ -46,7 +46,6 @@ fi
 # logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 compname=$( scutil --get ComputerName )
-# resulttmp="$logname"_result.log
 ##########################################################################################
 
 jamfBinary="/usr/local/jamf/bin/jamf"
@@ -117,7 +116,6 @@ for i in $plists ; do
 	#######################
 	logname="${packageName##*/}"
 	logfilename="$logname".log
-	resulttmp="$logname"_result.log
 	logfilepath="$logdir""$logfilename"
 	
 	# calculate the time elapsed

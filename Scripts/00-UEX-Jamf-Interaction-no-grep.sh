@@ -5,7 +5,8 @@
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
 loggedInUserHome=$( dscl . read "/Users/$loggedInUser" NFSHomeDirectory | awk '{ print $2 }' )
 
-CONSOLE=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
+##Saving this for later
+# CONSOLE=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
 
 ##########################################################################################
 ##								Jamf Interaction Configuration 							##
@@ -155,6 +156,7 @@ apps=$6
 altpaths=(
 "/Users/Shared/"
 "/Library/Application Support/"
+# shellcheck disable=SC2088 ##Needed to indicate home folders
 "~/Library/Application Support/"
 )
 
@@ -420,20 +422,6 @@ fn_getLoggedinUser () {
 	logInUEX4DebugMode "fn_getLoggedinUser returned $loggedInUser"
 }
 
-fn_waitForUserToLogout () {
-	if [[ $logoutReqd = true ]] ; then 
-		
-		fn_getLoggedinUser
-		while [[ $loggedInUser != root ]]; do
-			fn_getLoggedinUser
-			# sleep 1 
-			# echo user logged in $loggedInUser
-		done
-
-		# echo no user logged in
-	fi
-}
-
 fn_getPlistValue () {
 	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath/$2/$3"
 }
@@ -466,7 +454,8 @@ for package in "${packages[@]}"; do
 		pathtopkg="$waitingRoomDIR"
 		pkg2install="$pathtopkg""$PKG"
 		logInUEX4DebugMode "Checking $package for apps that are interacted with."
-		local packageContents=$( pkgutil --payload-files "$pkg2install" )
+		local packageContents
+		packageContents=$( pkgutil --payload-files "$pkg2install" )
 
 		for app in "${apps[@]}"; do
 			#statements
@@ -475,9 +464,11 @@ for package in "${packages[@]}"; do
 				#statements 
 
 				loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
-				local appfound=$( /usr/bin/find /Applications -maxdepth 3 -iname "$app" )
+				local appfound
+				appfound=$( /usr/bin/find /Applications -maxdepth 3 -iname "$app" )
 				if [[ -e /Users/"$loggedInUser"/Applications/ ]] ; then
-					local userappfound=$( /usr/bin/find /Users/"$loggedInUser"/Applications/ -maxdepth 3 -iname "$app" )
+					local userappfound
+					userappfound=$( /usr/bin/find /Users/"$loggedInUser"/Applications/ -maxdepth 3 -iname "$app" )
 				fi
 				
 		# 		altpathsfound=""
@@ -487,11 +478,13 @@ for package in "${packages[@]}"; do
 						altpathshort=$( echo $altpath | cut -c 2- )
 						altuserpath="/Users/${loggedInUser}${altpathshort}"
 						if [[ -e "$altuserpath" ]] ; then 
-							local foundappinalthpath=$( /usr/bin/find "$altuserpath" -maxdepth 3 -iname "$app" )
+							local foundappinalthpath
+							foundappinalthpath=$( /usr/bin/find "$altuserpath" -maxdepth 3 -iname "$app" )
 						fi
 					else
 						if [[ -e "$altpath" ]] ; then		
-							local foundappinalthpath=$( /usr/bin/find "$altpath" -maxdepth 3 -iname "$app" )
+							local foundappinalthpath
+							foundappinalthpath=$( /usr/bin/find "$altpath" -maxdepth 3 -iname "$app" )
 						fi
 					fi
 				done
@@ -526,12 +519,14 @@ log4_JSS () {
 }
 
 fn_execute_log4_JSS () {
-	local dateOfCommand=$( date )
+	local dateOfCommand
+	dateOfCommand=$( date )
 	local TMPresultlogfilepath="/private/tmp/resultsOfCommand_$dateOfCommand.log"
 	
 	log4_JSS "Running command: $1"
 	$1 >>"$TMPresultlogfilepath"
-	local resultsOfCommand=$( cat "$TMPresultlogfilepath" )
+	local resultsOfCommand
+	resultsOfCommand=$( cat "$TMPresultlogfilepath" )
 	log4_JSS "RESULT: $resultsOfCommand"
 	rm "$TMPresultlogfilepath" 2> /dev/null
 }
@@ -566,6 +561,8 @@ fn_generatateApps2quit () {
 	apps2kill=()
 	for app in "${apps[@]}" ; do
 		IFS=$'\n'
+		## This is needed to get the parent proccess and prevent unwanted blocking
+		# shellcheck disable=SC2009
 		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
@@ -603,6 +600,8 @@ fn_waitForApps2Quit () {
 	appsRunning=()
 	for app in "${apps[@]}" ; do
 		IFS=$'\n'
+		## This is needed to get the parent proccess and prevent unwanted blocking
+		# shellcheck disable=SC2009
 		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
@@ -623,6 +622,8 @@ fn_waitForApps2Quit4areYouSure () {
 	appsRunning=()
 	for app in "${apps[@]}" ; do
 		IFS=$'\n'
+		## This is needed to get the parent proccess and prevent unwanted blocking
+		# shellcheck disable=SC2009
 		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
@@ -1009,8 +1010,8 @@ fi
 # splash Buddy for DEP
 #####
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
-splashBuddyRunning=$( ps aux | grep SplashBuddy.app/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
-DEPNotifyRunning=$( ps aux | grep DEPNotify.app/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
+splashBuddyRunning=$( pgrep SplashBuddy )
+DEPNotifyRunning=$( pgrep DEPNotify )
 
 AppleSetupDoneFile="/var/db/.AppleSetupDone"
 
@@ -1210,6 +1211,8 @@ No updates available."
 			OutlookUpdateID=$( echo "$msupdatesUpdatesList" | grep Outlook | awk '{ print $1 }' )
 	 		OutlookNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Outlook" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 	
+	 		## This is needed to get the parent proccess and prevent unwanted blocking
+			# shellcheck disable=SC2009
 	 		outLookappid=$( ps aux | grep "Microsoft Outlook.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 			# if [[ "$outLookappid" ]] && [[ "$OutlookNoteSilentInstallQueued" ]] ;then
 			if [[ "$outLookappid" ]] ;then
@@ -1231,6 +1234,8 @@ No updates available."
 	 		WordUpdateName=$( echo "$msupdatesUpdatesList" | grep Word | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# WordSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$WordUpdateName\"" )
 
+	 		## This is needed to get the parent proccess and prevent unwanted blocking
+			# shellcheck disable=SC2009
 	 		Wordappid=$( ps aux | grep "Microsoft Word.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 			# if [[ "$Wordappid" ]] && [[ "$WordSilentInstallQueued" ]] ;then
 			if [[ "$Wordappid" ]] ;then
@@ -1251,6 +1256,8 @@ No updates available."
 			PowerPointUpdateID=$( echo "$msupdatesUpdatesList" | grep PowerPoint | awk '{ print $1 }' )
 	 		PowerPointNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "PowerPoint" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 
+	 		## This is needed to get the parent proccess and prevent unwanted blocking
+			# shellcheck disable=SC2009
 	 		PowerPointappid=$( ps aux | grep "Microsoft PowerPoint.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 			# if [[ "$PowerPointappid" ]] && [[ "$PowerPointNoteSilentInstallQueued" ]] ;then
 			if [[ "$PowerPointappid" ]] ;then
@@ -1272,6 +1279,8 @@ No updates available."
 			ExcelUpdateName=$( echo "$msupdatesUpdatesList" | grep Excel | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# ExcelSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$ExcelUpdateName\"" )
 
+	 		## This is needed to get the parent proccess and prevent unwanted blocking
+			# shellcheck disable=SC2009
 	 		Excelappid=$( ps aux | grep "Microsoft Excel.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 			# if [[ "$Excelappid" ]] && [[ "$ExcelSilentInstallQueued" ]];then
 			if [[ "$Excelappid" ]];then
@@ -1329,6 +1338,8 @@ No updates available."
 	 		OneNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep OneNote | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# OneNoteSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OneNoteUpdateName\"" )
 
+	 		## This is needed to get the parent proccess and prevent unwanted blocking
+			# shellcheck disable=SC2009
 	 		OneNoteappid=$( ps aux | grep "Microsoft OneNote.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 			# if [[ "$OneNoteappid" ]] && [[ "$OneNoteSilentInstallQueued" ]] ;then
 			if [[ "$OneNoteappid" ]] ;then
@@ -1350,6 +1361,8 @@ No updates available."
 	 		SFBNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Skype For Business" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# SFBNoteSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OneNoteUpdateName\"" )
 
+	 		## This is needed to get the parent proccess and prevent unwanted blocking
+			# shellcheck disable=SC2009
 	 		SFBappid=$( ps aux | grep "Skype for Business.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 			# if [[ "$SFBappid" ]] && [[ "$SFBNoteSilentInstallQueued" ]] ;then
 			if [[ "$SFBappid" ]] ;then
@@ -2861,6 +2874,8 @@ fn_check4ScreenSharingSessionInZoomUS
 
 for app in "${presentationApps[@]}" ; do
 	IFS=$'\n'
+	## This is needed to get the parent proccess and prevent unwanted blocking
+	# shellcheck disable=SC2009
 	appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 # 	echo Processing application $app
 	if  [ "$appid" != "" ] ; then
