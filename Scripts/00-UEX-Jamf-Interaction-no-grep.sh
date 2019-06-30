@@ -783,7 +783,7 @@ fn_check4PendingRestartsOrLogout () {
 
 			local plistrunDateFriendly=$( date -r $plistrunDate )
 			
-			local timeSinceLogin=$((lastLogin-plistrunDate))
+			# local timeSinceLogin=$((lastLogin-plistrunDate))
 			local timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 			
 			#######################
@@ -928,16 +928,17 @@ spaceRequired=${NameConsolidated[3]}
 ##								PreProcessing of Defer									##
 ##########################################################################################
 
+IFS=";"
+set -- "$maxdeferConsolidated" 
+##This works because i'm setting the seperator
+# shellcheck disable=SC2048
+declare -a maxdeferConsolidated=($*)
+
 if [[ $spaceRequired ]] || [[ "$maxdeferConsolidated" == *";"* ]] ; then
-	IFS=";"
-	set -- "$maxdeferConsolidated" 
-	##This works because i'm setting the seperator
-	# shellcheck disable=SC2048
-	declare -a maxdeferConsolidated=($*)
-	maxdefer=${maxdeferConsolidated[0]}
-	diskCheckDelaylimit=${maxdeferConsolidated[1]}
+	maxdefer="${maxdeferConsolidated[0]}"
+	diskCheckDelaylimit="${maxdeferConsolidated[1]}"
 else
-	maxdefer=$maxdeferConsolidated
+	maxdefer="${maxdeferConsolidated[0]}"
 fi
 
 
@@ -982,8 +983,14 @@ fi
 ##########################################################################################
 #								SELF SERVICE APP DETECTION								 #
 ##########################################################################################
+## This is needed to get the exact proccess
+# shellcheck disable=SC2009
 sspolicyRunning=$( ps aux | grep "00-UEX-Install-via-Self-Service" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
+## This is needed to get the exact proccess
+# shellcheck disable=SC2009
 ssUpdatePolicyRunning=$( ps aux | grep "00-UEX-Update-via-Self-Service" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
+## This is needed to get the exact proccess
+# shellcheck disable=SC2009
 ssUninstallPolicyRunning=$( ps aux | grep "00-UEX-Uninstall-via-Self-Service" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
 
 if [[ -e "$SSplaceholderDIR""$packageName" ]] ; then 
@@ -1006,8 +1013,12 @@ if [[ "$ssUninstallPolicyRunning" == *"$UEXpolicyTrigger"* ]] ; then
 	selfservicePackage=true
 fi 
 
+## This is needed to get the exact proccess
+# shellcheck disable=SC2009
 deploymentpolicyRunning=$( ps aux | grep "00-UEX-Deploy-via-Trigger" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
 
+## This is needed to get the exact proccess
+# shellcheck disable=SC2009
 silentpolicyRunning=$( ps aux | grep "00-UEX-Install-Silent-via-trigger" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
 
 if [[ "$silentpolicyRunning" == *"$UEXpolicyTrigger"* ]] ; then
@@ -2772,6 +2783,8 @@ fi
 # no login  RUN NOW
 # (skip to install stage)
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+## This is needed to get the exact proccess
+# shellcheck disable=SC2009
 logoutHookRunning=$( ps aux | grep "JAMF/ManagementFrameworkScripts/logouthook.sh" | grep -v grep )
 log4_JSS "loggedInUser is $loggedInUser"
 

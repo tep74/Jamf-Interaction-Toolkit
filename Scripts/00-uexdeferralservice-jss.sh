@@ -98,6 +98,8 @@ for i in $plists ; do
 	policyTriggerResult=""
 	BatteryTest=$( pmset -g batt )
 	loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+	## This is needed to get the specfic hook running
+	# shellcheck disable=SC2009
 	logoutHookRunning=$( ps aux | grep "JAMF/ManagementFrameworkScripts/logouthook.sh" | grep -v grep )
 
 	if [ "$logoutHookRunning" ] ; then 
