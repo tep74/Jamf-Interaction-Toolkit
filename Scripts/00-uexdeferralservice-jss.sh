@@ -45,7 +45,7 @@ fi
 # logname=$(echo $packageName | sed 's/.\{4\}$//')
 # logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
-compname=`scutil --get ComputerName`
+compname=$( scutil --get ComputerName )
 # resulttmp="$logname"_result.log
 ##########################################################################################
 
@@ -89,22 +89,22 @@ triggerNgo ()
 ##					PROCESS PLISTS AND RESTARTING INSTALLS IF READY						##
 ##########################################################################################
 
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
-logoutHookRunning=`ps aux | grep "JAMF/ManagementFrameworkScripts/logouthook.sh" | grep -v grep`
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+logoutHookRunning=$( ps aux | grep "JAMF/ManagementFrameworkScripts/logouthook.sh" | grep -v grep )
 
 if [ "$logoutHookRunning" ] ; then 
 	loggedInUser=""
 fi
 
-plists=`ls "$UEXFolderPath"/defer_jss/ | grep ".plist"`
-runDate=`date +%s`
+plists=$( ls "$UEXFolderPath"/defer_jss/ | grep ".plist" )
+runDate=$( date +%s )
 
 IFS=$'\n'
 for i in $plists ; do
 	policyTriggerResult=""
-	BatteryTest=`pmset -g batt`
-	loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
-	logoutHookRunning=`ps aux | grep "JAMF/ManagementFrameworkScripts/logouthook.sh" | grep -v grep`
+	BatteryTest=$( pmset -g batt )
+	loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+	logoutHookRunning=$( ps aux | grep "JAMF/ManagementFrameworkScripts/logouthook.sh" | grep -v grep )
 
 	if [ "$logoutHookRunning" ] ; then 
 		loggedInUser=""
@@ -137,7 +137,7 @@ for i in $plists ; do
 		# start the install
 			log4_JSS "Enough time has passed starting the install"
 			log4_JSS "$jamfBinary policy -trigger $policyTrigger"
-			policyTriggerResult=`$jamfBinary policy -trigger "$policyTrigger"`
+			policyTriggerResult=$( $jamfBinary policy -trigger "$policyTrigger" )
 		fi
 	elif [[ $loggedInUser == "" ]] && [[ $loginscreeninstall == false ]] ; then
 		# skipping install
@@ -155,7 +155,7 @@ for i in $plists ; do
 
 		killall loginwindow
 		log4_JSS "Running: $jamfBinary policy -trigger $policyTrigger"
-		policyTriggerResult=`$jamfBinary policy -trigger "$policyTrigger"`
+		policyTriggerResult=$( $jamfBinary policy -trigger "$policyTrigger" )
 	fi
 
 	# plist clean up if no policy found
@@ -170,7 +170,7 @@ done
 unset IFS
 
 # if the defer folder is now empty then you should do an inventory update to stop deferral service from running
-deferfolderContents=`ls "$UEXFolderPath/defer_jss/" | grep plist`
+deferfolderContents=$( ls "$UEXFolderPath/defer_jss/" | grep plist )
 if [[ -z "$deferfolderContents" ]]; then
 	log4_JSS "No more deferrals."
 	InventoryUpdateRequired=true

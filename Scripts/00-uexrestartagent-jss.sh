@@ -90,7 +90,7 @@ fi
 # logname=$(echo $packageName | sed 's/.\{4\}$//')
 # logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
-compname=`scutil --get ComputerName`
+compname=$( scutil --get ComputerName )
 # resulttmp="$logname"_result.log
 ##########################################################################################
 
@@ -125,12 +125,12 @@ log4_JSS () {
 ##			CALCULATIONS TO SEE IF A RESTART HAS OCCURRED SINCE BEING REQUIRED			##
 ##########################################################################################
 
-lastReboot=`date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s"`
-lastRebootFriendly=`date -r$lastReboot`
+lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s" )
+lastRebootFriendly=$( date -r$lastReboot )
 
-rundate=`date +%s`
+rundate=$( date +%s )
 
-plists=`ls "$UEXFolderPath"/restart_jss/ | grep ".plist"`
+plists=$( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" )
 
 set -- "$plists" 
 ##This works because i'm setting the seperator
@@ -146,12 +146,12 @@ for i in "${plists[@]}" ; do
 	name=$(fn_getPlistValue "name" "restart_jss" "$i")
 	packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
 	plistrunDate=$(fn_getPlistValue "runDate" "restart_jss" "$i")
-	runDateFriendly=`date -r $plistrunDate`
+	runDateFriendly=$( date -r $plistrunDate )
 	
 # 	echo lastReboot is $lastReboot
 # 	echo plistRunDate is $plistRunDate
 	
-	timeSinceReboot=`echo "${lastReboot} - ${plistrunDate}" | bc`
+	timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 	
 	#######################
 	# Logging files setup #
@@ -170,7 +170,7 @@ for i in "${plists[@]}" ; do
 		rm "$UEXFolderPath/restart_jss/$i"
 	else 
 		# the computer has NOT rebooted since $runDateFriendly
-		lastline=`awk 'END{print}' "$logfilepath"`
+		lastline=$( awk 'END{print}' "$logfilepath" )
 		if [[ "$lastline" != *"Prompting the user"* ]] ; then 
 			logInUEX "The computer has NOT rebooted since $runDateFriendly"
 			logInUEX "Prompting the user that a restart is required"
@@ -186,7 +186,7 @@ done
 ##########################################################################################
 # no login  RUN NOW
 # (skip to install stage)
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
 
 ##########################################################################################
 ##					Notification if there are scheduled restarts						##
@@ -195,13 +195,13 @@ loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v ro
 osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. {'print $2'} )
 
 sleep 15
-otherJamfprocess=`ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent`
-otherJamfprocess+=`ps aux | grep [Ss]plashBuddy`
+otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent )
+otherJamfprocess+=$( ps aux | grep [Ss]plashBuddy )
 if [[ "$restart" == "true" ]] ; then
 	while [[ $otherJamfprocess != "" ]] ; do 
 		sleep 15
-		otherJamfprocess=`ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent`
-		otherJamfprocess+=`ps aux | grep [Ss]plashBuddy`
+		otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent )
+		otherJamfprocess+=$( ps aux | grep [Ss]plashBuddy )
 	done
 fi
 
@@ -215,7 +215,7 @@ if [[ $otherJamfprocess == "" ]] ; then
 ##########################################################################################
 
 		fvUsers=($(fdesetup list | awk -F',' '{ print $1}'))
-		fvAutrestartSupported=`fdesetup supportsauthrestart`
+		fvAutrestartSupported=$( fdesetup supportsauthrestart )
 
 		for user2Check in "${fvUsers[@]}"; do
 			# Check if the logged in user can unlock the disk by lopping through the user that are abel to unlock it
@@ -237,7 +237,7 @@ Would you to like enter your password to have the computer unlock the disk autom
 Note: Automatic unlock does not always occur.'
 	
 		#notice
-		fvUnlockButton=`"$jhPath" -windowType hud -lockHUD -heading "$fvUnlockHeading" -windowPostion lr -title "$title" -description "$fvUnlockNotice" -icon "$icon" -timeout 300 -countdown -alignCountdown center -button1 "No" -button2 "Yes" `
+		fvUnlockButton=$( "$jhPath" -windowType hud -lockHUD -heading "$fvUnlockHeading" -windowPostion lr -title "$title" -description "$fvUnlockNotice" -icon "$icon" -timeout 300 -countdown -alignCountdown center -button1 "No" -button2 "Yes"  )
 		
 			if [[ "$fvUnlockButton" = 2 ]]; then
 				log4_JSS "User chose to restart with an authenticatedRestart"
@@ -270,7 +270,7 @@ Note: Automatic unlock does not always occur.'
 	Click "Try Again" or "Cancel".'
 		
 				#notice
-				fvUnlockErrorButton=`"$jhPath" -windowType hud -lockHUD -heading "$fvUnlockHeading" -windowPostion lr -title "$title" -description "$fvUnlockErrorNotice" -icon "$icon" -timeout 300 -countdown -alignCountdown center -button1 "Cancel" -button2 "Try Again" `
+				fvUnlockErrorButton=$( "$jhPath" -windowType hud -lockHUD -heading "$fvUnlockHeading" -windowPostion lr -title "$title" -description "$fvUnlockErrorNotice" -icon "$icon" -timeout 300 -countdown -alignCountdown center -button1 "Cancel" -button2 "Try Again"  )
 				if [[ "$fvUnlockErrorButton" = 2 ]]; then
 					#statements
 					passwordLooper=0
@@ -296,7 +296,7 @@ Note: Automatic unlock does not always occur.'
 Your computer will be automatically restarted at the end of the countdown.'
 	
 		#notice
-		restartclickbutton=`"$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Restart Now"`
+		restartclickbutton=$( "$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Restart Now" )
 	
 			if [[ "$authenticatedRestart" = true ]] ;then
 				log4_JSS "ENTRY 2: User chose to restart with an authenticatedRestart"

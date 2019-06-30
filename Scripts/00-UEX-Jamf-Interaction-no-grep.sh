@@ -143,7 +143,7 @@ NameConsolidated=$4
 # if the install is critical add "critical"
 # if the app is available in Self Service add "ssavail"
 # LABEL: Checks
-checks=`echo "$5" | tr '[:upper:]' '[:lower:]'`
+checks=$( echo "$5" | tr '[:upper:]' '[:lower:]' )
 
 
 # apps="xyz.app;asdf.app"
@@ -184,7 +184,7 @@ customMessage=${11}
 
 # for debugging
 # NameConsolidated="UEX;Quit Dialog;1.0"
-# checks=`echo "merp nopreclose block" | tr '[:upper:]' '[:lower:]'`
+# checks=$( echo "merp nopreclose block" | tr '[:upper:]' '[:lower:]' )
 # apps="Microsoft Excel.app;Microsoft OneNote.app;Microsoft Outlook.app;Microsoft PowerPoint.app;Microsoft Word.app;OneDrive.app;Skype for Business.app"
 # installDuration=15
 # maxdeferConsolidated="1"
@@ -213,7 +213,7 @@ waitingRoomDIR="/Library/Application Support/JAMF/Waiting Room/"
 
 pathToPackage="$waitingRoomDIR""$NameConsolidated4plist".pkg
 packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
-pathToFolder=`dirname "$pathToPackage"`
+pathToFolder=$( dirname "$pathToPackage" )
 
 
 ##########################################################################################
@@ -235,7 +235,7 @@ resultlogfilepath="$logdir""$resulttmp"
 linkaddress="/Library/Logs/"
 ln -s "$logdir" "$linkaddress" > /dev/null 2>&1
 
-compname=`scutil --get ComputerName`
+compname=$( scutil --get ComputerName )
 chmod -R 777 "$logdir"
 
 ##########################################################################################
@@ -257,7 +257,7 @@ resultlogfilepath="$logdir""$resulttmp"
 linkaddress="/Library/Logs/"
 ln -s "$logdir" "$linkaddress" > /dev/null 2>&1
 
-compname=`scutil --get ComputerName`
+compname=$( scutil --get ComputerName )
 chmod -R 777 "$logdir"
 
 ##########################################################################################
@@ -288,7 +288,7 @@ if [[ $debug = true ]] ; then
 	if [[ $pathToPackage == "" ]] ; then
 		pathToPackage="/Users/ramirdai/Desktop/aG - Google - Google Chrome 47.0.2526.73 - OSX EN - SRXXXXX - 1.0.pkg"
 		packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
-		pathToFolder=`dirname "$pathToPackage"`
+		pathToFolder=$( dirname "$pathToPackage" )
 	fi
 	
 	mkdir -p "$debugDIR" > /dev/null 2>&1
@@ -466,7 +466,7 @@ for package in "${packages[@]}"; do
 		pathtopkg="$waitingRoomDIR"
 		pkg2install="$pathtopkg""$PKG"
 		logInUEX4DebugMode "Checking $package for apps that are interacted with."
-		local packageContents=`pkgutil --payload-files "$pkg2install"`
+		local packageContents=$( pkgutil --payload-files "$pkg2install" )
 
 		for app in "${apps[@]}"; do
 			#statements
@@ -474,24 +474,24 @@ for package in "${packages[@]}"; do
 			if [[ "$packageContents" == *"$app"* ]]; then
 				#statements 
 
-				loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
-				local appfound=`/usr/bin/find /Applications -maxdepth 3 -iname "$app"`
+				loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+				local appfound=$( /usr/bin/find /Applications -maxdepth 3 -iname "$app" )
 				if [[ -e /Users/"$loggedInUser"/Applications/ ]] ; then
-					local userappfound=`/usr/bin/find /Users/"$loggedInUser"/Applications/ -maxdepth 3 -iname "$app"`
+					local userappfound=$( /usr/bin/find /Users/"$loggedInUser"/Applications/ -maxdepth 3 -iname "$app" )
 				fi
 				
 		# 		altpathsfound=""
 				for altpath in "${altpaths[@]}" ; do
 					
 					if [[ "$altpath" == "~"* ]] ; then 
-						altpathshort=`echo $altpath | cut -c 2-`
+						altpathshort=$( echo $altpath | cut -c 2- )
 						altuserpath="/Users/${loggedInUser}${altpathshort}"
 						if [[ -e "$altuserpath" ]] ; then 
-							local foundappinalthpath=`/usr/bin/find "$altuserpath" -maxdepth 3 -iname "$app"`
+							local foundappinalthpath=$( /usr/bin/find "$altuserpath" -maxdepth 3 -iname "$app" )
 						fi
 					else
 						if [[ -e "$altpath" ]] ; then		
-							local foundappinalthpath=`/usr/bin/find "$altpath" -maxdepth 3 -iname "$app"`
+							local foundappinalthpath=$( /usr/bin/find "$altpath" -maxdepth 3 -iname "$app" )
 						fi
 					fi
 				done
@@ -526,7 +526,7 @@ log4_JSS () {
 }
 
 fn_execute_log4_JSS () {
-	local dateOfCommand=`date`
+	local dateOfCommand=$( date )
 	local TMPresultlogfilepath="/private/tmp/resultsOfCommand_$dateOfCommand.log"
 
 	# echo command to run is \""$1"\"
@@ -536,7 +536,7 @@ fn_execute_log4_JSS () {
 	
 	log4_JSS "Running command: $1"
 	$1 >>"$TMPresultlogfilepath"
-	local resultsOfCommand=`cat "$TMPresultlogfilepath"`
+	local resultsOfCommand=$( cat "$TMPresultlogfilepath" )
 	log4_JSS "RESULT: $resultsOfCommand"
 	rm "$TMPresultlogfilepath" 2> /dev/null
 }
@@ -571,7 +571,7 @@ fn_generatateApps2quit () {
 	apps2kill=()
 	for app in "${apps[@]}" ; do
 		IFS=$'\n'
-		appid=`ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'}`
+		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
 				app2Open=""
@@ -579,8 +579,8 @@ fn_generatateApps2quit () {
 				userAppFound=""
 				# Find the apss in /Applications/ and ~/Applications/ and open as the user
 				if [[ "$checks" != *"uninstall"* ]]; then
-					appFound=`/usr/bin/find "/Applications" -maxdepth 3 -iname "$app"`
-					userAppFound=`/usr/bin/find "$loggedInUserHome/Applications" -maxdepth 3 -iname "$app" 2> /dev/null`
+					appFound=$( /usr/bin/find "/Applications" -maxdepth 3 -iname "$app" )
+					userAppFound=$( /usr/bin/find "$loggedInUserHome/Applications" -maxdepth 3 -iname "$app" 2> /dev/null )
 				fi
 				
 				
@@ -608,7 +608,7 @@ fn_waitForApps2Quit () {
 	appsRunning=()
 	for app in "${apps[@]}" ; do
 		IFS=$'\n'
-		appid=`ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'}`
+		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
 			appsRunning+=(${app})
@@ -628,7 +628,7 @@ fn_waitForApps2Quit4areYouSure () {
 	appsRunning=()
 	for app in "${apps[@]}" ; do
 		IFS=$'\n'
-		appid=`ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'}`
+		appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
 			appsRunning+=(${app})
@@ -646,8 +646,8 @@ fn_waitForApps2Quit4areYouSure () {
 
 
 fn_check4KeynoteRunningAndActiveInPresentationMode () {
-# KeynotePlaying=`lsof -p $(pgrep 'Keynote' | awk '{print $1}') | grep "/Resources/KeynotePlaying.icns"`
-KeynotePlaying=`pmset -g assertions`
+# KeynotePlaying=$( lsof -p $(pgrep 'Keynote' | awk '{print $1}') | grep "/Resources/KeynotePlaying.icns" )
+KeynotePlaying=$( pmset -g assertions )
 
 
 if [[ "$KeynotePlaying" == *"Displaying Keynote slideshow"* ]];then
@@ -657,7 +657,7 @@ fi
 }
 
 fn_check4PowerPointRunningInPresentationMode () {
-PowerPointPlaying=`pmset -g assertions | grep "Microsoft PowerPoint"`
+PowerPointPlaying=$( pmset -g assertions | grep "Microsoft PowerPoint" )
 if [[ "$PowerPointPlaying" == *"Slide Show"* ]];then
 	log4_JSS "User is in Presentation Mode on Microsoft PowerPoint"
 	presentationRunning=true
@@ -665,7 +665,7 @@ fi
 }
 
 fn_check4ActiveScreenSharingInSkypeForBusiness () {
-S4Bscreensharing=`lsof -p $(ps -A | grep -m1 'Skype for Business' | awk '{print $1}') | grep "Resources/ScreenSharingIndicator.storyboardc"`
+S4Bscreensharing=$( lsof -p $(ps -A | grep -m1 'Skype for Business' | awk '{print $1}') | grep "Resources/ScreenSharingIndicator.storyboardc" )
 if [[ "$S4Bscreensharing" == *"ScreenSharingIndicator.storyboardc"* ]] ; then
 	log4_JSS "User is sharing their screen on Skype for Business."
 	presentationRunning=true
@@ -674,7 +674,7 @@ fi
 
 
 fn_check4ScreenSharingSessionInWebExMeetingCenter () {
-webExScreenSharing=`lsof -p $(ps -A | grep -m1 'Meeting Center.app' | awk '{print $1}') | grep "NF_Button_Stop_default.tiff"`
+webExScreenSharing=$( lsof -p $(ps -A | grep -m1 'Meeting Center.app' | awk '{print $1}') | grep "NF_Button_Stop_default.tiff" )
 if [[ "$webExScreenSharing" == *"NF_Button_Stop_default.tiff"* ]] ; then
 	log4_JSS "User has been sharing their screen on WebEx Meeting Center."
 	presentationRunning=true
@@ -684,9 +684,9 @@ fi
 
 fn_check4ActiveScreenSharingInMicrosoftTeams () {
 
-msTeamsLogLocation=`lsof -p $(ps -A | grep -m1 'Microsoft Teams' | awk '{print $1}') | grep -m1 "logs.txt" | tail -n 1 | awk '{ print $9 " " $NF }'`
+msTeamsLogLocation=$( lsof -p $(ps -A | grep -m1 'Microsoft Teams' | awk '{print $1}') | grep -m1 "logs.txt" | tail -n 1 | awk '{ print $9 " " $NF }' )
 if [[ -e "$msTeamsLogLocation" ]]; then
-	msTeamsScreensharing=`cat "$msTeamsLogLocation" | grep SharingIndicator | tail -n 1`
+	msTeamsScreensharing=$( cat "$msTeamsLogLocation" | grep SharingIndicator | tail -n 1 )
 	if [[ "$msTeamsScreensharing" ]] && [[ "$msTeamsScreensharing" != *"disposing"* ]] ; then
 		log4_JSS "User is sharing their screen on Microsoft Teams."
 		presentationRunning=true
@@ -697,9 +697,9 @@ fi
 
 fn_check4ScreenSharingSessionInZoomUS () {
 
-zoomUSLogLocation=`lsof -p $(ps -A | grep -m1 'zoom.us' | awk '{print $1}') | grep -m1 "as.log" | tail -n 1 | awk '{ print $NF }'`
+zoomUSLogLocation=$( lsof -p $(ps -A | grep -m1 'zoom.us' | awk '{print $1}') | grep -m1 "as.log" | tail -n 1 | awk '{ print $NF }' )
 if [[ -e "$zoomUSLogLocation" ]]; then
-	zoomUSScreensharing=`cat "$zoomUSLogLocation"`
+	zoomUSScreensharing=$( cat "$zoomUSLogLocation" )
 	# using if it's not empty because the file might be there but it will be empty 
 	if [[ ! -z "$zoomUSScreensharing" ]] ; then
 		log4_JSS "User has been sharing their screen on zoom.us."
@@ -712,17 +712,17 @@ fi
 
 
 fn_check4PendingRestartsOrLogout () {
-	lastReboot=`date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s"`
-	lastRebootFriendly=`date -r$lastReboot`
+	lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s" )
+	lastRebootFriendly=$( date -r$lastReboot )
 
-	resartPlists=`ls "$UEXFolderPath"/restart_jss/ | grep ".plist"`
+	resartPlists=$( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" )
 	set -- "$resartPlists"
 	##This works because i'm setting the seperator
 	# shellcheck disable=SC2048
 	IFS=$'\n' ; declare -a resartPlists=($*)  
 	unset IFS
 
-	logoutPlists=`ls "$UEXFolderPath"/logout_jss/ | grep ".plist"`
+	logoutPlists=$( ls "$UEXFolderPath"/logout_jss/ | grep ".plist" )
 	set -- "$logoutPlists" 
 	##This works because i'm setting the seperator
 	# shellcheck disable=SC2048
@@ -739,7 +739,7 @@ fn_check4PendingRestartsOrLogout () {
 		local packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
 		local plistrunDate=$(fn_getPlistValue "runDate" "restart_jss" "$i")
 
-		local timeSinceReboot=`echo "${lastReboot} - ${plistrunDate}" | bc`		
+		local timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 		logInUEX "timeSinceReboot is $timeSinceReboot"
 		
 		local logname=$(echo $packageName | sed 's/.\{4\}$//')
@@ -776,10 +776,10 @@ fn_check4PendingRestartsOrLogout () {
 			local checked=$(fn_getPlistValue "checked" "logout_jss" "$i")
 			local plistrunDate=$(fn_getPlistValue "runDate" "logout_jss" "$i")
 
-			local plistrunDateFriendly=`date -r $plistrunDate`
+			local plistrunDateFriendly=$( date -r $plistrunDate )
 			
 			local timeSinceLogin=$((lastLogin-plistrunDate))
-			local timeSinceReboot=`echo "${lastReboot} - ${plistrunDate}" | bc`		
+			local timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 			
 			#######################
 			# Logging files setup #
@@ -859,7 +859,7 @@ DetermineLoginState
 ##									SSD Calculations									##
 ##########################################################################################
 
-solidstate=`/usr/sbin/diskutil info / | grep "Solid State" | awk 'BEGIN { FS=":" } ; { print $2}'`
+solidstate=$( /usr/sbin/diskutil info / | grep "Solid State" | awk 'BEGIN { FS=":" } ; { print $2}' )
 
 if [[ "$solidstate" == *"Yes"* ]] ; then
 	# log computer has a solid state drive
@@ -977,9 +977,9 @@ fi
 ##########################################################################################
 #								SELF SERVICE APP DETECTION								 #
 ##########################################################################################
-sspolicyRunning=`ps aux | grep "00-UEX-Install-via-Self-Service" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]'`
-ssUpdatePolicyRunning=`ps aux | grep "00-UEX-Update-via-Self-Service" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]'`
-ssUninstallPolicyRunning=`ps aux | grep "00-UEX-Uninstall-via-Self-Service" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]'`
+sspolicyRunning=$( ps aux | grep "00-UEX-Install-via-Self-Service" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
+ssUpdatePolicyRunning=$( ps aux | grep "00-UEX-Update-via-Self-Service" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
+ssUninstallPolicyRunning=$( ps aux | grep "00-UEX-Uninstall-via-Self-Service" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
 
 if [[ -e "$SSplaceholderDIR""$packageName" ]] ; then 
 	selfservicePackage=true
@@ -1001,9 +1001,9 @@ if [[ "$ssUninstallPolicyRunning" == *"$UEXpolicyTrigger"* ]] ; then
 	selfservicePackage=true
 fi 
 
-deploymentpolicyRunning=`ps aux | grep "00-UEX-Deploy-via-Trigger" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]'`
+deploymentpolicyRunning=$( ps aux | grep "00-UEX-Deploy-via-Trigger" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
 
-silentpolicyRunning=`ps aux | grep "00-UEX-Install-Silent-via-trigger" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]'`
+silentpolicyRunning=$( ps aux | grep "00-UEX-Install-Silent-via-trigger" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
 
 if [[ "$silentpolicyRunning" == *"$UEXpolicyTrigger"* ]] ; then
 	log4_JSS "Deteced Policy is running with Silent-via-trigger script. Forcing the $actionation in the background."
@@ -1013,9 +1013,9 @@ fi
 #####
 # splash Buddy for DEP
 #####
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
-splashBuddyRunning=`ps aux | grep SplashBuddy.app/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'}`
-DEPNotifyRunning=`ps aux | grep DEPNotify.app/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'}`
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+splashBuddyRunning=$( ps aux | grep SplashBuddy.app/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
+DEPNotifyRunning=$( ps aux | grep DEPNotify.app/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
 
 AppleSetupDoneFile="/var/db/.AppleSetupDone"
 
@@ -1080,7 +1080,7 @@ fn_downloadMSupdatePackages () {
 	packages=""
 	for msUpdatePackage in "${msUPdatePackageURLS[@]}" ; do
 		
-		msUpdatePackageFileName=`echo "$msUpdatePackage" | sed 's@.*/@@'`
+		msUpdatePackageFileName=$( echo "$msUpdatePackage" | sed 's@.*/@@' )
 		log4_JSS "msUpdatePackageFileName is: $msUpdatePackageFileName"
 
 
@@ -1141,7 +1141,7 @@ checking for updates..."
 
 	fn_downloadMSupdatePackages
 
-	msupdatesUpdatesList=`cat $msupdateLog`
+	msupdatesUpdatesList=$( cat $msupdateLog )
 
 	if [[ "$msupdatesUpdatesList" == *"Updates available:"* ]] || [[ "$debug" == true ]] ; then
 		msupdateUpdatesAvail=true
@@ -1171,13 +1171,13 @@ No updates available."
 		if [[ "$msupdatesUpdatesList" == *"AutoUpdate"* ]] ; then
 			
 			#extract ID of update for msupdate
-			AutoUpdateUpdateID=`echo "$msupdatesUpdatesList" | grep AutoUpdate | awk '{ print $1 }'`
+			AutoUpdateUpdateID=$( echo "$msupdatesUpdatesList" | grep AutoUpdate | awk '{ print $1 }' )
 
 			
 			# sudo -u "$currentConsoleUserName" "$msupdateBinary" -i -a "$AutoUpdateUpdateID"
 
 
-				msupdatesUpdatesList=`cat $msupdateLog`
+				msupdatesUpdatesList=$( cat $msupdateLog )
 
 				if [[ "$msupdatesUpdatesList" == *"Updates available:"* ]] || [[ "$debug" == true ]] ; then
 					msupdateUpdatesAvail=true
@@ -1212,11 +1212,10 @@ No updates available."
 		if [[ "$msupdatesUpdatesList" == *"Outlook"* ]] ; then
 			
 			#extract ID of update for msupdate
-			OutlookUpdateID=`echo "$msupdatesUpdatesList" | grep Outlook | awk '{ print $1 }'`
-	 		OutlookNoteUpdateName=`echo "$msupdatesUpdatesList" | grep "Outlook" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs`
-	 		# OutlookNoteSilentInstallQueued=`cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OutlookNoteUpdateName\""`	 	
+			OutlookUpdateID=$( echo "$msupdatesUpdatesList" | grep Outlook | awk '{ print $1 }' )
+	 		OutlookNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Outlook" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 	
-	 		outLookappid=`ps aux | grep "Microsoft Outlook.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'}`
+	 		outLookappid=$( ps aux | grep "Microsoft Outlook.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
 			# if [[ "$outLookappid" ]] && [[ "$OutlookNoteSilentInstallQueued" ]] ;then
 			if [[ "$outLookappid" ]] ;then
 				checks+=" block"
@@ -1233,11 +1232,11 @@ No updates available."
 		if [[ "$msupdatesUpdatesList" == *"Word"* ]] ; then
 			
 			#extract ID of update for msupdate
-			WordUpdateID=`echo "$msupdatesUpdatesList" | grep Word | awk '{ print $1 }'`
-	 		WordUpdateName=`echo "$msupdatesUpdatesList" | grep Word | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs`
-	 		# WordSilentInstallQueued=`cat "$autoUpdateLogFile" | grep "update for silent installation: \"$WordUpdateName\""`
+			WordUpdateID=$( echo "$msupdatesUpdatesList" | grep Word | awk '{ print $1 }' )
+	 		WordUpdateName=$( echo "$msupdatesUpdatesList" | grep Word | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# WordSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$WordUpdateName\"" )
 
-	 		Wordappid=`ps aux | grep "Microsoft Word.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'}`
+	 		Wordappid=$( ps aux | grep "Microsoft Word.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
 			# if [[ "$Wordappid" ]] && [[ "$WordSilentInstallQueued" ]] ;then
 			if [[ "$Wordappid" ]] ;then
 				checks+=" block"
@@ -1254,11 +1253,10 @@ No updates available."
 		if [[ "$msupdatesUpdatesList" == *"PowerPoint"* ]] ; then
 			
 			#extract ID of update for msupdate
-			PowerPointUpdateID=`echo "$msupdatesUpdatesList" | grep PowerPoint | awk '{ print $1 }'`
-	 		PowerPointNoteUpdateName=`echo "$msupdatesUpdatesList" | grep "PowerPoint" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs`
-	 		# PowerPointNoteSilentInstallQueued=`cat "$autoUpdateLogFile" | grep "update for silent installation: \"$PowerPointNoteUpdateName\""`	 	
-	 		
-	 		PowerPointappid=`ps aux | grep "Microsoft PowerPoint.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'}`
+			PowerPointUpdateID=$( echo "$msupdatesUpdatesList" | grep PowerPoint | awk '{ print $1 }' )
+	 		PowerPointNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "PowerPoint" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+
+	 		PowerPointappid=$( ps aux | grep "Microsoft PowerPoint.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
 			# if [[ "$PowerPointappid" ]] && [[ "$PowerPointNoteSilentInstallQueued" ]] ;then
 			if [[ "$PowerPointappid" ]] ;then
 				checks+=" block"
@@ -1275,11 +1273,11 @@ No updates available."
 		if [[ "$msupdatesUpdatesList" == *"Excel"* ]] ; then
 			
 			#extract ID of update for msupdate
-			ExcelUpdateID=`echo "$msupdatesUpdatesList" | grep Excel | awk '{ print $1 }'`
-			ExcelUpdateName=`echo "$msupdatesUpdatesList" | grep Excel | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs`
-	 		# ExcelSilentInstallQueued=`cat "$autoUpdateLogFile" | grep "update for silent installation: \"$ExcelUpdateName\""`
+			ExcelUpdateID=$( echo "$msupdatesUpdatesList" | grep Excel | awk '{ print $1 }' )
+			ExcelUpdateName=$( echo "$msupdatesUpdatesList" | grep Excel | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# ExcelSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$ExcelUpdateName\"" )
 
-	 		Excelappid=`ps aux | grep "Microsoft Excel.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'}`
+	 		Excelappid=$( ps aux | grep "Microsoft Excel.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
 			# if [[ "$Excelappid" ]] && [[ "$ExcelSilentInstallQueued" ]];then
 			if [[ "$Excelappid" ]];then
 				checks+=" block"
@@ -1297,8 +1295,8 @@ No updates available."
 		# if [[ "$msupdatesUpdatesList" == *"Teams"* ]] ; then
 			
 		# 	#extract ID of update for msupdate
-		# 	TeamsUpdateID=`echo "$msupdatesUpdatesList" | grep Teams | awk '{ print $1 }'`
-	 # 		Teamsappid=`ps aux | grep "Microsoft Teams.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'}`
+		# 	TeamsUpdateID=$( echo "$msupdatesUpdatesList" | grep Teams | awk '{ print $1 }' )
+	 # 		Teamsappid=$( ps aux | grep "Microsoft Teams.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
 		# 	if [[ "$Teamsappid" ]] ;then
 		# 		checks+=" block"
 		installDuration=20
@@ -1315,8 +1313,8 @@ No updates available."
 		# if [[ "$msupdatesUpdatesList" == *"OneDrive"* ]] ; then
 			
 		# 	#extract ID of update for msupdate
-		# 	OneDriveUpdateID=`echo "$msupdatesUpdatesList" | grep OneDrive | awk '{ print $1 }'`
-	 # 		OneDriveappid=`ps aux | grep "OneDrive.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'}`
+		# 	OneDriveUpdateID=$( echo "$msupdatesUpdatesList" | grep OneDrive | awk '{ print $1 }' )
+	 # 		OneDriveappid=$( ps aux | grep "OneDrive.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
 		# 	if [[ "$OneDriveappid" ]] ;then
 		# 		checks+=" block"
 		installDuration=20
@@ -1332,11 +1330,11 @@ No updates available."
 		if [[ "$msupdatesUpdatesList" == *"OneNote"* ]] ; then
 			
 			#extract ID of update for msupdate
-			OneNoteUpdateID=`echo "$msupdatesUpdatesList" | grep OneNote | awk '{ print $1 }'`
-	 		OneNoteUpdateName=`echo "$msupdatesUpdatesList" | grep OneNote | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs`
-	 		# OneNoteSilentInstallQueued=`cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OneNoteUpdateName\""`
+			OneNoteUpdateID=$( echo "$msupdatesUpdatesList" | grep OneNote | awk '{ print $1 }' )
+	 		OneNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep OneNote | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# OneNoteSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OneNoteUpdateName\"" )
 
-	 		OneNoteappid=`ps aux | grep "Microsoft OneNote.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'}`
+	 		OneNoteappid=$( ps aux | grep "Microsoft OneNote.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
 			# if [[ "$OneNoteappid" ]] && [[ "$OneNoteSilentInstallQueued" ]] ;then
 			if [[ "$OneNoteappid" ]] ;then
 				checks+=" block"
@@ -1353,11 +1351,11 @@ No updates available."
 		if [[ "$msupdatesUpdatesList" == *"Skype For Business"* ]] ; then
 			
 			#extract ID of update for msupdate
-			SFBUpdateID=`echo "$msupdatesUpdatesList" | grep "Skype For Business" | awk '{ print $1 }'`
-	 		SFBNoteUpdateName=`echo "$msupdatesUpdatesList" | grep "Skype For Business" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs`
-	 		# SFBNoteSilentInstallQueued=`cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OneNoteUpdateName\""`
+			SFBUpdateID=$( echo "$msupdatesUpdatesList" | grep "Skype For Business" | awk '{ print $1 }' )
+	 		SFBNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Skype For Business" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# SFBNoteSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OneNoteUpdateName\"" )
 
-	 		SFBappid=`ps aux | grep "Skype for Business.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'}`
+	 		SFBappid=$( ps aux | grep "Skype for Business.app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk {'print $2'} )
 			# if [[ "$SFBappid" ]] && [[ "$SFBNoteSilentInstallQueued" ]] ;then
 			if [[ "$SFBappid" ]] ;then
 				checks+=" block"
@@ -1408,7 +1406,7 @@ checking for updates..."
 
 	softwareupdate -l > $appleSUSlog
 
-	appleUpdates=`cat $appleSUSlog`
+	appleUpdates=$( cat $appleSUSlog )
 
 
 		
@@ -1507,7 +1505,7 @@ No updates available."
 			apps="xayasdf.app;asdfasfd.app"
 		fi
 
-		updatesfiltered=`cat $appleSUSlog | grep "*" -A 1 | grep -v "*" | awk -F ',' '{print $1}' | awk -F '\t' '{print $2}' | sed '/^\s*$/d'`
+		updatesfiltered=$( cat $appleSUSlog | grep "*" -A 1 | grep -v "*" | awk -F ',' '{print $1}' | awk -F '\t' '{print $2}' | sed '/^\s*$/d' )
 
 		set -- "$updatesfiltered" 
 		##This works because i'm setting the seperator
@@ -1589,7 +1587,7 @@ resources=(
 )
 for i in "${resources[@]}"; do
 	resourceName="$(echo "$i" | sed 's@.*/@@')"
-	pathToResource=`dirname "$i"`
+	pathToResource=$( dirname "$i" )
    if [[ ! -e "$i" ]] && [[ "$i" ]]; then
       # does not exist...
       missingResources=true
@@ -1632,15 +1630,15 @@ apps2block="$apps4plist"
 ##########################################################################################
 ##								Date for Plists Creation								##
 ##########################################################################################
-runDate=`date +%s`
-runDateFriendly=`date -r$runDate`
+runDate=$( date +%s )
+runDateFriendly=$( date -r$runDate )
 ##########################################################################################
 
 ##########################################################################################
 #								Package name Processing									 #
 ##########################################################################################
 packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
-pathToFolder=`dirname "$pathToPackage"`
+pathToFolder=$( dirname "$pathToPackage" )
 SSplaceholderDIR="$UEXFolderPath/selfservice_jss/"
 
 
@@ -1709,7 +1707,7 @@ resultlogfilepath="$logdir""$resulttmp"
 linkaddress="/Library/Logs/"
 ln -s "$logdir" "$linkaddress" > /dev/null 2>&1
 
-compname=`scutil --get ComputerName`
+compname=$( scutil --get ComputerName )
 chmod -R 777 "$logdir"
 
 #Empty lines
@@ -1749,18 +1747,18 @@ logInUEX "******* script started ******"
 
 
 if [[ ! -e "$jamfBinary" ]] ; then 
-warningmsg=`"$CocoaDialog" ok-msgbox --icon caution --title "$title" --text "Error" \
+warningmsg=$( "$CocoaDialog" ok-msgbox --icon caution --title "$title" --text "Error"  
     --informative-text "There is Scheduled $action being attempted but the computer doesn't have JAMF Management software installed correctly. Please contact $ServiceDeskName for support." \
-    --float --no-cancel`
+    --float --no-cancel )
     badvariable=true
     logInUEX "ERROR: JAMF binary not found"
 fi
 
 jamfhelper="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 if [[ ! -e "$jamfhelper" ]] ; then 
-warningmsg=`"$CocoaDialog" ok-msgbox --icon caution --title "$title" --text "Error" \
+warningmsg=$( "$CocoaDialog" ok-msgbox --icon caution --title "$title" --text "Error"   
     --informative-text "There is Scheduled $action being attempted but the computer doesn't have JAMF Management software installed correctly. Please contact $ServiceDeskName for support." \
-    --float --no-cancel`
+    --float --no-cancel )
     badvariable=true
     logInUEX "ERROR: jamfHelper not found"
 fi
@@ -2011,9 +2009,9 @@ pleasewaitInstallProgress="/private/tmp/com.pleasewait.installprogress"
 ##########################################################################################
 
 
-Laptop=`system_profiler SPHardwareDataType | grep -E "MacBook"`
+Laptop=$( system_profiler SPHardwareDataType | grep -E "MacBook" )
 modelName=$( system_profiler SPHardwareDataType | grep "Model Name" | awk -F ': ' '{ print $2 }' )
-VmTest=`ioreg -l | grep -e Manufacturer -e 'Vendor Name' | grep 'Parallels\|VMware\|Oracle\|VirtualBox' | grep -v IOAudioDeviceManufacturerName`
+VmTest=$( ioreg -l | grep -e Manufacturer -e 'Vendor Name' | grep 'Parallels\|VMware\|Oracle\|VirtualBox' | grep -v IOAudioDeviceManufacturerName )
 if [[ "$VmTest" ]] ; then 
 	Laptop="MacBook" 
 fi
@@ -2055,27 +2053,27 @@ if [[ "$checks" == *"block"* ]] ; then
 
 	for app in "${apps[@]}" ; do
 		IFS=$'\n'
-		loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
+		loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
 		
-		appfound=`/usr/bin/find /Applications -maxdepth 3 -iname "$app"`
+		appfound=$( /usr/bin/find /Applications -maxdepth 3 -iname "$app" )
 		
 		if [[ -e /Users/"$loggedInUser"/Applications/ ]] ; then
-			userappfound=`/usr/bin/find /Users/"$loggedInUser"/Applications/ -maxdepth 3 -iname "$app"`
+			userappfound=$( /usr/bin/find /Users/"$loggedInUser"/Applications/ -maxdepth 3 -iname "$app" )
 		fi
 		
 # 		altpathsfound=""
 		for altpath in "${altpaths[@]}" ; do
 			
 			if [[ "$altpath" == "~"* ]] ; then 
-				altpathshort=`echo $altpath | cut -c 2-`
+				altpathshort=$( echo $altpath | cut -c 2- )
 				altuserpath="/Users/${loggedInUser}${altpathshort}"
 				
 				if [[ -e "$altuserpath" ]] ; then 
-				foundappinalthpath=`/usr/bin/find "$altuserpath" -maxdepth 3 -iname "$app"`
+				foundappinalthpath=$( /usr/bin/find "$altuserpath" -maxdepth 3 -iname "$app" )
 				fi
 			else
 				if [[ -e "$altpath" ]] ; then		
-					foundappinalthpath=`/usr/bin/find "$altpath" -maxdepth 3 -iname "$app"`
+					foundappinalthpath=$( /usr/bin/find "$altpath" -maxdepth 3 -iname "$app" )
 				fi
 			fi
 			
@@ -2248,7 +2246,7 @@ fi #Suspackage && macOS upgrade safety net
 #get the delay number form the plist or set it to zero
 
 if [ -e "$UEXFolderPath"/defer_jss/"$packageName".plist ] ; then 
-	# delayNumber=`/usr/libexec/PlistBuddy -c "print delayNumber" "$UEXFolderPath"/defer_jss/"$packageName".plist 2>/dev/null`
+	# delayNumber=$( /usr/libexec/PlistBuddy -c "print delayNumber" "$UEXFolderPath"/defer_jss/"$packageName".plist 2>/dev/null )
 	delayNumber=$(fn_getPlistValue "delayNumber" "defer_jss" "$packageName.plist")
 else
 	delayNumber=0
@@ -2287,13 +2285,13 @@ if [[ "$spaceRequired" ]] ; then
 	
 	#####
 	# Disk Space Check
-	free=`/usr/sbin/diskutil info / | grep "Free Space"`
+	free=$( /usr/sbin/diskutil info / | grep "Free Space" )
 	if [ -z "$free" ] ; then
-		free=`/usr/sbin/diskutil info / | grep "Available" | awk '{print $4}'`
-		unit=`/usr/sbin/diskutil info / | grep "Available" | awk '{print $5}'`
+		free=$( /usr/sbin/diskutil info / | grep "Available" | awk '{print $4}' )
+		unit=$( /usr/sbin/diskutil info / | grep "Available" | awk '{print $5}' )
 	else
-		free=`/usr/sbin/diskutil info / | grep "Free Space" | awk '{print $4}'`
-		unit=`/usr/sbin/diskutil info / | grep "Free Space" | awk '{print $5}'`
+		free=$( /usr/sbin/diskutil info / | grep "Free Space" | awk '{print $4}' )
+		unit=$( /usr/sbin/diskutil info / | grep "Free Space" | awk '{print $5}' )
 	fi
 
 	space=${free%.*}
@@ -2308,7 +2306,7 @@ if [[ "$spaceRequired" ]] ; then
 
 	if [ $convertedfree -lt $spaceRequired ] ; then
 		insufficientSpace=true
-		remaining=`echo $spaceRequired - $convertedfree | bc`
+		remaining=$( echo $spaceRequired - $convertedfree | bc )
 		log4_JSS "The computer has insufficient space."
 		log4_JSS "Free in GB: $convertedfree"
 		log4_JSS "Required in GB: $spaceRequired"
@@ -2594,14 +2592,14 @@ SelfServiceAppPath=$( /usr/bin/defaults read /Library/Preferences/com.jamfsoftwa
 SelfServiceAppName=$( echo "$SelfServiceAppPath" |\
 					  /usr/bin/sed -ne 's|^.*/\(.*\).app$|\1|p' )
 
-SelfServiceAppFolder=`dirname "$SelfServiceAppPath"`
+SelfServiceAppFolder=$( dirname "$SelfServiceAppPath" )
 
 if [[ -z "${SelfServiceAppName}" ]]; then
 	SelfServiceAppName="Self Service"
 fi
 
-SelfServiceAppNameDockPlist=`/bin/echo ${SelfServiceAppName// /"%20"}`
-SelfServersioninDock=`sudo -u "$loggedInUser" -H defaults read com.apple.Dock | grep "$SelfServiceAppNameDockPlist"`
+SelfServiceAppNameDockPlist=$( /bin/echo ${SelfServiceAppName// /"%20"} )
+SelfServersioninDock=$( sudo -u "$loggedInUser" -H defaults read com.apple.Dock | grep "$SelfServiceAppNameDockPlist" )
 
 # dynamically detect the location of where the user can find self service and update the dialog
 if [[ "$SelfServersioninDock" ]]; then
@@ -2701,8 +2699,8 @@ spaceMsg+="
 ##								INSTALL LOGOUT MESSAGE SETTING							##
 ##########################################################################################
 # notice about needing charger connect if you want to install at logout
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
-usernamefriendly=`id -P $loggedInUser | awk -F: '{print $8}'`
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+usernamefriendly=$( id -P $loggedInUser | awk -F: '{print $8}' )
 
 logoutMessage="To start the $action:
 
@@ -2754,8 +2752,8 @@ fi
 ##########################################################################################
 # no login  RUN NOW
 # (skip to install stage)
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
-logoutHookRunning=`ps aux | grep "JAMF/ManagementFrameworkScripts/logouthook.sh" | grep -v grep`
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+logoutHookRunning=$( ps aux | grep "JAMF/ManagementFrameworkScripts/logouthook.sh" | grep -v grep )
 log4_JSS "loggedInUser is $loggedInUser"
 
 if [ "$logoutHookRunning" ] ; then 
@@ -2868,7 +2866,7 @@ fn_check4ScreenSharingSessionInZoomUS
 
 for app in "${presentationApps[@]}" ; do
 	IFS=$'\n'
-	appid=`ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'}`
+	appid=$( ps aux | grep ${app}/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
 # 	echo Processing application $app
 	if  [ "$appid" != "" ] ; then
 		log4_JSS "Application $app is Running"
@@ -3012,7 +3010,7 @@ while [ $reqlooper = 1 ] ; do
 
 	# this is a safety net for closing and for 10.9 skiping jamfHelper windows
 	counter=0
-	jamfHelperOn=`ps aux | grep jamfHelper | grep -v grep`
+	jamfHelperOn=$( ps aux | grep jamfHelper | grep -v grep )
 	while [[ $jamfHelperOn != "" ]] ; do
 		let counter=counter+1
 		sleep 1
@@ -3034,17 +3032,17 @@ while [ $reqlooper = 1 ] ; do
 			fn_waitForApps2Quit
 		fi
 
-		jamfHelperOn=`ps aux | grep jamfHelper | grep -v grep`
+		jamfHelperOn=$( ps aux | grep jamfHelper | grep -v grep )
 	done
 
 
-	PostponeClickResult=`cat $PostponeClickResultFile`
+	PostponeClickResult=$( cat $PostponeClickResultFile )
 	# echo PostponeClickResult is $PostponeClickResult
 
 	if [ -z $PostponeClickResult ] ; then
 
 		# new safety override for not having the charger
-		# BatteryTest=`pmset -g batt`
+		# BatteryTest=$( pmset -g batt )
 		if [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" != *"AC"* ]] ; then 
 			if [ $inactivityDelay -ge 3 ] && [[ $delayNumber -ge $maxdefer ]] && [[ "$checks" == *"compliance"* ]] && [[ $insufficientSpace != true ]] ; then 
 				log4_JSS "User has exhausted delay options and ignored the prompt 3 times further."
@@ -3109,7 +3107,7 @@ while [ $reqlooper = 1 ] ; do
 		log4_JSS "User either skipped or Jamf helper did not return a result."
 	else # User chose an option
 		skipOver=false
-		PostponeClickResult=`echo $PostponeClickResult | sed 's/1$//'`
+		PostponeClickResult=$( echo $PostponeClickResult | sed 's/1$//' )
 		if [[ "$PostponeClickResult" = 0 ]] ; then
 			PostponeClickResult=""
 		fi # ppcr=0
@@ -3198,7 +3196,7 @@ Current work may be lost if you do not save before proceeding."
 				fi
 				for app in "${apps2kill[@]}" ; do
 					IFS=$'\n'
-					appid=`ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'}`
+					appid=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
 					# Processing application $app
 						if  [[ $appid != "" ]] ; then
 							# testing #36 for multiple quitting
@@ -3292,7 +3290,7 @@ Current work may be lost if you do not save before proceeding."
 	##########################################################################################
 	##										BATTERY SAFETY NET	 							##
 	##########################################################################################
-	# BatteryTest=`pmset -g batt`
+	# BatteryTest=$( pmset -g batt )
 	if [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" != *"AC"* ]] && [[ -z $PostponeClickResult ]] && [[ "$skipOver" != true ]] ; then
 		reqlooper=1
 		# /bin/echo postponesLeft is "$postponesLeft"
@@ -3310,10 +3308,10 @@ Current work may be lost if you do not save before proceeding."
 
 
 		batlooper=1
-		jamfHelperOn=`ps aux | grep jamfHelper | grep -v grep`
+		jamfHelperOn=$( ps aux | grep jamfHelper | grep -v grep )
 		while [ $batlooper = 1 ] && [[ $jamfHelperOn != "" ]] ; do
-			# BatteryTest=`pmset -g batt`
-			jamfHelperOn=`ps aux | grep jamfHelper | grep -v grep`
+			# BatteryTest=$( pmset -g batt )
+			jamfHelperOn=$( ps aux | grep jamfHelper | grep -v grep )
 			# /bin/echo batteryClickResult is $batteryClickResult
 
 			if [[ "$( fn_BatteryStatus )" != *"AC"* ]] && [[ "$checks" == *"critical"* ]] ; then 
@@ -3357,7 +3355,7 @@ Current work may be lost if you do not save before proceeding."
 # 		echo PostponeClickResult $PostponeClickResult
 # 		echo skipOver $skipOver
 
-	# BatteryTest=`pmset -g batt`
+	# BatteryTest=$( pmset -g batt )
 	if [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" != *"AC"* ]] && [[ -z $PostponeClickResult ]] && [[ "$batteryOveride" != true ]] ; then
 		reqlooper=1
 	else 
@@ -3383,14 +3381,14 @@ else # loginuser is null therefore no one is logged in and
 	logInUEX "No one is logged in"
 	if [[ -a "$UEXFolderPath"/defer_jss/"$packageName".plist ]] ; then
 		echo delay exists
-		# installNow=`/usr/libexec/PlistBuddy -c "print loginscreeninstall" "$UEXFolderPath"/defer_jss/"$packageName".plist 2>/dev/null`
+		# installNow=$( /usr/libexec/PlistBuddy -c "print loginscreeninstall" "$UEXFolderPath"/defer_jss/"$packageName".plist 2>/dev/null )
 		installNow=$(fn_getPlistValue "loginscreeninstall" "defer_jss" "$packageName.plist")
 		echo $installNow
 		if [[ $installNow == "true" ]] ; then 
 			log4_JSS "Install at login permitted"
 			# install at login permitted
 			
-			# BatteryTest=`pmset -g batt`
+			# BatteryTest=$( pmset -g batt )
 			if [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" != *"AC"* ]] ; then
 				log4_JSS "Power not connected postponing 24 hours"
 				echo power not connected postponing 24 hours
@@ -3436,11 +3434,11 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 	
 	if [[ $PostponeClickResult = 86400 ]]; then
 		# get the time tomorrow at 9am and delay until that time.
-		tomorrow=`date -v+1d`
-		tomorrowTime=`echo $tomorrow | awk '{ print $4}'`
+		tomorrow=$( date -v+1d )
+		tomorrowTime=$( echo $tomorrow | awk '{ print $4}' )
 		tomorrow9am="${tomorrow/$tomorrowTime/09:00:00}"
-		tomorrow9amEpoch=`date -j -f '%a %b %d %T %Z %Y' "$tomorrow9am" '+%s'`
-		nowEpoch=`date +%s`
+		tomorrow9amEpoch=$( date -j -f '%a %b %d %T %Z %Y' "$tomorrow9am" '+%s' )
+		nowEpoch=$( date +%s )
 		PostponeClickResult=$((tomorrow9amEpoch-nowEpoch))
 	fi # if the postpone is 1 day
 	
@@ -3449,13 +3447,13 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 	logInUEX "Delay Time = $delaytime"
 	
 	# calculate time and date just before plist creation
-	runDate=`date +%s`
+	runDate=$( date +%s )
 	runDate=$((runDate-300))
-	runDateFriendly=`date -r$runDate`
+	runDateFriendly=$( date -r$runDate )
 		
 	# Calculate the date that
 	delayDate=$((runDate+delaytime))
-	delayDateFriendly=`date -r $delayDate`
+	delayDateFriendly=$( date -r $delayDate )
 
 	
 
@@ -3472,7 +3470,7 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 		log4_JSS "The next $action prompt is postponed until after $delayDateFriendly"
 		
 		# if the defer folder if empty and i'm creating the first deferal then invetory updates are needed to the comptuer is in scope of the deferral service
-		deferfolderContents=`ls "$UEXFolderPath/defer_jss/" | grep plist`
+		deferfolderContents=$( ls "$UEXFolderPath/defer_jss/" | grep plist )
 		if [[ -z "$deferfolderContents" ]]; then
 			InventoryUpdateRequired=true
 		fi
@@ -3654,7 +3652,7 @@ fi # no on logged in
 
 			for app in "${apps2kill[@]}" ; do
 				IFS=$'\n'
-				appid=`ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'}`
+				appid=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v jamf | awk {'print $2'} )
 				# Processing application $app
 					if  [[ $appid != "" ]] ; then
 						
@@ -3673,7 +3671,7 @@ fi # no on logged in
 								sleep 2
 							fi
 
-							processstatus=`ps -p $id`
+							processstatus=$( ps -p $id )
 							if [[ "$processstatus" == *"$app"* ]]; then
 								log4_JSS "$app is still running. Killing process id $id."
 								# log4_JSS "Re-opening $app"
@@ -3683,7 +3681,7 @@ fi # no on logged in
 								sleep 1
 							fi
 
-							processstatus=`ps -p $id`
+							processstatus=$( ps -p $id )
 							if [[ "$processstatus" == *"$app"* ]]; then
 								#statements
 								log4_JSS "The process $id was still running for application $app. Force killing Application."
@@ -3701,8 +3699,8 @@ fi # no on logged in
 	#####################
 	if [[ "$checks" == *"block"* ]] ; then	
 		# calculate time and date just before plist creation
-		runDate=`date +%s`
-		runDateFriendly=`date -r$runDate`
+		runDate=$( date +%s )
+		runDateFriendly=$( date -r$runDate )
 		
 		# Create Plist with all that properties to block the apps
 		# added Package & date info for restar safety measures
@@ -3726,11 +3724,11 @@ fi # no on logged in
 
 	if [[ "$checks" == *"logout"* ]] ; then
 	echo script wants me to logout
-		loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }'`
+		loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' )
 		
 		# calculate time and date just before plist creation
-		runDate=`date +%s`
-		runDateFriendly=`date -r$runDate`
+		runDate=$( date +%s )
+		runDateFriendly=$( date -r$runDate )
 		
 		# Testing
 		# loggedInUser="cedarari"
@@ -3767,7 +3765,7 @@ fi # no on logged in
 
 	if [[ "$checks" == *"restart"* ]] ; then
 		# calculate time and date just before plist creation
-		runDate=`date +%s`
+		runDate=$( date +%s )
 		
 		
 		# Create plist with Restart required
@@ -3957,7 +3955,7 @@ EOT
 			#Debug Line
 			logInUEX4DebugMode "exit code for installer is $?"
 			
-			installResults=`cat "$resultlogfilepath" | tr '[:upper:]' '[:lower:]'`
+			installResults=$( cat "$resultlogfilepath" | tr '[:upper:]' '[:lower:]' )
 			if 	[[ "$installResults" == *"failed"* ]] || [[ "$installResults" == *"error"* ]] ; then
 				failedInstall=true
 			fi 
@@ -4010,10 +4008,10 @@ EOT
 	logInUEX "Deleting defer plist so the agent doesn not start it again"
 	
 	# go thourgh all the deferal plist and if any of them mention the same triggr then delete them
-	plists=`ls "$UEXFolderPath"/defer_jss/ | grep ".plist"`
+	plists=$( ls "$UEXFolderPath"/defer_jss/ | grep ".plist" )
 	IFS=$'\n'
 	for i in $plists ; do
-		# deferPolicyTrigger=`/usr/libexec/PlistBuddy -c "print policyTrigger" "$UEXFolderPath"/defer_jss/"$i"`
+		# deferPolicyTrigger=$( /usr/libexec/PlistBuddy -c "print policyTrigger" "$UEXFolderPath"/defer_jss/"$i" )
 		deferPolicyTrigger=$(fn_getPlistValue "policyTrigger" "defer_jss" "$i")
 		if [[ "$deferPolicyTrigger" == "$UEXpolicyTrigger" ]]; then
 			log4_JSS "Deleting $i"
@@ -4039,7 +4037,7 @@ EOT
 
 
 	#only kill the pleaseWaitDaemon if it's running
-	launchcltList=`launchctl list`
+	launchcltList=$( launchctl list )
 	if [[ "$launchcltList" == *"github.cubandave.UEX-PleaseWait"* ]]; then
 		#statements
 		launchctl unload -w $pleaseWaitDaemon > /dev/null 2>&1
@@ -4127,8 +4125,8 @@ $action completed."
 			appFound=""
 			userAppFound=""
 			# Find the apss in /Applications/ and ~/Applications/ and open as the user
-			appFound=`/usr/bin/find "/Applications" -maxdepth 3 -iname "$relaunchAppName"`
-			userAppFound=`/usr/bin/find "$loggedInUserHome/Applications" -maxdepth 3 -iname "$relaunchAppName" 2> /dev/null`
+			appFound=$( /usr/bin/find "/Applications" -maxdepth 3 -iname "$relaunchAppName" )
+			userAppFound=$( /usr/bin/find "$loggedInUserHome/Applications" -maxdepth 3 -iname "$relaunchAppName" 2> /dev/null )
 			
 			if [[ "$appFound" ]]; then
 				app2Open="$appFound"

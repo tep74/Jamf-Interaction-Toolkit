@@ -83,7 +83,7 @@ fi
 # logname=$(echo $packageName | sed 's/.\{4\}$//')
 # logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
-compname=`scutil --get ComputerName`
+compname=$( scutil --get ComputerName )
 # resulttmp="$logname"_result.log
 ##########################################################################################
 
@@ -115,24 +115,24 @@ log4_JSS () {
 ##								USER AND PLIST PROCESSING								##
 ##########################################################################################
 
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }'`
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' )
 
-lastLogin=`syslog -F raw -k Facility com.apple.system.lastlog | grep $loggedInUser | grep -v tty | awk 'END{print}' | awk '{ print $4 }' | sed -e 's/]//g'`
-lastLoginFriendly=`date -r$lastLogin`
+lastLogin=$( syslog -F raw -k Facility com.apple.system.lastlog | grep $loggedInUser | grep -v tty | awk 'END{print}' | awk '{ print $4 }' | sed -e 's/]//g' )
+lastLoginFriendly=$( date -r$lastLogin )
 
-lastReboot=`date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s"`
-lastRebootFriendly=`date -r$lastReboot`
+lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s" )
+lastRebootFriendly=$( date -r$lastReboot )
 
-rundate=`date +%s`
+rundate=$( date +%s )
 
-resartPlists=`ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist"`
+resartPlists=$( ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist" )
 set -- "$resartPlists"
 ##This works because i'm setting the seperator
 # shellcheck disable=SC2048
 IFS=$'\n' ; declare -a resartPlists=($*)  
 unset IFS
 
-logoutPlists=`ls /Library/Application\ Support/JAMF/UEX/logout_jss/ | grep ".plist"`
+logoutPlists=$( ls /Library/Application\ Support/JAMF/UEX/logout_jss/ | grep ".plist" )
 set -- "$logoutPlists" 
 ##This works because i'm setting the seperator
 # shellcheck disable=SC2048
@@ -144,10 +144,10 @@ unset IFS
 ##########################################################################################
 
 sleep 15
-otherJamfprocess=`ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent | grep -v uexlogoutagent`
+otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent | grep -v uexlogoutagent )
 while [ "$otherJamfprocess" ] ; do 
 	sleep 15
-	otherJamfprocess=`ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent | grep -v uexlogoutagent`
+	otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent | grep -v uexlogoutagent )
 done
 
 # only run the Plist processing command once all other jamf policies have completed
@@ -166,7 +166,7 @@ for i in "${resartPlists[@]}" ; do
 	packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
 	plistrunDate=$(fn_getPlistValue "runDate" "restart_jss" "$i")
 
-	timeSinceReboot=`echo "${lastReboot} - ${plistrunDate}" | bc`		
+	timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 	echo timeSinceReboot is $timeSinceReboot
 	
 	logname=$(echo $packageName | sed 's/.\{4\}$//')
@@ -182,7 +182,7 @@ for i in "${resartPlists[@]}" ; do
 		rm "$UEXFolderPath/restart_jss/$i"
 	else 
 		# the computer has NOT rebooted since $runDateFriendly
-		lastline=`awk 'END{print}' "$logfilepath"`
+		lastline=$( awk 'END{print}' "$logfilepath" )
 		if [[ "$lastline" != *"Prompting the user"* ]] ; then 
 			logInUEX "The computer has NOT rebooted since $runDateFriendly"
 			logInUEX "Prompting the user that a restart is required"
@@ -207,10 +207,10 @@ if [[ $restart != "true" ]] ; then
 		checked=$(fn_getPlistValue "checked" "logout_jss" "$i")
 		plistrunDate=$(fn_getPlistValue "runDate" "logout_jss" "$i")
 
-		plistrunDateFriendly=`date -r $plistrunDate`
+		plistrunDateFriendly=$( date -r $plistrunDate )
 		
 		timeSinceLogin=$((lastLogin-plistrunDate))
-		timeSinceReboot=`echo "${lastReboot} - ${plistrunDate}" | bc`		
+		timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc`	 )
 		
 		#######################
 		# Logging files setup #
@@ -244,7 +244,7 @@ if [[ $restart != "true" ]] ; then
 		# change the plist state to checked=true so that it's deleted the next time.
 			sleep 1
 			/usr/libexec/PlistBuddy -c "set checked true" "$UEXFolderPath/logout_jss/$i"
-			lastline=`awk 'END{print}' "$logfilepath"`
+			lastline=$( awk 'END{print}' "$logfilepath" )
 			if [[ "$lastline" != *"Notifying the user"* ]] ; then 
 				logInUEX "There are no restart interactions required."
 				logInUEX "the user has NOT logged out since $plistrunDateFriendly"
@@ -268,7 +268,7 @@ unset IFS
 ##########################################################################################
 # no login  RUN NOW
 # (skip to install stage)
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
 osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. {'print $2'} )
 ##########################################################################################
 ##					Notification if there are scheduled logouts							##
@@ -282,7 +282,7 @@ if [ $loggedInUser ] ; then
     Your user will be automatically logged out at the end of the countdown.'
  
         # dialog with 10 minute countdown
-        logoutclickbutton=`"$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Logout Now"`
+        logoutclickbutton=$( "$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Logout Now" )
      
        
         if [[ "$osMajor" -ge 14 ]]; then
