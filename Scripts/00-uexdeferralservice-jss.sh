@@ -42,7 +42,7 @@ fi
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-# logname=$(echo $packageName | sed 's/.\{4\}$//')
+# logname="${packageName##*/}"
 # logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 compname=$( scutil --get ComputerName )
@@ -63,26 +63,19 @@ logInUEX () {
 	echo "$(date)"	"$compname"	:	"$1" >> "$logfilepath"
 }
 
-logInUEX4DebugMode () {
-	if [[ "$debug" = true ]] ; then	
-		logMessage="-DEBUG- $1"
-		logInUEX "$logMessage"
-	fi
-}
-
 log4_JSS () {
 	# only put in the log if it exist
 	if [[ "$logfilepath" ]] ; then
 		echo "$(date)"	"$compname"	:	"$1"  | tee -a "$logfilepath"
 	else
-		echo $(date)	$compname	:	"$1"
+		echo "$(date)"	"$compname"	:	"$1"
 	fi
 }
 
 
 triggerNgo ()
 {
-	$jamfBinary policy -forceNoRecon -trigger $1 &
+	$jamfBinary policy -forceNoRecon -trigger "$1" &
 }
 
 ##########################################################################################
@@ -90,6 +83,8 @@ triggerNgo ()
 ##########################################################################################
 
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+## This is needed to get the specfic hook running
+# shellcheck disable=SC2009
 logoutHookRunning=$( ps aux | grep "JAMF/ManagementFrameworkScripts/logouthook.sh" | grep -v grep )
 
 if [ "$logoutHookRunning" ] ; then 
@@ -113,7 +108,6 @@ for i in $plists ; do
 	# Process the plist	
 	delayDate=$(fn_getPlistValue "delayDate" "defer_jss" "$i")
 	packageName=$(fn_getPlistValue "package" "defer_jss" "$i")
-	folder=$(fn_getPlistValue "folder" "defer_jss" "$i")
 	loginscreeninstall=$(fn_getPlistValue "loginscreeninstall" "defer_jss" "$i")
 	checks=$(fn_getPlistValue "checks" "defer_jss" "$i")
 	policyTrigger=$(fn_getPlistValue "policyTrigger" "defer_jss" "$i")
@@ -121,15 +115,13 @@ for i in $plists ; do
 	#######################
 	# Logging files setup #
 	#######################
-	logname=$(echo $packageName | sed 's/.\{4\}$//')
+	logname="${packageName##*/}"
 	logfilename="$logname".log
 	resulttmp="$logname"_result.log
 	logfilepath="$logdir""$logfilename"
-	resultlogfilepath="$logdir""$resulttmp"
 	
 	# calculate the time elapsed
 	timeelapsed=$((delayDate-runDate))
-	skip=""
 	if [ $loggedInUser ] ; then
 		# string contains a user ID therefore someone is logged in
 		if [ "$timeelapsed" -lt 0 ] ; then
@@ -141,10 +133,10 @@ for i in $plists ; do
 		fi
 	elif [[ $loggedInUser == "" ]] && [[ $loginscreeninstall == false ]] ; then
 		# skipping install
-		skip=true
+		logInUEX "skipping $policyTrigger as it is not permitted at login window"
 	elif [[ $loggedInUser == "" ]] && [[ $loginscreeninstall == true ]] && [[ $checks == *"power"* ]] && [[ "$BatteryTest" != *"AC"* ]] ; then
 		# skipping install
-		skip=true
+		logInUEX "skipping $policyTrigger as it requires power and it's not connected"
 	else 
 	# loggedInUser is null therefore no one is logged in
 	# start the install

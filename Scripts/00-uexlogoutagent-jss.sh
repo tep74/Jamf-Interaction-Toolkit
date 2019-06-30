@@ -79,7 +79,7 @@ fi
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-# logname=$(echo $packageName | sed 's/.\{4\}$//')
+# logname="${packageName##*/}"
 # logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 compname=$( scutil --get ComputerName )
@@ -149,9 +149,13 @@ unset IFS
 ##########################################################################################
 
 sleep 15
+## This is needed to rule out only what's needed
+# shellcheck disable=SC2009
 otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent | grep -v uexlogoutagent )
 while [ "$otherJamfprocess" ] ; do 
 	sleep 15
+## This is needed to rule out only what's needed
+# shellcheck disable=SC2009
 	otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent | grep -v uexlogoutagent )
 done
 
@@ -174,11 +178,10 @@ for i in "${resartPlists[@]}" ; do
 	timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 	echo timeSinceReboot is $timeSinceReboot
 	
-	logname=$(echo $packageName | sed 's/.\{4\}$//')
+	logname="${packageName##*/}"
 	logfilename="$logname".log
 	resulttmp="$logname"_result.log
 	logfilepath="$logdir""$logfilename"
-	resultlogfilepath="$logdir""$resulttmp"
 	
 	if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then
 		# the computer has rebooted since $runDateFriendly
@@ -215,16 +218,15 @@ if [[ $restart != "true" ]] ; then
 		plistrunDateFriendly=$( date -r $plistrunDate )
 		
 		timeSinceLogin=$((lastLogin-plistrunDate))
-		timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc`	 )
+		timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 		
 		#######################
 		# Logging files setup #
 		#######################
-		logname=$(echo $packageName | sed 's/.\{4\}$//')
+		logname="${packageName##*/}"
 		logfilename="$logname".log
 		resulttmp="$logname"_result.log
 		logfilepath="$logdir""$logfilename"
-		resultlogfilepath="$logdir""$resulttmp"
 		
 		
 		if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then

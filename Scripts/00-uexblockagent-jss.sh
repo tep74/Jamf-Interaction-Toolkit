@@ -75,7 +75,7 @@ fi
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-# logname=$(echo $packageName | sed 's/.\{4\}$//')
+# logname="${packageName##*/}"
 # logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 compname=$( scutil --get ComputerName )
@@ -177,11 +177,10 @@ runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 		#######################
 		# Logging files setup #
 		#######################
-		logname=$(echo $packageName | sed 's/.\{4\}$//')
+		logname="${packageName##*/}"
 		logfilename="$logname".log
 		resulttmp="$logname"_result.log
 		logfilepath="$logdir""$logfilename"
-		resultlogfilepath="$logdir""$resulttmp"
 	
 		# Create array of apps to run through checks
 		set -- "$apps"

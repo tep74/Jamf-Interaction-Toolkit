@@ -32,7 +32,7 @@ unset IFS
 
 
 
-for triggerName in ${triggers[@]} ; do
+for triggerName in "${triggers[@]}" ; do
 
 	"$jamfBinary" policy -forceNoRecon -trigger "$triggerName"
 

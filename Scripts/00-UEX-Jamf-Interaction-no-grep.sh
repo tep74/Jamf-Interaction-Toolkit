@@ -219,7 +219,7 @@ pathToFolder=$( dirname "$pathToPackage" )
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-logname=$(echo $packageName | sed 's/.\{4\}$//')
+logname="${packageName##*/}"
 logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 resulttmp="$logname"_result.log
@@ -241,7 +241,7 @@ chmod -R 777 "$logdir"
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-logname=$(echo $packageName | sed 's/.\{4\}$//')
+logname="${packageName##*/}"
 logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 resulttmp="$logname"_result.log
@@ -344,7 +344,7 @@ fn_trigger ()
 
 triggerNgo ()
 {
-	$jamfBinary policy -forceNoRecon -trigger $1 &
+	$jamfBinary policy -forceNoRecon -trigger "$1" &
 }
 
 
@@ -528,11 +528,6 @@ log4_JSS () {
 fn_execute_log4_JSS () {
 	local dateOfCommand=$( date )
 	local TMPresultlogfilepath="/private/tmp/resultsOfCommand_$dateOfCommand.log"
-
-	# echo command to run is \""$1"\"
-	# rm "$TMPresultlogfilepath" 2> /dev/null 
-	# echo TMPresultlogfilepath is "$TMPresultlogfilepath"
-	# echo ${1} >> "$resultlogfilepath"
 	
 	log4_JSS "Running command: $1"
 	$1 >>"$TMPresultlogfilepath"
@@ -742,7 +737,7 @@ fn_check4PendingRestartsOrLogout () {
 		local timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 		logInUEX "timeSinceReboot is $timeSinceReboot"
 		
-		local logname=$(echo $packageName | sed 's/.\{4\}$//')
+		local logname="${packageName##*/}"
 		local logfilename="$logname".log
 		local resulttmp="$logname"_result.log
 		local logfilepath="$logdir""$logfilename"
@@ -784,7 +779,7 @@ fn_check4PendingRestartsOrLogout () {
 			#######################
 			# Logging files setup #
 			#######################
-			local logname=$(echo $packageName | sed 's/.\{4\}$//')
+			local logname="${packageName##*/}"
 			local logfilename="$logname".log
 			local resulttmp="$logname"_result.log
 			local logfilepath="$logdir""$logfilename"
@@ -1691,7 +1686,7 @@ chown -R root:wheel "$UEXFolderPath" > /dev/null 2>&1
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-logname=$(echo $packageName | sed 's/.\{4\}$//')
+logname="${packageName##*/}"
 logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 resulttmp="$logname"_result.log

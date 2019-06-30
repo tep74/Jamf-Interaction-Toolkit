@@ -86,7 +86,7 @@ fi
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-# logname=$(echo $packageName | sed 's/.\{4\}$//')
+# logname="${packageName##*/}"
 # logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 compname=$( scutil --get ComputerName )
@@ -159,11 +159,10 @@ for i in "${plists[@]}" ; do
 	#######################
 	# Logging files setup #
 	#######################
-	logname=$(echo $packageName | sed 's/.\{4\}$//')
+	logname="${packageName##*/}"
 	logfilename="$logname".log
 	resulttmp="$logname"_result.log
 	logfilepath="$logdir""$logfilename"
-	resultlogfilepath="$logdir""$resulttmp"
 	
 # 	echo timeSinceReboot is $timeSinceReboot
 	if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then
@@ -198,11 +197,15 @@ loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v 
 osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. {'print $2'} )
 
 sleep 15
+## This is needed to rule out only what's needed
+# shellcheck disable=SC2009
 otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent )
 otherJamfprocess+=$( pgrep SplashBuddy )
 if [[ "$restart" == "true" ]] ; then
 	while [[ $otherJamfprocess != "" ]] ; do 
 		sleep 15
+		## This is needed to rule out only what's needed
+		# shellcheck disable=SC2009
 		otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent )
 		otherJamfprocess+=$( pgrep SplashBuddy )
 	done
