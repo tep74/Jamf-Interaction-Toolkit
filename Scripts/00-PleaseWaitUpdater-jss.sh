@@ -65,10 +65,12 @@ while [ ! -z "$( pgrep PleaseWait )" ] ; do
 
 # Get a list of plist from the UEX folder
 plists=$( find "/Library/Application Support/JAMF/UEX" -name '*.plist' | grep -v resources )
+
 set -- "$plists" 
+IFS=$'\n'
 ##This works because i'm setting the seperator
 # shellcheck disable=SC2048
-IFS=$'\n'; declare -a plists=($*)
+declare -a plists=($*)
 unset IFS
 
 installjss="$UEXFolderPath/install_jss/"
@@ -118,14 +120,15 @@ installjss="$UEXFolderPath/install_jss/"
 
 			# Create array of apps to run through checks
 			set -- "$apps" 
+			IFS=";"
 			##This works because i'm setting the seperator
 			# shellcheck disable=SC2048
-			IFS=";"; declare -a apps=($*)  
+			declare -a apps=($*)  
 			unset IFS
 			# Cycle through list of prohibited apps from the block plist config file
 			for app in "${apps[@]}" ; do
-				echo Please do not open these applications > $pleasewaitPhase
-				echo $app | sed 's/.\{4\}$//' > $pleasewaitProgress
+				echo "Please do not open these applications" > $pleasewaitPhase
+				echo "${app//.app/}" > $pleasewaitProgress
 				sleep 3
 			done
 		
@@ -136,7 +139,7 @@ installjss="$UEXFolderPath/install_jss/"
 	
 	# 	if there are logout plist present then notify that a logout will be required
 		if [[ "$plist" == *"UEX/logout"* ]] ;then
-			plistName="$(echo "$plist" | sed 's@.*/@@')"
+			plistName=${plist##*/}" )"
 			if [ -e "$installjss""$plistName" ] ; then
 				echo "A logout will be required..." > $pleasewaitPhase
 				echo "after $action completes." > $pleasewaitProgress
@@ -146,7 +149,7 @@ installjss="$UEXFolderPath/install_jss/"
 	
 	# 	if there are restart plist present then notify that a restart will be required
 		if [[ "$plist" == *"UEX/restart"* ]] ;then
-			plistName="$(echo "$plist" | sed 's@.*/@@')"
+			plistName="${plist##*/}"
 			if [ -e "$installjss""$plistName" ] ; then
 				echo "A restart will be required..." > $pleasewaitPhase
 				echo "after $action completes." > $pleasewaitProgress
