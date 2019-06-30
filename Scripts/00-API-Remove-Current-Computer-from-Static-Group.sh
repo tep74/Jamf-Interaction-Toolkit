@@ -28,6 +28,8 @@ function DecryptString() {
 }
 
 computerinGroup() {
+	##CURL needs indivudual expansion
+	# shellcheck disable=SC2086
 	curl ${CURL_OPTIONS} --header "Accept:application/xml" --request "GET" --user "${jss_user}:${jss_pass}" "$jss_url/JSSResource/computergroups/id/$groupNameIDLookup" | grep "<id>$computerIDLookup</id>" 
 }
 
@@ -41,9 +43,13 @@ computersUDID=$(system_profiler SPHardwareDataType | awk '/UUID/ { print $3; }')
 
 CURL_OPTIONS="--location --insecure --silent --show-error --connect-timeout 30"
 
-groupNameIDLookup=`curl ${CURL_OPTIONS} --header "Accept: application/xml" --request "GET" --user "${jss_user}:${jss_pass}" "$jss_url/JSSResource/computergroups" | xmllint --format - | grep -B 1 ">$jssGroupname<" | /usr/bin/awk -F'<id>|</id>' '{print $2}' | sed '/^\s*$/d'`
+##CURL needs indivudual expansion
+# shellcheck disable=SC2086
+groupNameIDLookup=$( curl ${CURL_OPTIONS} --header "Accept: application/xml" --request "GET" --user "${jss_user}:${jss_pass}" "$jss_url/JSSResource/computergroups" | xmllint --format - | grep -B 1 ">$jssGroupname<" | /usr/bin/awk -F'<id>|</id>' '{print $2}' | sed '/^\s*$/d' )
 
-computerIDLookup=`curl ${CURL_OPTIONS} --header "Accept:application/xml" --request "GET" --user "${jss_user}:${jss_pass}" "$jss_url/JSSResource/computers/udid/$computersUDID" | xpath "/computer[1]/general/id/text()" 2>/dev/null`
+##CURL needs indivudual expansion
+# shellcheck disable=SC2086
+computerIDLookup=$( curl ${CURL_OPTIONS} --header "Accept:application/xml" --request "GET" --user "${jss_user}:${jss_pass}" "$jss_url/JSSResource/computers/udid/$computersUDID" | xpath "/computer[1]/general/id/text()" 2>/dev/null )
 
 GROUPXML="<computer_group><computer_deletions>
 <computer>
@@ -70,13 +76,13 @@ fi
 # echo computerIDLookup is $computerIDLookup
 
 
-if [[ $( computerinGroup) != "" ]]; then
+if [[ "$( computerinGroup )" != "" ]]; then
 	#statements	
 	echo "Attempting to upload changes to group '$jssGroupname'"
 	curl -s -k -u "${jss_user}:${jss_pass}" "$jss_url/JSSResource/computergroups/id/$groupNameIDLookup" -X PUT -H "Content-type:application/xml" --data "$GROUPXML"
 
 
-	if [[ $( computerinGroup) == "" ]]; then
+	if [[ "$( computerinGroup )" == "" ]]; then
 		echo comptuer successfully removed to group
 		exit 0
 		
