@@ -134,13 +134,12 @@ runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 	
 	for i in "${blockPlists[@]}" ; do
 		# Run through the plists and check for app blocking requirements
-		name=$(fn_getPlistValue "name" "block_jss" "$i")
 		packageName=$(fn_getPlistValue "packageName" "block_jss" "$i")
 		apps=$(fn_getPlistValue "apps2block" "block_jss" "$i")
 		checks=$(fn_getPlistValue "checks" "block_jss" "$i"	)
 		runDate=$(fn_getPlistValue "runDate" "block_jss" "$i")
 
-		runDateFriendly=$( date -r$runDate )
+		# runDateFriendly=$( date -r$runDate )
 		timeSinceReboot=$((lastReboot-runDate))
 		
 		##########################################################################################
@@ -149,19 +148,15 @@ runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 		if [[ "$checks" == *"install"* ]] && [[ "$checks" != *"uninstall"* ]] ; then
 			action="install"
 			actioncap="Install"
-			actioning="installing"
 		elif [[ "$checks" == *"update"* ]] ; then
 			action="update"
 			actioncap="Update"
-			actioning="updating"
 		elif [[ "$checks" == *"uninstall"* ]] ; then
 			action="uninstall"
 			actioncap="Uninstall"
-			actioning="uninstalling"
 		else
 			action="install"
 			actioncap="Install"
-			actioning="installing"
 		fi
 	
 		##########################################################################################
@@ -205,6 +200,9 @@ runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 			# Process the apps in the plist and kill and notify
 			for app in "${apps[@]}" ; do
 				IFS=$'\n'
+				
+				## This is needed to get the parent proccess and prevent unwanted blocking
+				# shellcheck disable=SC2009
 				id=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v PleaseWaitUpdater.sh | grep -v PleaseWait | grep -v sed | grep -v jamf | grep -v cocoaDialog | awk '{ print $2 }' )
 	# 			echo Processing application $app
 					if  [[ $id != "" ]] ; then
@@ -213,10 +211,13 @@ runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 						################################
 						# Debugging applications kills #
 						################################
+						
+						## This is needed to get the parent proccess and prevent unwanted blocking
+						# shellcheck disable=SC2009
 						processData=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v PleaseWaitUpdater.sh | grep -v PleaseWait | grep -v sed | grep -v jamf | grep -v cocoaDialog  )
 						for process in $processData ; do
-							if [[ "$debug" = true ]] ; then	echo $(date)	$compname	:	-DEBUG-	 '*****' PROCESSS FOUND MATCHING CRITERIA '******' | /usr/bin/tee -a "$logfilepath" ; fi
-							if [[ "$debug" = true ]] ; then	echo $(date)	$compname	:	-DEBUG-	 "$process" | /usr/bin/tee -a "$logfilepath" ; fi
+							if [[ "$debug" = true ]] ; then	echo "$(date)"	"$compname"	:	-DEBUG-	 '*****' PROCESSS FOUND MATCHING CRITERIA '******' | /usr/bin/tee -a "$logfilepath" ; fi
+							if [[ "$debug" = true ]] ; then	echo "$(date)"	"$compname"	:	-DEBUG-	 "$process" | /usr/bin/tee -a "$logfilepath" ; fi
 						done
 						####################################
 						# Debugging applications kills END #
@@ -229,23 +230,23 @@ runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 							sleep 2
 						fi
 							
-						processstatus=$( ps -p $id )
+						processstatus=$( ps -p "$id" )
 						if [[ "$processstatus" == *"$app"* ]] ; then
 							log4_JSS "$app is still running. Killing process id $id."
-							kill $id
+							kill "$id"
 							sleep 1
 						fi
 
-						processstatus=$( ps -p $id )
+						processstatus=$( ps -p "$id" )
 						if [[ "$processstatus" == *"$app"* ]] ; then
 							#statements
 							log4_JSS "The process $id was still running for application $app. Force killing Application."
-							kill -9 $id
+							kill -9 "$id"
 						fi 
 #################
 # MESSAGE START #
 #################
-appName=$( echo $app | sed 's/.\{4\}$//' )
+appName="${app//.app/}"
 
 # Use cocoaDialog so that it appears in front 
 "$CocoaDialog" bubble \

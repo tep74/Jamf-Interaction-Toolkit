@@ -3196,6 +3196,8 @@ Current work may be lost if you do not save before proceeding."
 				fi
 				for app in "${apps2kill[@]}" ; do
 					IFS=$'\n'
+					## This is needed to get the parent proccess and prevent unwanted blocking
+					# shellcheck disable=SC2009
 					appid=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 					# Processing application $app
 						if  [[ $appid != "" ]] ; then
@@ -3652,6 +3654,9 @@ fi # no on logged in
 
 			for app in "${apps2kill[@]}" ; do
 				IFS=$'\n'
+				
+				## This is needed to get the parent proccess and prevent unwanted blocking
+				# shellcheck disable=SC2009
 				appid=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 				# Processing application $app
 					if  [[ $appid != "" ]] ; then
