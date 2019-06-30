@@ -27,19 +27,23 @@ function DecryptString() {
     echo "${1}" | /usr/bin/openssl enc -aes256 -d -a -A -S "$SALT" -k "$K"
 }
 
-jss_user=$(DecryptString "$jss_userEncrptyed")
-jss_pass=$(DecryptString "$jss_passEncrptyed")
+computerinGroup() {
+	curl ${CURL_OPTIONS} --header "Accept:application/xml" --request "GET" --user "${jss_user}:${jss_pass}" "$jss_url/JSSResource/computergroups/id/$groupNameIDLookup" | grep "<id>$computerIDLookup</id>" 
+}
+
+jss_user=$( DecryptString "$jss_userEncrptyed" )
+jss_pass=$( DecryptString "$jss_passEncrptyed" )
 
 
-computersUDID=$(system_profiler SPHardwareDataType | awk '/UUID/ { print $3; }')
+computersUDID=$( system_profiler SPHardwareDataType | awk '/UUID/ { print $3; }' )
 # computersUDID="CA984439-6E47-5D44-B52D-C855768AC39B"
 # echo computersUDID is $computersUDID
 
 CURL_OPTIONS="--location --insecure --silent --show-error --connect-timeout 30"
 
-groupNameIDLookup=`curl ${CURL_OPTIONS} --header "Accept: application/xml" --request "GET" --user $jss_user:$jss_pass "$jss_url/JSSResource/computergroups" | xmllint --format - | grep -B 1 '>'"$jssGroupname"'<' | /usr/bin/awk -F'<id>|</id>' '{print $2}' | sed '/^\s*$/d'`
+groupNameIDLookup=$( curl ${CURL_OPTIONS} --header "Accept: application/xml" --request "GET" --user "${jss_user}:${jss_pass}" "$jss_url/JSSResource/computergroups" | xmllint --format - | grep -B 1 ">$jssGroupname<" | /usr/bin/awk -F'<id>|</id>' '{print $2}' | sed '/^\s*$/d' )
 
-computerIDLookup=`curl ${CURL_OPTIONS} --header "Accept:application/xml" --request "GET" --user $jss_user:$jss_pass $jss_url/JSSResource/computers/udid/$computersUDID | xpath "/computer[1]/general/id/text()" 2>/dev/null`
+computerIDLookup=$( curl ${CURL_OPTIONS} --header "Accept:application/xml" --request "GET" --user "${jss_user}:${jss_pass}" $jss_url/JSSResource/computers/udid/$computersUDID | xpath "/computer[1]/general/id/text()" 2>/dev/null )
 
 GROUPXML="<computer_group><computer_additions>
 <computer>
@@ -65,20 +69,16 @@ fi
 # echo groupNameIDLookup is $groupNameIDLookup
 # echo computerIDLookup is $computerIDLookup
 
-computerinGroup=`curl ${CURL_OPTIONS} --header "Accept:application/xml" --request "GET" --user $jss_user:$jss_pass $jss_url/JSSResource/computergroups/id/$groupNameIDLookup | grep "<id>$computerIDLookup</id>"`
-
-if [[ "$computerinGroup" ]]; then
+if [[ $( computerinGroup) != "" ]]; then
 	echo "computer '$computerIDLookup' already in the group '$jssGroupname'"
 	exit 0
 else
 	echo "Attempting to upload changes to group '$jssGroupname'"
-	curl -s -k -u $jss_user:$jss_pass $jss_url/JSSResource/computergroups/id/$groupNameIDLookup -X PUT -H Content-type:application/xml --data "$GROUPXML"
+	curl -s -k -u "${jss_user}:${jss_pass}" "$jss_url/JSSResource/computergroups/id/$groupNameIDLookup" -X PUT -H "Content-type:application/xml" --data "$GROUPXML"
 fi
 
-computerinGroup=`curl ${CURL_OPTIONS} --header "Accept:application/xml" --request "GET" --user $jss_user:$jss_pass $jss_url/JSSResource/computergroups/id/$groupNameIDLookup | grep "<id>$computerIDLookup</id>"`
 
-
-if [ "$computerinGroup" ] ; then
+if [[ "$( computerinGroup) " != "" ]] ; then
 	echo "comptuer '$computerIDLookup' successfully added to group '$jssGroupname'"
 	exit 0
 else
