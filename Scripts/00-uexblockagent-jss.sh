@@ -3,8 +3,8 @@
 # used for major debugging
 # set -x
 
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
-loggedInUserHome=`dscl . read /Users/$loggedInUser NFSHomeDirectory | awk '{ print $2 }'`
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+loggedInUserHome=$( dscl . read "/Users/$loggedInUser" NFSHomeDirectory | awk '{ print $2 }' )
 
 ##########################################################################################
 ##						Get The Jamf Interaction Configuration 							##
@@ -20,8 +20,6 @@ UEXFolderPath="$(fn_read_uex_Preference "UEXFolderPath")"
 if [[ -z "$UEXFolderPath" ]] ; then
 	UEXFolderPath="/Library/Application Support/JAMF/UEX"
 fi
-
-title="$(fn_read_uex_Preference "title")"
 
 customLogo="$(fn_read_uex_Preference "customLogo")"
 
@@ -61,10 +59,8 @@ CocoaDialog="$UEXFolderPath/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog
 
 
 ##########################################################################################
-##							STATIC VARIABLES FOR JH DIALOGS								##
+##							STATIC VARIABLES FOR DIALOGS								##
 ##########################################################################################
-
-jhPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 
 #if the icon file doesn't exist then set to a standard icon
 if [[ -e "$SelfServiceIcon" ]]; then
@@ -83,7 +79,7 @@ fi
 # logname=$(echo $packageName | sed 's/.\{4\}$//')
 # logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
-compname=`scutil --get ComputerName`
+compname=$( scutil --get ComputerName )
 # resulttmp="$logname"_result.log
 ##########################################################################################
 
@@ -92,36 +88,29 @@ compname=`scutil --get ComputerName`
 ##########################################################################################
 
 fn_getPlistValue () {
-	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath"/$2/"$3"
+	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath/$2/$3"
 }
 
 logInUEX () {
-	echo $(date)	$compname	:	"$1" >> "$logfilepath"
+	echo "$(date)"	"$compname"	:	"$1" >> "$logfilepath"
 }
 
 logInUEX4DebugMode () {
-	if [ $debug = true ] ; then	
+	if [[ "$debug" = true ]] ; then	
 		logMessage="-DEBUG- $1"
-		logInUEX $logMessage
+		logInUEX "$logMessage"
 	fi
 }
 
 log4_JSS () {
-	echo $(date)	$compname	:	"$1"  | tee -a "$logfilepath"
+	echo "$(date)"	"$compname"	:	"$1"  | tee -a "$logfilepath"
 }
 
 ##################################
-# 		Reboot Detections		 #
+# 		Creating Arrays			 #
 ##################################	
 
-
-
-lastReboot=`date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s"`
-lastRebootFriendly=`date -r$lastReboot`
-
-rundate=`date +%s`
-
-blockPlists=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
+blockPlists=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 
 set -- "$blockPlists"
 ##This works because i'm setting the seperator
@@ -130,14 +119,20 @@ IFS=$'\n' ; declare -a blockPlists=($*)
 unset IFS
 
 ##################################
+# 		FOR PLIST CLEANUP		 #
+##################################	
+
+lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s" )
+
+##################################
 # 		PLIST PROCESSING		 #
 ##################################
 
-runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
+runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 	while [ "$runBlocking" ] ; do
 	 
-	runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
-	blockPlists=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
+	runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
+	blockPlists=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 	
 	set -- "$blockPlists"
 	##This works because i'm setting the seperator
@@ -146,21 +141,14 @@ runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 	unset IFS
 	
 	for i in "${blockPlists[@]}" ; do
-	# Run through the plists and check for app blocking requirements
-		# name=`/usr/libexec/PlistBuddy -c "print name" "$UEXFolderPath/block_jss/$i"`
-		# packageName=`/usr/libexec/PlistBuddy -c "print packageName" "$UEXFolderPath/block_jss/$i"`
-		# apps=`/usr/libexec/PlistBuddy -c "print apps2block" "$UEXFolderPath/block_jss/$i"`
-		# checks=`/usr/libexec/PlistBuddy -c "print checks" "$UEXFolderPath/block_jss/$i"`	
-		# runDate=`/usr/libexec/PlistBuddy -c "print runDate" "$UEXFolderPath/block_jss/$i"`
-
+		# Run through the plists and check for app blocking requirements
 		name=$(fn_getPlistValue "name" "block_jss" "$i")
 		packageName=$(fn_getPlistValue "packageName" "block_jss" "$i")
 		apps=$(fn_getPlistValue "apps2block" "block_jss" "$i")
 		checks=$(fn_getPlistValue "checks" "block_jss" "$i"	)
 		runDate=$(fn_getPlistValue "runDate" "block_jss" "$i")
 
-
-		runDateFriendly=`date -r$runDate`
+		runDateFriendly=$( date -r$runDate )
 		timeSinceReboot=$((lastReboot-runDate))
 		
 		##########################################################################################
@@ -224,7 +212,7 @@ runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 			# Process the apps in the plist and kill and notify
 			for app in "${apps[@]}" ; do
 				IFS=$'\n'
-				id=`ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v PleaseWaitUpdater.sh | grep -v PleaseWait | grep -v sed | grep -v jamf | grep -v cocoaDialog | awk {'print $2'}`
+				id=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v PleaseWaitUpdater.sh | grep -v PleaseWait | grep -v sed | grep -v jamf | grep -v cocoaDialog | awk {'print $2'} )
 	# 			echo Processing application $app
 					if  [[ $id != "" ]] ; then
 						# app was running so kill it then give the notification
@@ -232,10 +220,10 @@ runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 						################################
 						# Debugging applications kills #
 						################################
-						processData=`ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v PleaseWaitUpdater.sh | grep -v PleaseWait | grep -v sed | grep -v jamf | grep -v cocoaDialog `
+						processData=$( ps aux | grep "$app"/Contents/MacOS/ | grep -v grep | grep -v PleaseWaitUpdater.sh | grep -v PleaseWait | grep -v sed | grep -v jamf | grep -v cocoaDialog  )
 						for process in $processData ; do
-							if [ $debug = true ] ; then	echo $(date)	$compname	:	-DEBUG-	 '*****' PROCESSS FOUND MATCHING CRITERIA '******' | /usr/bin/tee -a "$logfilepath" ; fi
-							if [ $debug = true ] ; then	echo $(date)	$compname	:	-DEBUG-	 "$process" | /usr/bin/tee -a "$logfilepath" ; fi
+							if [[ "$debug" = true ]] ; then	echo $(date)	$compname	:	-DEBUG-	 '*****' PROCESSS FOUND MATCHING CRITERIA '******' | /usr/bin/tee -a "$logfilepath" ; fi
+							if [[ "$debug" = true ]] ; then	echo $(date)	$compname	:	-DEBUG-	 "$process" | /usr/bin/tee -a "$logfilepath" ; fi
 						done
 						####################################
 						# Debugging applications kills END #
@@ -248,14 +236,14 @@ runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 							sleep 2
 						fi
 							
-						processstatus=`ps -p $id`
+						processstatus=$( ps -p $id )
 						if [[ "$processstatus" == *"$app"* ]]; then
 							log4_JSS "$app is still running. Killing process id $id."
 							kill $id
 							sleep 1
 						fi
 
-						processstatus=`ps -p $id`
+						processstatus=$( ps -p $id )
 						if [[ "$processstatus" == *"$app"* ]]; then
 							#statements
 							log4_JSS "The process $id was still running for application $app. Force killing Application."
@@ -264,7 +252,7 @@ runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 #################
 # MESSAGE START #
 #################
-appName=`echo $app | sed 's/.\{4\}$//'`
+appName=$( echo $app | sed 's/.\{4\}$//' )
 
 # Use cocoaDialog so that it appears in front 
 "$CocoaDialog" bubble \

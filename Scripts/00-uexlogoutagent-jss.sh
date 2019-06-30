@@ -3,8 +3,8 @@
 # used for major debugging
 # set -x
 
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
-loggedInUserHome=`dscl . read /Users/$loggedInUser NFSHomeDirectory | awk '{ print $2 }'`
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+loggedInUserHome=$( dscl . read "/Users/$loggedInUser" NFSHomeDirectory | awk '{ print $2 }' )
 
 ##########################################################################################
 ##						Get The Jamf Interaction Configuration 							##
@@ -97,18 +97,18 @@ fn_getPlistValue () {
 }
 
 logInUEX () {
-	echo $(date)	$compname	:	"$1" >> "$logfilepath"
+	echo "$(date)"	"$compname"	:	"$1" >> "$logfilepath"
 }
 
 logInUEX4DebugMode () {
-	if [ $debug = true ] ; then	
+	if [[ "$debug" = true ]] ; then	
 		logMessage="-DEBUG- $1"
-		logInUEX $logMessage
+		logInUEX "$logMessage"
 	fi
 }
 
 log4_JSS () {
-	echo $(date)	$compname	:	"$1"  | tee -a "$logfilepath"
+	echo "$(date)"	"$compname"	:	"$1"  | tee -a "$logfilepath"
 }
 
 ##########################################################################################

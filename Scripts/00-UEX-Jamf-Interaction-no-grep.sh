@@ -2,10 +2,10 @@
 
 # used for major debugging
 # set -x
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+loggedInUserHome=$( dscl . read "/Users/$loggedInUser" NFSHomeDirectory | awk '{ print $2 }' )
 
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
 CONSOLE=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
-loggedInUserHome=`dscl . read /Users/$loggedInUser NFSHomeDirectory | awk '{ print $2 }'`
 
 ##########################################################################################
 ##								Jamf Interaction Configuration 							##
@@ -435,7 +435,7 @@ fn_waitForUserToLogout () {
 }
 
 fn_getPlistValue () {
-	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath"/$2/"$3"
+	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath/$2/$3"
 }
 
 fn_addPlistValue () {
@@ -511,7 +511,7 @@ done
 
 
 logInUEX () {
-	echo $(date)	$compname	:	"$1" >> "$logfilepath"
+	echo "$(date)"	"$compname"	:	"$1" >> "$logfilepath"
 }
 
 logInUEX4DebugMode () {
@@ -522,7 +522,7 @@ logInUEX4DebugMode () {
 }
 
 log4_JSS () {
-	echo $(date)	$compname	:	"$1"  | tee -a "$logfilepath"
+	echo "$(date)"	"$compname"	:	"$1"  | tee -a "$logfilepath"
 }
 
 fn_execute_log4_JSS () {

@@ -56,24 +56,24 @@ jamfBinary="/usr/local/jamf/bin/jamf"
 ##########################################################################################
 
 fn_getPlistValue () {
-	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath"/$2/"$3"
+	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath/$2/$3"
 }
 
 logInUEX () {
-	echo $(date)	$compname	:	"$1" >> "$logfilepath"
+	echo "$(date)"	"$compname"	:	"$1" >> "$logfilepath"
 }
 
 logInUEX4DebugMode () {
-	if [ $debug = true ] ; then	
+	if [[ "$debug" = true ]] ; then	
 		logMessage="-DEBUG- $1"
-		logInUEX $logMessage
+		logInUEX "$logMessage"
 	fi
 }
 
 log4_JSS () {
 	# only put in the log if it exist
 	if [[ "$logfilepath" ]] ; then
-		echo $(date)	$compname	:	"$1"  | tee -a "$logfilepath"
+		echo "$(date)"	"$compname"	:	"$1"  | tee -a "$logfilepath"
 	else
 		echo $(date)	$compname	:	"$1"
 	fi
