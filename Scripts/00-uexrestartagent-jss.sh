@@ -133,6 +133,8 @@ rundate=`date +%s`
 plists=`ls "$UEXFolderPath"/restart_jss/ | grep ".plist"`
 
 set -- "$plists" 
+##This works because i'm setting the seperator
+# shellcheck disable=SC2048
 IFS=$'\n' ; declare -a plists=($*)  
 unset IFS
 

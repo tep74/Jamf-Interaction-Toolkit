@@ -124,6 +124,8 @@ rundate=`date +%s`
 blockPlists=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 
 set -- "$blockPlists"
+##This works because i'm setting the seperator
+# shellcheck disable=SC2048
 IFS=$'\n' ; declare -a blockPlists=($*)  
 unset IFS
 
@@ -138,6 +140,8 @@ runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 	blockPlists=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 	
 	set -- "$blockPlists"
+	##This works because i'm setting the seperator
+	# shellcheck disable=SC2048
 	IFS=$'\n' ; declare -a blockPlists=($*)  
 	unset IFS
 	
@@ -205,7 +209,9 @@ runBlocking=`ls "$UEXFolderPath"/block_jss/ | grep ".plist"`
 		resultlogfilepath="$logdir""$resulttmp"
 	
 		# Create array of apps to run through checks
-		set -- "$apps" 
+		set -- "$apps"
+		##This works because i'm setting the seperator
+		# shellcheck disable=SC2048
 		IFS=";"; declare -a apps=($*)  
 		unset IFS
 

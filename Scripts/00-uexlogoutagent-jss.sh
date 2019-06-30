@@ -127,11 +127,15 @@ rundate=`date +%s`
 
 resartPlists=`ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist"`
 set -- "$resartPlists"
+##This works because i'm setting the seperator
+# shellcheck disable=SC2048
 IFS=$'\n' ; declare -a resartPlists=($*)  
 unset IFS
 
 logoutPlists=`ls /Library/Application\ Support/JAMF/UEX/logout_jss/ | grep ".plist"`
 set -- "$logoutPlists" 
+##This works because i'm setting the seperator
+# shellcheck disable=SC2048
 IFS=$'\n' ; declare -a logoutPlists=($*)  
 unset IFS
 

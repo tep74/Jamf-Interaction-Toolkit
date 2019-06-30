@@ -40,10 +40,10 @@ fi
 ########################################################################################## 
 
 
-PleaseWaitApp="$UEXFolderPath/resources/PleaseWait.app"
+# PleaseWaitApp="$UEXFolderPath/resources/PleaseWait.app"
 pleasewaitPhase="/private/tmp/com.pleasewait.phase"
 pleasewaitProgress="/private/tmp/com.pleasewait.progress"
-pleasewaitInstallProgress="/private/tmp/com.pleasewait.installprogress"
+# pleasewaitInstallProgress="/private/tmp/com.pleasewait.installprogress"
 
 ##########################################################################################
 # 									Functions											 #
@@ -61,12 +61,14 @@ fn_getPlistValue () {
 sleep 10
 
 # while PleaseWait.app is running 
-while [ ! -z $( pgrep PleaseWait ) ] ; do 
+while [ ! -z "$( pgrep PleaseWait )" ] ; do 
 
 # Get a list of plist from the UEX folder
-plists=`find "/Library/Application Support/JAMF/UEX" -name '*.plist' | grep -v resources`
+plists=$( find "/Library/Application Support/JAMF/UEX" -name '*.plist' | grep -v resources )
 set -- "$plists" 
-IFS=$'\n'; declare -a plists=($*)  
+##This works because i'm setting the seperator
+# shellcheck disable=SC2048
+IFS=$'\n'; declare -a plists=($*)
 unset IFS
 
 installjss="$UEXFolderPath/install_jss/"
@@ -76,8 +78,6 @@ installjss="$UEXFolderPath/install_jss/"
 		
 		# if there is a place holder for an install in progress
 		if [[ "$plist" == *"UEX/install"* ]] ;then		
-			# name=`/usr/libexec/PlistBuddy -c "print name" "$plist"`
-			# checks=`/usr/libexec/PlistBuddy -c "print checks" "$plist"`
 
 			name=$(fn_getPlistValue "name" "$plist")
 			checks=$(fn_getPlistValue "checks" "$plist")
@@ -114,11 +114,12 @@ installjss="$UEXFolderPath/install_jss/"
 	
 		# if the plist is a block plist then notify the user that the apps can't be opened 
 		if [[ "$plist" == *"UEX/block"* ]] ;then
-			# apps=`/usr/libexec/PlistBuddy -c "print apps2block" "$plist"`
 			apps=$(fn_getPlistValue "apps2block" "$plist")
 
 			# Create array of apps to run through checks
 			set -- "$apps" 
+			##This works because i'm setting the seperator
+			# shellcheck disable=SC2048
 			IFS=";"; declare -a apps=($*)  
 			unset IFS
 			# Cycle through list of prohibited apps from the block plist config file

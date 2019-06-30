@@ -24,7 +24,9 @@ jamfBinary="/usr/local/jamf/bin/jamf"
 triggers="$4"
 
 IFS=";"
-set -- "$triggers" 
+set -- "$triggers"
+##This works because i'm setting the seperator
+# shellcheck disable=SC2048
 declare -a triggers=($*)
 unset IFS
 

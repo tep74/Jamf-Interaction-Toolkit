@@ -717,11 +717,15 @@ fn_check4PendingRestartsOrLogout () {
 
 	resartPlists=`ls "$UEXFolderPath"/restart_jss/ | grep ".plist"`
 	set -- "$resartPlists"
+	##This works because i'm setting the seperator
+	# shellcheck disable=SC2048
 	IFS=$'\n' ; declare -a resartPlists=($*)  
 	unset IFS
 
 	logoutPlists=`ls "$UEXFolderPath"/logout_jss/ | grep ".plist"`
 	set -- "$logoutPlists" 
+	##This works because i'm setting the seperator
+	# shellcheck disable=SC2048
 	IFS=$'\n' ; declare -a logoutPlists=($*)  
 	unset IFS
 
@@ -884,9 +888,13 @@ fi
 
 IFS=";"
 set -- "$NameConsolidated" 
+##This works because i'm setting the seperator
+# shellcheck disable=SC2048
 declare -a NameConsolidated=($*)
 
 set -- "$triggers" 
+##This works because i'm setting the seperator
+# shellcheck disable=SC2048
 declare -a triggers=($*)
 UEXpolicyTrigger=$(echo "${triggers[0]}" | tr '[:upper:]' '[:lower:]')
 UEXcachingTrigger="$UEXpolicyTrigger""_cache"
@@ -918,6 +926,8 @@ spaceRequired=${NameConsolidated[3]}
 if [[ $spaceRequired ]] || [[ "$maxdeferConsolidated" == *";"* ]] ; then
 	IFS=";"
 	set -- "$maxdeferConsolidated" 
+	##This works because i'm setting the seperator
+	# shellcheck disable=SC2048
 	declare -a maxdeferConsolidated=($*)
 	maxdefer=${maxdeferConsolidated[0]}
 	diskCheckDelaylimit=${maxdeferConsolidated[1]}
@@ -1500,6 +1510,8 @@ No updates available."
 		updatesfiltered=`cat $appleSUSlog | grep "*" -A 1 | grep -v "*" | awk -F ',' '{print $1}' | awk -F '\t' '{print $2}' | sed '/^\s*$/d'`
 
 		set -- "$updatesfiltered" 
+		##This works because i'm setting the seperator
+		# shellcheck disable=SC2048
 		IFS="--"; declare -a updatesfiltered=($*)  
 		unset IFS
 
@@ -1522,10 +1534,14 @@ packages4plist="$packages"
 # oldIFS=IFS
 IFS=";"
 
-set -- "$apps" 
+set -- "$apps"
+##This works because i'm setting the seperator
+# shellcheck disable=SC2048
 declare -a apps=($*)
 
-set -- "$packages" 
+set -- "$packages"
+##This works because i'm setting the seperator
+# shellcheck disable=SC2048
 declare -a packages=($*)
 
 unset IFS
