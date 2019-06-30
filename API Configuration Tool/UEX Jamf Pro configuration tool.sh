@@ -95,7 +95,7 @@ FNput_postXML ()
 
 	if [ "$pid" ] ; then
 		echo "updating $1: ($pid) \"$2\"" 
-		FNputXML "$1" $pid "$3"
+		FNputXML "$1" "$pid" "$3"
 		echo ""
 	else
 		echo "creating $1: \"$2\""
@@ -114,7 +114,7 @@ FNput_postXMLFile ()
 
 	if [ "$pid" ] ; then
 		echo "updating $1: ($pid) \"$2\"" 
-		FNputXMLFile "$1" $pid "$3"
+		FNputXMLFile "$1" "$pid" "$3"
 		echo ""
 	else
 		echo "creating $1: \"$2\""
@@ -233,7 +233,7 @@ fn_createAPIPolicy () {
 	local scriptID="$retreivedID"
 
 	FNgetID "policies" "$APIPolicyName"
-	if [ $retreivedID ] ; then
+	if [ "$retreivedID" ] ; then
 		FNgetXML "policies" "$retreivedID"
 
 		parameter6=$( echo "$retreivedXML" | xmllint --xpath "/policy/scripts/script/parameter6/text()" - )
@@ -272,7 +272,7 @@ FNput_postXML "policies" "$APIPolicyName" "$APIPolicyXML"
 }
 
 fn_checkForSMTPServer () {
-	echo $( /usr/bin/curl -s -k "${jss_url}/JSSResource/smtpserver" -u "${jss_user}:${jss_pass}" -H "Accept: application/xml" | xmllint --format - | grep -c "<enabled>true</enabled>" )
+	/usr/bin/curl -s -k "${jss_url}/JSSResource/smtpserver" -u "${jss_user}:${jss_pass}" -H "Accept: application/xml" | xmllint --format - | grep -c "<enabled>true</enabled>"
 }
 
 fn_createTriggerPolicy () {
