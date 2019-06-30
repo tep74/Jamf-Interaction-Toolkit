@@ -4,7 +4,6 @@
 # set -x
 
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
-loggedInUserHome=$( dscl . read "/Users/$loggedInUser" NFSHomeDirectory | awk '{ print $2 }' )
 
 ##########################################################################################
 ##						Manual Jamf Interaction Configuration 							##
@@ -75,7 +74,7 @@ CocoaDialog="$UEXFolderPath/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog
 jhPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 
 #if the icon file doesn't exist then set to a standard icon
-if [[ -e "$SelfServiceIcon" ]]; then
+if [[ -e "$SelfServiceIcon" ]] ; then
 	icon="$SelfServiceIcon"
 elif [ -e "$customLogo" ] ; then
 	icon="$customLogo"
@@ -130,13 +129,17 @@ lastRebootFriendly=$( date -r$lastReboot )
 
 rundate=$( date +%s )
 
-plists=$( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" )
-
-set -- "$plists" 
-##This works because i'm setting the seperator
-# shellcheck disable=SC2048
-IFS=$'\n' ; declare -a plists=($*)  
+IFS=$'\n'
+plists=( $( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" ) )
 unset IFS
+
+# plists=$( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" )
+
+# set -- "$plists" 
+# ##This works because i'm setting the seperator
+# # shellcheck disable=SC2048
+# IFS=$'\n' ; declare -a plists=($*)  
+# unset IFS
 
 for i in "${plists[@]}" ; do
 	# Check all the plist in the folder for any required actions
@@ -196,12 +199,12 @@ osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. {'print $2'} )
 
 sleep 15
 otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent )
-otherJamfprocess+=$( ps aux | grep [Ss]plashBuddy )
+otherJamfprocess+=$( pgrep SplashBuddy )
 if [[ "$restart" == "true" ]] ; then
 	while [[ $otherJamfprocess != "" ]] ; do 
 		sleep 15
 		otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent )
-		otherJamfprocess+=$( ps aux | grep [Ss]plashBuddy )
+		otherJamfprocess+=$( pgrep SplashBuddy )
 	done
 fi
 
@@ -220,7 +223,7 @@ if [[ $otherJamfprocess == "" ]] ; then
 		for user2Check in "${fvUsers[@]}"; do
 			# Check if the logged in user can unlock the disk by lopping through the user that are abel to unlock it
 
-			if [[ "$loggedInUser" == "$user2Check" ]]; then
+			if [[ "$loggedInUser" == "$user2Check" ]] ; then
 				# set the unlock disk variable so that the user can be proompted if they want to do an authenticated restart
 				userCanUnLockDisk=true
 				break
@@ -239,7 +242,7 @@ Note: Automatic unlock does not always occur.'
 		#notice
 		fvUnlockButton=$( "$jhPath" -windowType hud -lockHUD -heading "$fvUnlockHeading" -windowPostion lr -title "$title" -description "$fvUnlockNotice" -icon "$icon" -timeout 300 -countdown -alignCountdown center -button1 "No" -button2 "Yes"  )
 		
-			if [[ "$fvUnlockButton" = 2 ]]; then
+			if [[ "$fvUnlockButton" = 2 ]] ; then
 				log4_JSS "User chose to restart with an authenticatedRestart"
 				authenticatedRestart=true
 				passwordLooper=0
@@ -248,7 +251,7 @@ Note: Automatic unlock does not always occur.'
 					userPassword=""
 					userPassword="$(fn_getPassword)"
 
-				if [[ "$userPassword" ]]; then
+				if [[ "$userPassword" ]] ; then
 					#statements
 					authenticatedRestart=true
 					expect -c "
@@ -271,7 +274,7 @@ Note: Automatic unlock does not always occur.'
 		
 				#notice
 				fvUnlockErrorButton=$( "$jhPath" -windowType hud -lockHUD -heading "$fvUnlockHeading" -windowPostion lr -title "$title" -description "$fvUnlockErrorNotice" -icon "$icon" -timeout 300 -countdown -alignCountdown center -button1 "Cancel" -button2 "Try Again"  )
-				if [[ "$fvUnlockErrorButton" = 2 ]]; then
+				if [[ "$fvUnlockErrorButton" = 2 ]] ; then
 					#statements
 					passwordLooper=0
 				else
@@ -301,7 +304,7 @@ Your computer will be automatically restarted at the end of the countdown.'
 			if [[ "$authenticatedRestart" = true ]] ;then
 				log4_JSS "ENTRY 2: User chose to restart with an authenticatedRestart"
 
-			elif [[ "$osMajor" -ge 14 ]]; then
+			elif [[ "$osMajor" -ge 14 ]] ; then
 				#statements
 				shutdown -r now
 			else

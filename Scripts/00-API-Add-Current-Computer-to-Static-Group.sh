@@ -60,13 +60,13 @@ GROUPXML="<computer_group><computer_additions>
 
 # echo $GROUPXML
 
-if [[ -z "$groupNameIDLookup" ]]; then
+if [[ -z "$groupNameIDLookup" ]] ; then
 	#statements
 	echo "groupNameIDLookup came back blank the group $jssGroupname may not exist"
 	exit 1
 fi
 
-if [[ -z "$computerIDLookup" ]]; then
+if [[ -z "$computerIDLookup" ]] ; then
 	#statements
 	echo "computerIDLookup came back blank the computer $computersUDID may not exist"
 	exit 1
@@ -75,7 +75,7 @@ fi
 # echo groupNameIDLookup is $groupNameIDLookup
 # echo computerIDLookup is $computerIDLookup
 
-if [[ $( computerinGroup) != "" ]]; then
+if [[ $( computerinGroup) != "" ]] ; then
 	echo "computer '$computerIDLookup' already in the group '$jssGroupname'"
 	exit 0
 else

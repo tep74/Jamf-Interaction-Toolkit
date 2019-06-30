@@ -4,7 +4,6 @@
 # set -x
 
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
-loggedInUserHome=$( dscl . read "/Users/$loggedInUser" NFSHomeDirectory | awk '{ print $2 }' )
 
 ##########################################################################################
 ##						Get The Jamf Interaction Configuration 							##
@@ -67,7 +66,7 @@ CocoaDialog="$UEXFolderPath/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog
 jhPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 
 #if the icon file doesn't exist then set to a standard icon
-if [[ -e "$SelfServiceIcon" ]]; then
+if [[ -e "$SelfServiceIcon" ]] ; then
 	icon="$SelfServiceIcon"
 elif [ -e "$customLogo" ] ; then
 	icon="$customLogo"
@@ -125,19 +124,25 @@ lastRebootFriendly=$( date -r$lastReboot )
 
 rundate=$( date +%s )
 
-resartPlists=$( ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist" )
-set -- "$resartPlists"
-##This works because i'm setting the seperator
-# shellcheck disable=SC2048
-IFS=$'\n' ; declare -a resartPlists=($*)  
+IFS=$'\n' 
+resartPlists=( $( ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist" ) )
+
+# resartPlists=$( ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist" )
+# set -- "$resartPlists"
+# ##This works because i'm setting the seperator
+# # shellcheck disable=SC2048
+# IFS=$'\n' ; declare -a resartPlists=($*)  
+# unset IFS
+
+logoutPlists=( $( ls /Library/Application\ Support/JAMF/UEX/logout_jss/ | grep ".plist" ) )
 unset IFS
 
-logoutPlists=$( ls /Library/Application\ Support/JAMF/UEX/logout_jss/ | grep ".plist" )
-set -- "$logoutPlists" 
-##This works because i'm setting the seperator
-# shellcheck disable=SC2048
-IFS=$'\n' ; declare -a logoutPlists=($*)  
-unset IFS
+# logoutPlists=$( ls /Library/Application\ Support/JAMF/UEX/logout_jss/ | grep ".plist" )
+# set -- "$logoutPlists" 
+# ##This works because i'm setting the seperator
+# # shellcheck disable=SC2048
+# IFS=$'\n' ; declare -a logoutPlists=($*)  
+# unset IFS
 
 ##########################################################################################
 ##					Notification if there are scheduled restarts						##
@@ -285,7 +290,7 @@ if [ $loggedInUser ] ; then
         logoutclickbutton=$( "$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Logout Now" )
      
        
-        if [[ "$osMajor" -ge 14 ]]; then
+        if [[ "$osMajor" -ge 14 ]] ; then
 	        # Force logout by killing the login window for that user
 	        messylogout`ps -Ajc | grep loginwindow | grep "$loggedInUser" | grep -v grep | awk '{print $2}' | xargs kill`
 		else

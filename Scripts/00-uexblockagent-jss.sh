@@ -4,7 +4,6 @@
 # set -x
 
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
-loggedInUserHome=$( dscl . read "/Users/$loggedInUser" NFSHomeDirectory | awk '{ print $2 }' )
 
 ##########################################################################################
 ##						Get The Jamf Interaction Configuration 							##
@@ -63,7 +62,7 @@ CocoaDialog="$UEXFolderPath/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog
 ##########################################################################################
 
 #if the icon file doesn't exist then set to a standard icon
-if [[ -e "$SelfServiceIcon" ]]; then
+if [[ -e "$SelfServiceIcon" ]] ; then
 	icon="$SelfServiceIcon"
 elif [ -e "$customLogo" ] ; then
 	icon="$customLogo"
@@ -110,12 +109,8 @@ log4_JSS () {
 # 		Creating Arrays			 #
 ##################################	
 
-blockPlists=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
-
-set -- "$blockPlists"
-##This works because i'm setting the seperator
-# shellcheck disable=SC2048
-IFS=$'\n' ; declare -a blockPlists=($*)  
+IFS=$'\n'
+blockPlists=($( ls "$UEXFolderPath"/block_jss/ | grep ".plist" ))
 unset IFS
 
 ##################################
@@ -130,14 +125,11 @@ lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}
 
 runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 	while [ "$runBlocking" ] ; do
-	 
-	runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
-	blockPlists=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 	
-	set -- "$blockPlists"
-	##This works because i'm setting the seperator
-	# shellcheck disable=SC2048
-	IFS=$'\n' ; declare -a blockPlists=($*)  
+	runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
+	
+	IFS=$'\n'
+	blockPlists=($( ls "$UEXFolderPath"/block_jss/ | grep ".plist" ))
 	unset IFS
 	
 	for i in "${blockPlists[@]}" ; do
@@ -198,9 +190,10 @@ runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 	
 		# Create array of apps to run through checks
 		set -- "$apps"
+		IFS=";"
 		##This works because i'm setting the seperator
 		# shellcheck disable=SC2048
-		IFS=";"; declare -a apps=($*)  
+		declare -a apps=($*)  
 		unset IFS
 
 		if [[ timeSinceReboot -gt 0 ]] ; then
@@ -237,14 +230,14 @@ runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 						fi
 							
 						processstatus=$( ps -p $id )
-						if [[ "$processstatus" == *"$app"* ]]; then
+						if [[ "$processstatus" == *"$app"* ]] ; then
 							log4_JSS "$app is still running. Killing process id $id."
 							kill $id
 							sleep 1
 						fi
 
 						processstatus=$( ps -p $id )
-						if [[ "$processstatus" == *"$app"* ]]; then
+						if [[ "$processstatus" == *"$app"* ]] ; then
 							#statements
 							log4_JSS "The process $id was still running for application $app. Force killing Application."
 							kill -9 $id

@@ -60,13 +60,13 @@ GROUPXML="<computer_group><computer_deletions>
 
 # echo $GROUPXML
 
-if [[ -z "$groupNameIDLookup" ]]; then
+if [[ -z "$groupNameIDLookup" ]] ; then
 	#statements
 	echo "groupNameIDLookup came back blank the group '$jssGroupname' may not exist"
 	exit 1
 fi
 
-if [[ -z "$computerIDLookup" ]]; then
+if [[ -z "$computerIDLookup" ]] ; then
 	#statements
 	echo "computerIDLookup came back blank the computer '$computersUDID' may not exist"
 	exit 1
@@ -76,13 +76,13 @@ fi
 # echo computerIDLookup is $computerIDLookup
 
 
-if [[ "$( computerinGroup )" != "" ]]; then
+if [[ "$( computerinGroup )" != "" ]] ; then
 	#statements	
 	echo "Attempting to upload changes to group '$jssGroupname'"
 	curl -s -k -u "${jss_user}:${jss_pass}" "$jss_url/JSSResource/computergroups/id/$groupNameIDLookup" -X PUT -H "Content-type:application/xml" --data "$GROUPXML"
 
 
-	if [[ "$( computerinGroup )" == "" ]]; then
+	if [[ "$( computerinGroup )" == "" ]] ; then
 		echo comptuer successfully removed to group
 		exit 0
 		

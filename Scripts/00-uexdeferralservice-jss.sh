@@ -171,7 +171,7 @@ unset IFS
 
 # if the defer folder is now empty then you should do an inventory update to stop deferral service from running
 deferfolderContents=$( ls "$UEXFolderPath/defer_jss/" | grep plist )
-if [[ -z "$deferfolderContents" ]]; then
+if [[ -z "$deferfolderContents" ]] ; then
 	log4_JSS "No more deferrals."
 	InventoryUpdateRequired=true
 fi

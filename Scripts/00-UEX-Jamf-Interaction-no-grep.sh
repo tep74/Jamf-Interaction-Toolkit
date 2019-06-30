@@ -317,7 +317,7 @@ currentConsoleUserName=$( getCurrentConsoleUser )
 function DetermineLoginState() {
 	# The following line is courtesy of @macmule - https://macmule.com/2014/11/19/how-to-get-the-currently-logged-in-user-in-a-more-apple-approved-way/
 	currentConsoleUserName=$( getCurrentConsoleUser )
-	if [[ "$currentConsoleUserName" == "" ]]; then
+	if [[ "$currentConsoleUserName" == "" ]] ; then
     	log4_JSS "No user logged in"
 		CMD_PREFIX=""
 	else
@@ -379,7 +379,7 @@ displayCocoaDialogProgress () {
     local sDialogTitle="${1}"
     local sDialogMessage="${2}"
     
-	if [[ ${bCocoaDialog_DisplayIsInitialized} -eq 0 ]]; then
+	if [[ ${bCocoaDialog_DisplayIsInitialized} -eq 0 ]] ; then
 		_initCocoaDialogProgress "${sDialogTitle}" "${sDialogMessage}"
 	fi
    	
@@ -392,7 +392,7 @@ displayCocoaDialogProgress () {
 updateCocoaDialogProgress () {
 	# parameter message
 	CocoaDialogProgressCounter=$(( CocoaDialogProgressCounter + 1 ))
-	if [[ $CocoaDialogProgressCounter -ge 100 ]]; then
+	if [[ $CocoaDialogProgressCounter -ge 100 ]] ; then
 		CocoaDialogProgressCounter=0
 	fi
 	
@@ -403,7 +403,7 @@ updateCocoaDialogProgress () {
 }
 
 cleanupCocoaDialogProgress () {
-	if [[ ${bCocoaDialog_DisplayIsInitialized} -ne 0 ]]; then
+	if [[ ${bCocoaDialog_DisplayIsInitialized} -ne 0 ]] ; then
 		# turn off the progress bar by closing file descriptor 3
 		exec 3>&-
 		
@@ -471,7 +471,7 @@ for package in "${packages[@]}"; do
 		for app in "${apps[@]}"; do
 			#statements
 			logInUEX4DebugMode "Check $package for app $app"
-			if [[ "$packageContents" == *"$app"* ]]; then
+			if [[ "$packageContents" == *"$app"* ]] ; then
 				#statements 
 
 				loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
@@ -495,7 +495,7 @@ for package in "${packages[@]}"; do
 						fi
 					fi
 				done
-				if [[ "$foundappinalthpath" ]] || [[ "$userappfound" ]] || [[ "$appfound" ]]; then
+				if [[ "$foundappinalthpath" ]] || [[ "$userappfound" ]] || [[ "$appfound" ]] ; then
 					#statements
 				log4_JSS "$package contains $app and app is already found. Classifying as an update"
 				checks+=" update"
@@ -558,7 +558,7 @@ fn_check4Packages () {
 			fi
 		done
 
-		if [[ $packageMissing != true ]]; then
+		if [[ $packageMissing != true ]] ; then
 			packageMissing=false
 		fi
 	fi
@@ -578,13 +578,13 @@ fn_generatateApps2quit () {
 				appFound=""
 				userAppFound=""
 				# Find the apss in /Applications/ and ~/Applications/ and open as the user
-				if [[ "$checks" != *"uninstall"* ]]; then
+				if [[ "$checks" != *"uninstall"* ]] ; then
 					appFound=$( /usr/bin/find "/Applications" -maxdepth 3 -iname "$app" )
 					userAppFound=$( /usr/bin/find "$loggedInUserHome/Applications" -maxdepth 3 -iname "$app" 2> /dev/null )
 				fi
 				
 				
-				if [[ "$appFound" ]] || [[ "$userAppFound" ]]; then
+				if [[ "$appFound" ]] || [[ "$userAppFound" ]] ; then
 					apps2ReOpen+=(${app})
 					apps2kill+=(${app})
 				else
@@ -685,7 +685,7 @@ fi
 fn_check4ActiveScreenSharingInMicrosoftTeams () {
 
 msTeamsLogLocation=$( lsof -p $(ps -A | grep -m1 'Microsoft Teams' | awk '{print $1}') | grep -m1 "logs.txt" | tail -n 1 | awk '{ print $9 " " $NF }' )
-if [[ -e "$msTeamsLogLocation" ]]; then
+if [[ -e "$msTeamsLogLocation" ]] ; then
 	msTeamsScreensharing=$( cat "$msTeamsLogLocation" | grep SharingIndicator | tail -n 1 )
 	if [[ "$msTeamsScreensharing" ]] && [[ "$msTeamsScreensharing" != *"disposing"* ]] ; then
 		log4_JSS "User is sharing their screen on Microsoft Teams."
@@ -698,7 +698,7 @@ fi
 fn_check4ScreenSharingSessionInZoomUS () {
 
 zoomUSLogLocation=$( lsof -p $(ps -A | grep -m1 'zoom.us' | awk '{print $1}') | grep -m1 "as.log" | tail -n 1 | awk '{ print $NF }' )
-if [[ -e "$zoomUSLogLocation" ]]; then
+if [[ -e "$zoomUSLogLocation" ]] ; then
 	zoomUSScreensharing=$( cat "$zoomUSLogLocation" )
 	# using if it's not empty because the file might be there but it will be empty 
 	if [[ ! -z "$zoomUSScreensharing" ]] ; then
@@ -1029,7 +1029,7 @@ if [[ $DEPNotifyRunning ]] ; then
 	silentPackage=true
 fi
 
-if [[ "$loggedInUser" == "_mbsetupuser" ]] && [[ ! -f "$AppleSetupDoneFile" ]]; then
+if [[ "$loggedInUser" == "_mbsetupuser" ]] && [[ ! -f "$AppleSetupDoneFile" ]] ; then
 	silentPackage=true
 	log4_JSS "First time setup running. Allowing all installations to run silently."
 fi
@@ -1096,7 +1096,7 @@ fn_downloadMSupdatePackages () {
 		if [[ ! -f "$MSupdateDownloadDestination" ]] ; then
 
 			# delete the temp file just in case
-			if [[ -e "$tmpMSupdateDownloadDestination" ]]; then rm "$tmpMSupdateDownloadDestination" ; fi
+			if [[ -e "$tmpMSupdateDownloadDestination" ]] ; then rm "$tmpMSupdateDownloadDestination" ; fi
 			
 			# download to temp directory first
 			curl -o "$tmpMSupdateDownloadDestination" --silent --remote-name --location "$msUpdatePackage"
@@ -1203,7 +1203,7 @@ No updates available."
 		# try to run now for all apps it queues them anyway
 		if [[ "$msupdatesUpdatesList" == *"Updates available:"* ]] ; then
 				msupdateUpdatesAvail=true
-				if [[ "$selfservicePackage" != true ]]; then
+				if [[ "$selfservicePackage" != true ]] ; then
 					sudo -u "$currentConsoleUserName" "$msupdateBinary" -i &
 				fi
 		fi
@@ -1556,22 +1556,22 @@ unset IFS
 ##########################################################################################
 
 # only check for the self service icon image if the use is using a custom one
-if [[ "$SelfServiceIcon" != *"com.jamfsoftware.selfservice.mac/Documents/Images/brandingimage.png"* ]]; then
+if [[ "$SelfServiceIcon" != *"com.jamfsoftware.selfservice.mac/Documents/Images/brandingimage.png"* ]] ; then
 	SelfServiceIconCheck="$SelfServiceIcon"
 fi
 
 # only check for the self service icon image if the use is using a custom one
-if [[ "$customLogo" != *"Jamf.app/Contents/Resources/AppIcon.icns"* ]]; then
+if [[ "$customLogo" != *"Jamf.app/Contents/Resources/AppIcon.icns"* ]] ; then
 	customLogoCheck="$customLogo"
 fi
 
 # only check for the disk icon image if the use is using a custom one
-if [[ "$diskicon" != *"/System/Library/Extensions/IOStorageFamily.kext/Contents/Resources/Internal.icns"* ]]; then
+if [[ "$diskicon" != *"/System/Library/Extensions/IOStorageFamily.kext/Contents/Resources/Internal.icns"* ]] ; then
 	diskiconCheck="$diskicon"
 fi
 
 # only check for the disk icon image if the use is using a custom one
-if [[ "$helpTicketsEnabledViaAppRestriction" = true ]]; then
+if [[ "$helpTicketsEnabledViaAppRestriction" = true ]] ; then
 	restrictedAppNameCheck="$restrictedAppName"
 fi
 
@@ -1588,7 +1588,7 @@ resources=(
 for i in "${resources[@]}"; do
 	resourceName="$(echo "$i" | sed 's@.*/@@')"
 	pathToResource=$( dirname "$i" )
-   if [[ ! -e "$i" ]] && [[ "$i" ]]; then
+   if [[ ! -e "$i" ]] && [[ "$i" ]] ; then
       # does not exist...
       missingResources=true
    fi
@@ -1600,7 +1600,7 @@ fi
 
 
 #if the icon file doesn't exist then set to a standard icon
-if [[ -e "$SelfServiceIcon" ]]; then
+if [[ -e "$SelfServiceIcon" ]] ; then
 	icon="$SelfServiceIcon"
 elif [[ -e "$customLogo" ]] ; then
 	icon="$customLogo"
@@ -1609,7 +1609,7 @@ else
 fi
 
 #in case the disk icon cannot be found then set the the default
-if [[ -e "$diskicon" ]]; then
+if [[ -e "$diskicon" ]] ; then
 	diskicon="/System/Library/Extensions/IOStorageFamily.kext/Contents/Resources/Internal.icns"
 fi
 
@@ -1723,7 +1723,7 @@ logInUEX "******* START UEX Detail ******"
 logInUEX "User Experience Version: $uexvers"
 logInUEX "AppVendor=$AppVendor"
 logInUEX "AppName=$AppName"
-if [[ $spacerequired ]]; then
+if [[ $spacerequired ]] ; then
 	logInUEX "spaceRequired=$spaceRequired"
 fi
 logInUEX "checks=$checks"
@@ -1833,7 +1833,7 @@ fi
 ##########################################################################################
 for app in "${apps[@]}" ; do
 
-	if [[ "$checks" == *"quit"* ]] && [[ "$app" != *".app" ]]; then
+	if [[ "$checks" == *"quit"* ]] && [[ "$app" != *".app" ]] ; then
 		"$CocoaDialog" ok-msgbox --icon caution --float --no-cancel --title "$title" --text "Error" \
 		--informative-text "Error: The variable, ${app}, in 'apps' is not set correctly. 
 	
@@ -1842,7 +1842,7 @@ for app in "${apps[@]}" ; do
 		logInUEX "ERROR: The variable, ${app}, in 'apps' is not set correctly."
 	fi
 	##########################################################################################
-	if [[ "$checks" == *"block"* ]] && [[ "$app" != *".app" ]]; then
+	if [[ "$checks" == *"block"* ]] && [[ "$app" != *".app" ]] ; then
 		"$CocoaDialog" ok-msgbox --icon caution --float --no-cancel --title "$title" --text "Error" \
 		--informative-text "Error: The variable, ${app}, in 'apps' is not set correctly. 
 	
@@ -2150,7 +2150,7 @@ fi
 for app2quit in "${apps2quit[@]}" ; do
 	delete_me=$app2quit
 	for i in ${!appsinstalled[@]};do
-		if [[ "${appsinstalled[$i]}" == "$delete_me" ]]; then
+		if [[ "${appsinstalled[$i]}" == "$delete_me" ]] ; then
 			unset appsinstalled[$i]
 		fi 
 	done
@@ -2160,7 +2160,7 @@ done
 for app2reopen in "${apps2ReOpen[@]}" ; do
 	delete_me=$app2reopen
 	for i in ${!appsinstalled[@]};do
-		if [[ "${appsinstalled[$i]}" == "$delete_me" ]]; then
+		if [[ "${appsinstalled[$i]}" == "$delete_me" ]] ; then
 			unset appsinstalled[$i]
 		fi 
 	done
@@ -2271,7 +2271,7 @@ if [[ "$spaceRequired" ]] ; then
 	diskCheckDelayNumber=$(fn_getPlistValue "diskCheckDelayNumber" "defer_jss" "$packageName.plist")
 	log4_JSS "diskCheckDelayNumber is $diskCheckDelayNumber"
 
-	if [[ -z "$diskCheckDelayNumber" ]]; then
+	if [[ -z "$diskCheckDelayNumber" ]] ; then
 		diskCheckDelayNumber=0
 	fi
 
@@ -2325,7 +2325,7 @@ fi # is there is a space requirement
 
 fn_check4Packages ""
 
-if [[ $packageMissing = true ]] && [[ $selfservicePackage != true ]] && [[ $insufficientSpace != true ]]; then
+if [[ $packageMissing = true ]] && [[ $selfservicePackage != true ]] && [[ $insufficientSpace != true ]] ; then
 	logInUEX4DebugMode "not selfservice" 
 	fn_trigger "$UEXcachingTrigger"
 	sleep 5
@@ -2343,7 +2343,7 @@ fi
 ##							Automatic Detection of updatesfiltered 						##
 ##########################################################################################
 
-if [[ "$suspackage" != true ]] && [[ "$checks" != *"uninstall"* ]] && [[ "$checks" != *"msupdate"* ]]; then
+if [[ "$suspackage" != true ]] && [[ "$checks" != *"uninstall"* ]] && [[ "$checks" != *"msupdate"* ]] ; then
 	fn_checkPKGsForApps
 fi
 
@@ -2552,7 +2552,7 @@ if [[ $selfservicePackage != true ]] && [[ "$checks" != *"critical"* ]] && [[ $d
 To run during a break or end of day, click 'at Logout'."
 	fi
 
-if [[ $postponesLeft -gt 1 ]]; then
+if [[ $postponesLeft -gt 1 ]] ; then
 	PostponeMsg+="
 Start now or select a reminder. You may delay $postponesLeft more times.
 "
@@ -2582,7 +2582,7 @@ PostponeMsg+="
 "
 
 
-if [[ -e "$SelfServiceIcon" ]]; then
+if [[ -e "$SelfServiceIcon" ]] ; then
 	ssicon="$SelfServiceIcon"
 else
 	ssicon="/Applications/Self Service.app/Contents/Resources/Self Service.icns"
@@ -2594,7 +2594,7 @@ SelfServiceAppName=$( echo "$SelfServiceAppPath" |\
 
 SelfServiceAppFolder=$( dirname "$SelfServiceAppPath" )
 
-if [[ -z "${SelfServiceAppName}" ]]; then
+if [[ -z "${SelfServiceAppName}" ]] ; then
 	SelfServiceAppName="Self Service"
 fi
 
@@ -2602,7 +2602,7 @@ SelfServiceAppNameDockPlist=$( /bin/echo ${SelfServiceAppName// /"%20"} )
 SelfServersioninDock=$( sudo -u "$loggedInUser" -H defaults read com.apple.Dock | grep "$SelfServiceAppNameDockPlist" )
 
 # dynamically detect the location of where the user can find self service and update the dialog
-if [[ "$SelfServersioninDock" ]]; then
+if [[ "$SelfServersioninDock" ]] ; then
 	SSLocation="your Dock or $SelfServiceAppFolder,"
 else
 	SSLocation="$SelfServiceAppFolder"
@@ -2660,7 +2660,7 @@ fi # if not  a self sef service run and not crtical and with enough delays lefft
 
 if [[ $selfservicePackage != true ]] && [[ $diskCheckDelayNumber -lt $diskCheckDelaylimit ]] && [[ "$checks" == *"helpticket"* ]] ; then
 
-if [[ $diskRemindersLeft -gt 1 ]]; then
+if [[ $diskRemindersLeft -gt 1 ]] ; then
 	spaceMsg+="
 You have $diskRemindersLeft more attempts left to clear up the space.
 "
@@ -2762,7 +2762,7 @@ fi
 
 # if there is a Apple Setup Done File but the setup user is running assumge it's running migration assistanant and act as if there is no one logged in
 # This will cause restart and long block installations to be put on a 1 hour delay automatically
-if [[ "$loggedInUser" == "_mbsetupuser" ]] && [[ -f "$AppleSetupDoneFile" ]]; then
+if [[ "$loggedInUser" == "_mbsetupuser" ]] && [[ -f "$AppleSetupDoneFile" ]] ; then
 	loggedInUser=""
 	log4_JSS "Migration Assistant running, delaying restart and block installations by 1 hour"
 fi
@@ -2916,7 +2916,7 @@ while [ $reqlooper = 1 ] ; do
 
 
 		#Critical 
-		# if [[ "$checks" == *"critical"* ]] && [[ "$diskCheckDelayNumber" -gt 1 ]]; then
+		# if [[ "$checks" == *"critical"* ]] && [[ "$diskCheckDelayNumber" -gt 1 ]] ; then
 		# 	log4_JSS "Critical Install: User"
 		# elif [[ "$selfservicePackage" = true ]] ; then 
 		# 	#statements
@@ -2938,7 +2938,7 @@ while [ $reqlooper = 1 ] ; do
 		skipNotices=true
 		skipOver=true
 
-	elif [[ $preApprovedInstall = true ]]; then
+	elif [[ $preApprovedInstall = true ]] ; then
 		#statements
 		log4_JSS "User has a previous approval for a restart of logout."
 		echo 0 > $PostponeClickResultFile
@@ -2951,7 +2951,7 @@ while [ $reqlooper = 1 ] ; do
 		skipNotices=true
 		# Only run presetation dely if the user is alllowed to postpone and has postponse avalable
 		# this means that if they exhaust postpones its because they chose to and we only wiat a max of 3 hour for them to be try and delay after that presetaion delay is not possible
-	elif [[ "$presentationRunning" = true ]] && [[ $presentationDelayNumber -lt 3 ]] && [[ $selfservicePackage != true ]] && [[ "$checks" != *"critical"* ]] && [[ $maxdefer -ge 1 ]] && [[ $delayNumber -lt $maxdefer ]]; then
+	elif [[ "$presentationRunning" = true ]] && [[ $presentationDelayNumber -lt 3 ]] && [[ $selfservicePackage != true ]] && [[ "$checks" != *"critical"* ]] && [[ $maxdefer -ge 1 ]] && [[ $delayNumber -lt $maxdefer ]] ; then
 		echo 3600 > $PostponeClickResultFile
 		PostponeClickResult=3600
 		presentationDelayNumber=$((presentationDelayNumber+1))
@@ -3160,7 +3160,7 @@ fi
 	
 	areyousureHeading="Please save your work"
 
-	if [[ "$checks" == *"saveallwork"* ]]; then
+	if [[ "$checks" == *"saveallwork"* ]] ; then
 		areyousureMessage="Please save ALL your work before clicking continue."
 	else # use for quigign spefic apps
 		areyousureMessage="Please save your work before clicking continue.
@@ -3245,7 +3245,7 @@ Current work may be lost if you do not save before proceeding."
 			areYouSureLooper=0
 			while [[ "$areYouSureLooper" = 0 ]] ; do
 				#statements
-				if [[ -e "$areYouSureClickResultFile" ]]; then
+				if [[ -e "$areYouSureClickResultFile" ]] ; then
 					#statements
 					areYouSure=$(cat "$areYouSureClickResultFile")
 
@@ -3432,7 +3432,7 @@ fi # No user is logged in
 if [[ $PostponeClickResult -gt 0 ]] ; then
 	
 	
-	if [[ $PostponeClickResult = 86400 ]]; then
+	if [[ $PostponeClickResult = 86400 ]] ; then
 		# get the time tomorrow at 9am and delay until that time.
 		tomorrow=$( date -v+1d )
 		tomorrowTime=$( echo $tomorrow | awk '{ print $4}' )
@@ -3461,7 +3461,7 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 		log4_JSS "SELF SERVICE PACKAGE: Skipping Delay Service"
 
 		fn_check4Packages ""
-		if [[ $packageMissing = true ]] && [[ $insufficientSpace != true ]]; then
+		if [[ $packageMissing = true ]] && [[ $insufficientSpace != true ]] ; then
 			triggerNgo $UEXcachingTrigger
 		fi
 
@@ -3471,7 +3471,7 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 		
 		# if the defer folder if empty and i'm creating the first deferal then invetory updates are needed to the comptuer is in scope of the deferral service
 		deferfolderContents=$( ls "$UEXFolderPath/defer_jss/" | grep plist )
-		if [[ -z "$deferfolderContents" ]]; then
+		if [[ -z "$deferfolderContents" ]] ; then
 			InventoryUpdateRequired=true
 		fi
 
@@ -3539,7 +3539,7 @@ fi
 	###########################################
 	fn_check4Packages ""
 
-	if [[ $packageMissing = true ]] && [[ "$selfservicePackage" = true ]] && [[ $insufficientSpace != true ]]; then
+	if [[ $packageMissing = true ]] && [[ "$selfservicePackage" = true ]] && [[ $insufficientSpace != true ]] ; then
 		status="$heading,
 Downloading packages..."
 		"$CocoaDialog" bubble --title "$title" --text "$status" --icon-file "$icon"
@@ -3548,7 +3548,7 @@ Downloading packages..."
 
 		fn_check4Packages ""
 
-		if [[ $packageMissing = true ]]; then
+		if [[ $packageMissing = true ]] ; then
 			badvariable=true
 		fi
 	fi
@@ -3563,7 +3563,7 @@ Downloading packages..."
 another $action is starting
 You will be logged out after all software changes are complete."
 		"$CocoaDialog" bubble --title "$title" --text "$status" --icon-file "$icon"
-	elif [[ $preApprovedInstall = true ]] && [[ "$loggedInUser" ]] && [[ $restartQueued = true ]]; then
+	elif [[ $preApprovedInstall = true ]] && [[ "$loggedInUser" ]] && [[ $restartQueued = true ]] ; then
 		status="$heading,
 another $action is starting
 The restart will happpen after all software changes are complete."
@@ -3672,7 +3672,7 @@ fi # no on logged in
 							fi
 
 							processstatus=$( ps -p $id )
-							if [[ "$processstatus" == *"$app"* ]]; then
+							if [[ "$processstatus" == *"$app"* ]] ; then
 								log4_JSS "$app is still running. Killing process id $id."
 								# log4_JSS "Re-opening $app"
 								# osascript -e "activate app \"$app\""
@@ -3682,7 +3682,7 @@ fi # no on logged in
 							fi
 
 							processstatus=$( ps -p $id )
-							if [[ "$processstatus" == *"$app"* ]]; then
+							if [[ "$processstatus" == *"$app"* ]] ; then
 								#statements
 								log4_JSS "The process $id was still running for application $app. Force killing Application."
 								kill -9 $id
@@ -3943,10 +3943,10 @@ EOT
 	
 			logInUEX "Starting Install"
 			
-			if [[ "$PKG" == *".dmg" ]] && [[ "$checks" == *"feu"* ]] && [[ "$checks" == *"fut"* ]]; then 
+			if [[ "$PKG" == *".dmg" ]] && [[ "$checks" == *"feu"* ]] && [[ "$checks" == *"fut"* ]] ; then 
 				"$jamfBinary" install -package "$PKG" -path "$pathtopkg" -feu -fut -target / | /usr/bin/tee -a "$resultlogfilepath"
 				
-			elif [[ "$PKG" == *".dmg" ]] && [[ "$checks" == *"fut"* ]]; then
+			elif [[ "$PKG" == *".dmg" ]] && [[ "$checks" == *"fut"* ]] ; then
 				"$jamfBinary" install -package "$PKG" -path "$pathtopkg" -fut -target / | /usr/bin/tee -a "$resultlogfilepath"
 			else
 				"$jamfBinary" install -package "$PKG" -path "$pathtopkg" -target / | /usr/bin/tee -a "$resultlogfilepath"
@@ -4013,7 +4013,7 @@ EOT
 	for i in $plists ; do
 		# deferPolicyTrigger=$( /usr/libexec/PlistBuddy -c "print policyTrigger" "$UEXFolderPath"/defer_jss/"$i" )
 		deferPolicyTrigger=$(fn_getPlistValue "policyTrigger" "defer_jss" "$i")
-		if [[ "$deferPolicyTrigger" == "$UEXpolicyTrigger" ]]; then
+		if [[ "$deferPolicyTrigger" == "$UEXpolicyTrigger" ]] ; then
 			log4_JSS "Deleting $i"
 			/bin/rm "$UEXFolderPath"/defer_jss/"$i" > /dev/null 2>&1
 		fi
@@ -4038,7 +4038,7 @@ EOT
 
 	#only kill the pleaseWaitDaemon if it's running
 	launchcltList=$( launchctl list )
-	if [[ "$launchcltList" == *"github.cubandave.UEX-PleaseWait"* ]]; then
+	if [[ "$launchcltList" == *"github.cubandave.UEX-PleaseWait"* ]] ; then
 		#statements
 		launchctl unload -w $pleaseWaitDaemon > /dev/null 2>&1
 	fi
@@ -4119,7 +4119,7 @@ $action completed."
 	#####################
 	# reopen apps      #
 	#####################
-	if [[ "$checks" != *"restart"* ]] && [[ "$checks" != *"logout"* ]]; then
+	if [[ "$checks" != *"restart"* ]] && [[ "$checks" != *"logout"* ]] ; then
 		for relaunchAppName in "${apps2Relaunch[@]}" ; do 
 			app2Open=""
 			appFound=""
@@ -4128,9 +4128,9 @@ $action completed."
 			appFound=$( /usr/bin/find "/Applications" -maxdepth 3 -iname "$relaunchAppName" )
 			userAppFound=$( /usr/bin/find "$loggedInUserHome/Applications" -maxdepth 3 -iname "$relaunchAppName" 2> /dev/null )
 			
-			if [[ "$appFound" ]]; then
+			if [[ "$appFound" ]] ; then
 				app2Open="$appFound"
-			elif [[ "$userAppFound" ]]; then
+			elif [[ "$userAppFound" ]] ; then
 				app2Open="$userAppFound"
 			fi
 
@@ -4196,7 +4196,7 @@ else
 # 	if [ debug != true ] ; then
 # 		# clear resouces
 # 		for i in "${resources[@]}" ; do
-# 			if [[ -e $i ]]; then
+# 			if [[ -e $i ]] ; then
 # 				/bin/rm -R "$i" > /dev/null 2>&1
 # 				echo deleting "$i"
 # 			fi
