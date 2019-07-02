@@ -744,8 +744,6 @@ fn_check4PendingRestartsOrLogout () {
 		# if the user has already had a fresh restart then delete the plist
 		# other wise the advise and schedule the logout.
 
-		local name
-		name=$(fn_getPlistValue "name" "restart_jss" "$i")
 		local packageName
 		packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
 		local plistrunDate
@@ -788,8 +786,6 @@ fn_check4PendingRestartsOrLogout () {
 		# OR if the user has already had a fresh login then delete the plist
 		# other wise the advise and schedule the logout.
 
-			local name
-			name=$(fn_getPlistValue "name" "logout_jss" "$i")
 			local packageName
 			packageName=$(fn_getPlistValue "packageName" "logout_jss" "$i")
 			local plistloggedInUser
@@ -799,8 +795,8 @@ fn_check4PendingRestartsOrLogout () {
 			local plistrunDate
 			plistrunDate=$(fn_getPlistValue "runDate" "logout_jss" "$i")
 
-			local plistrunDateFriendly
-			plistrunDateFriendly=$( date -r $plistrunDate )
+			# local plistrunDateFriendly
+			# plistrunDateFriendly=$( date -r $plistrunDate )
 			
 			# local timeSinceLogin=$((lastLogin-plistrunDate))
 			local timeSinceReboot
@@ -839,7 +835,7 @@ fn_check4PendingRestartsOrLogout () {
 			# this will skip the processing of that plist
 				logInUEX "User in the logout plist is not the same user as the one currently logged in do not force a logout"
 			else 
-			# the user has NOT logged out since $plistrunDateFriendly				
+				# the user has NOT logged out since $plistrunDateFriendly				
 				# set the logout to true so that the user is prompted
 				log4_JSS "Other logouts are queued"
 				logoutQueued=true
@@ -900,7 +896,7 @@ else
 fi
 
 if [[ $solidstate = true ]] ; then
-	installDuration=$(($installDuration / 2))
+	installDuration=$((installDuration / 2))
 fi
 
 if [[ "$checks" == *"block"* ]] && [[ $installDuration -lt 5 ]] ; then 
@@ -939,7 +935,7 @@ if [[ -z "$ClearHelpTicketRequirementTrigger" ]] ; then
 	ClearHelpTicketRequirementTrigger="$UEXpolicyTrigger""_clear_helpticket"
 fi
 
-unset triggers[0]
+unset "triggers[0]"
 
 unset IFS
 
@@ -1102,19 +1098,19 @@ fi
 ##								MS Update Variable Settings								##
 ##########################################################################################
 msupdateBinary="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
-autoUpdateLogFile="/Library/Logs/Microsoft/autoupdate.log"
+# autoUpdateLogFile="/Library/Logs/Microsoft/autoupdate.log"
 
 fn_check_4_msupdate () {
 	echo "" > "$msupdateLog"
 	echo "" > "$msupdateLogPlist"
-	sudo -u "$currentConsoleUserName" "$msupdateBinary" -l > "$msupdateLog"
-	sudo -u "$currentConsoleUserName" "$msupdateBinary" -l -f p > "$msupdateLogPlist"
+	sudo -u "$currentConsoleUserName" "$msupdateBinary" -l | /usr/bin/tee -a "$msupdateLog"
+	sudo -u "$currentConsoleUserName" "$msupdateBinary" -l -f p | /usr/bin/tee -a "$msupdateLogPlist"
 }
 
 
 fn_getMSupdatePackageURLs_and_names () {
 	IFS=$'\n'
-	msUPdatePackageURLS=($(cat "$msupdateLogPlist" | grep -A 1 "Location" | /usr/bin/awk -F'<string>|</string>' '{print $2}'))
+	msUPdatePackageURLS=($( grep -A 1 "Location" "$msupdateLogPlist" | /usr/bin/awk -F'<string>|</string>' '{print $2}'))
 	unset IFS
 }
 
@@ -1123,6 +1119,7 @@ fn_downloadMSupdatePackages () {
 	for msUpdatePackage in "${msUPdatePackageURLS[@]}" ; do
 		
 		msUpdatePackageFileName=$( echo "$msUpdatePackage" | sed 's@.*/@@' )
+		msUpdatePackageFileName="${msUpdatePackage##*/}"
 		log4_JSS "msUpdatePackageFileName is: $msUpdatePackageFileName"
 
 
@@ -1156,7 +1153,7 @@ fn_downloadMSupdatePackages () {
 			packages+="$msUpdatePackageFileName"
 		else
 			log4_JSS "Downloading $msUpdatePackageFileName Failed"
-			msUpdateDownloadFailed=true
+			# msUpdateDownloadFailed=true
 		fi
 
 	done
@@ -1215,9 +1212,7 @@ No updates available."
 		if [[ "$msupdatesUpdatesList" == *"AutoUpdate"* ]] ; then
 			
 			#extract ID of update for msupdate
-			AutoUpdateUpdateID=$( echo "$msupdatesUpdatesList" | grep AutoUpdate | awk '{ print $1 }' )
-
-			
+			# AutoUpdateUpdateID=$( echo "$msupdatesUpdatesList" | grep AutoUpdate | awk '{ print $1 }' )
 			# sudo -u "$currentConsoleUserName" "$msupdateBinary" -i -a "$AutoUpdateUpdateID"
 
 
@@ -1257,7 +1252,7 @@ No updates available."
 			
 			#extract ID of update for msupdate
 			OutlookUpdateID=$( echo "$msupdatesUpdatesList" | grep Outlook | awk '{ print $1 }' )
-	 		OutlookNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Outlook" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# OutlookNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Outlook" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 	
 	 		## This is needed to get the parent proccess and prevent unwanted blocking
 			# shellcheck disable=SC2009
@@ -1279,7 +1274,7 @@ No updates available."
 			
 			#extract ID of update for msupdate
 			WordUpdateID=$( echo "$msupdatesUpdatesList" | grep Word | awk '{ print $1 }' )
-	 		WordUpdateName=$( echo "$msupdatesUpdatesList" | grep Word | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# WordUpdateName=$( echo "$msupdatesUpdatesList" | grep Word | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# WordSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$WordUpdateName\"" )
 
 	 		## This is needed to get the parent proccess and prevent unwanted blocking
@@ -1302,7 +1297,7 @@ No updates available."
 			
 			#extract ID of update for msupdate
 			PowerPointUpdateID=$( echo "$msupdatesUpdatesList" | grep PowerPoint | awk '{ print $1 }' )
-	 		PowerPointNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "PowerPoint" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# PowerPointNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "PowerPoint" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 
 	 		## This is needed to get the parent proccess and prevent unwanted blocking
 			# shellcheck disable=SC2009
@@ -1324,7 +1319,7 @@ No updates available."
 			
 			#extract ID of update for msupdate
 			ExcelUpdateID=$( echo "$msupdatesUpdatesList" | grep Excel | awk '{ print $1 }' )
-			ExcelUpdateName=$( echo "$msupdatesUpdatesList" | grep Excel | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+			# ExcelUpdateName=$( echo "$msupdatesUpdatesList" | grep Excel | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# ExcelSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$ExcelUpdateName\"" )
 
 	 		## This is needed to get the parent proccess and prevent unwanted blocking
@@ -1383,7 +1378,7 @@ No updates available."
 			
 			#extract ID of update for msupdate
 			OneNoteUpdateID=$( echo "$msupdatesUpdatesList" | grep OneNote | awk '{ print $1 }' )
-	 		OneNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep OneNote | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# OneNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep OneNote | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# OneNoteSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OneNoteUpdateName\"" )
 
 	 		## This is needed to get the parent proccess and prevent unwanted blocking
@@ -1406,7 +1401,7 @@ No updates available."
 			
 			#extract ID of update for msupdate
 			SFBUpdateID=$( echo "$msupdatesUpdatesList" | grep "Skype For Business" | awk '{ print $1 }' )
-	 		SFBNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Skype For Business" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# SFBNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Skype For Business" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# SFBNoteSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OneNoteUpdateName\"" )
 
 	 		## This is needed to get the parent proccess and prevent unwanted blocking
@@ -1561,7 +1556,7 @@ No updates available."
 			apps="xayasdf.app;asdfasfd.app"
 		fi
 
-		updatesfiltered=$( cat $appleSUSlog | grep "*" -A 1 | grep -v "*" | awk -F ',' '{print $1}' | awk -F '\t' '{print $2}' | sed '/^\s*$/d' )
+		updatesfiltered=$( grep "*" -A 1 "$appleSUSlog" | grep -v "*" | awk -F ',' '{print $1}' | awk -F '\t' '{print $2}' | sed '/^\s*$/d' )
 
 		set -- "$updatesfiltered" 
 		##This works because i'm setting the seperator
@@ -2209,7 +2204,7 @@ for app2quit in "${apps2quit[@]}" ; do
 	delete_me=$app2quit
 	for i in ${!appsinstalled[@]};do
 		if [[ "${appsinstalled[$i]}" == "$delete_me" ]] ; then
-			unset appsinstalled[$i]
+			unset "appsinstalled[$i]"
 		fi 
 	done
 done
@@ -2219,7 +2214,7 @@ for app2reopen in "${apps2ReOpen[@]}" ; do
 	delete_me=$app2reopen
 	for i in ${!appsinstalled[@]};do
 		if [[ "${appsinstalled[$i]}" == "$delete_me" ]] ; then
-			unset appsinstalled[$i]
+			unset "appsinstalled[$i]"
 		fi 
 	done
 done
