@@ -138,7 +138,7 @@ runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 		checks=$(fn_getPlistValue "checks" "block_jss" "$i"	)
 		runDate=$(fn_getPlistValue "runDate" "block_jss" "$i")
 
-		# runDateFriendly=$( date -r$runDate )
+		# runDateFriendly=$( date -r $runDate )
 		timeSinceReboot=$((lastReboot-runDate))
 		
 		##########################################################################################

@@ -187,8 +187,8 @@ customMessage=${11}
 
 # for debugging
 # NameConsolidated="UEX;Quit Dialog;1.0"
-# checks=$( echo "merp nopreclose block" | tr '[:upper:]' '[:lower:]' )
-# apps="Microsoft Excel.app;Microsoft OneNote.app;Microsoft Outlook.app;Microsoft PowerPoint.app;Microsoft Word.app;OneDrive.app;Skype for Business.app"
+# checks=$( echo "merp nopreclose msupdate" | tr '[:upper:]' '[:lower:]' )
+# apps=""
 # installDuration=15
 # maxdeferConsolidated="1"
 # packages=""
@@ -216,8 +216,10 @@ waitingRoomDIR="/Library/Application Support/JAMF/Waiting Room/"
 
 pathToPackage="$waitingRoomDIR""$NameConsolidated4plist".pkg
 # packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
-packageName="${pathToPackage##*/}"
-pathToFolder=$( dirname "$pathToPackage" )
+packageName="$( basename "$pathToPackage" )"
+# packageName="${pathToPackage##*/}"
+packageName="$( basename "$pathToPackage" )"
+pathToFolder="$( dirname "$pathToPackage" )"
 
 
 ##########################################################################################
@@ -280,7 +282,8 @@ if [[ "$debug" == true ]] || [[ "$checks" == *"debug"* ]] ; then
 	echo debug on
 	debug=true
 else
-	echo debug off
+	## less verbose is better
+	# echo debug off
 	debug=false
 fi
 
@@ -292,8 +295,9 @@ if [[ $debug = true ]] ; then
 	if [[ $pathToPackage == "" ]] ; then
 		pathToPackage="/Users/ramirdai/Desktop/aG - Google - Google Chrome 47.0.2526.73 - OSX EN - SRXXXXX - 1.0.pkg"
 		# packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
-		packageName="${pathToPackage##*/}"
-		pathToFolder=$( dirname "$pathToPackage" )
+		# packageName="${pathToPackage##*/}"
+		packageName="$( basename "$pathToPackage" )"
+		pathToFolder="$( dirname "$pathToPackage" )"
 	fi
 	
 	mkdir -p "$debugDIR" > /dev/null 2>&1
@@ -332,7 +336,7 @@ function DetermineLoginState() {
 	logInUEX4DebugMode "Resolved CMD_PREFIX: $CMD_PREFIX"
 }
 
-sCocoaDialog_Pipe="/tmp/.cocoadialog_${0##*/}_${$}.pipe"
+sCocoaDialog_Pipe="/private/tmp/.cocoadialog_${0##*/}_${$}.pipe"
 bCocoaDialog_DisplayIsInitialized=0
 CocoaDialogProgressCounter=0
 
@@ -582,11 +586,11 @@ fn_generatateApps2quit () {
 				
 				
 				if [[ "$appFound" ]] || [[ "$userAppFound" ]] ; then
-					apps2ReOpen+=(${app})
-					apps2kill+=(${app})
+					apps2ReOpen+=("${app}")
+					apps2kill+=("${app}")
 				else
-					apps2quit+=(${app})
-					apps2kill+=(${app})
+					apps2quit+=("${app}")
+					apps2kill+=("${app}")
 				fi
 			if [[ $logMode = areyousure ]] ;then
 				log4_JSS "$app is stil running. Loading Are You Sure Window"
@@ -610,12 +614,12 @@ fn_waitForApps2Quit () {
 		appid=$( ps aux | grep "$app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
-			appsRunning+=(${app})
+			appsRunning+=("${app}")
 
 		fi
 	done
 
-	if [[ "${appsRunning[@]}" != *".app"* ]] ; then
+	if [[ "${appsRunning[*]}" != *".app"* ]] ; then
 		log4_JSS "User has closed all apps needed. Continuing $action"
 		echo 1 > "$PostponeClickResultFile"
 		apps2Relaunch=("${apps2ReOpen[@]}")
@@ -632,12 +636,12 @@ fn_waitForApps2Quit4areYouSure () {
 		appid=$( ps aux | grep "$app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
 		# Processing application $app
 		if  [ "$appid" != "" ] ; then
-			appsRunning+=(${app})
+			appsRunning+=("${app}")
 
 		fi
 	done
 
-	if [[ "${appsRunning[@]}" != *".app"* ]] ; then
+	if [[ "${appsRunning[*]}" != *".app"* ]] ; then
 		log4_JSS "User has closed all apps needed. Continuing $action"
 		echo 0 > "$areYouSureClickResultFile"
 		apps2Relaunch=("${apps2ReOpen[@]}")
@@ -692,7 +696,7 @@ fn_check4ActiveScreenSharingInMicrosoftTeams () {
 # shellcheck disable=SC2009
 msTeamsLogLocation=$( lsof -p "$(ps -A | grep -m1 'Microsoft Teams' | awk '{print $1}')" | grep -m1 "logs.txt" | tail -n 1 | awk '{ print $9 " " $NF }' )
 if [[ -e "$msTeamsLogLocation" ]] ; then
-	msTeamsScreensharing=$( grep SharingIndicator "$msTeamsLogLocation" | tail -n 1 )
+	msTeamsScreensharing=$( grep SharingIndicator "$msTeamsLogLocation" | tail -n 2 )
 	if [[ "$msTeamsScreensharing" ]] && [[ "$msTeamsScreensharing" != *"disposing"* ]] ; then
 		log4_JSS "User is sharing their screen on Microsoft Teams."
 		presentationRunning=true
@@ -708,7 +712,7 @@ zoomUSLogLocation=$( lsof -p "$(ps -A | grep -m1 'zoom.us' | awk '{print $1}')" 
 if [[ -e "$zoomUSLogLocation" ]] ; then
 	zoomUSScreensharing=$( cat "$zoomUSLogLocation" )
 	# using if it's not empty because the file might be there but it will be empty 
-	if [[ ! -z "$zoomUSScreensharing" ]] ; then
+	if [[ -n "$zoomUSScreensharing" ]] ; then
 		log4_JSS "User has been sharing their screen on zoom.us."
 		presentationRunning=true
 	fi
@@ -726,7 +730,7 @@ fn_check4PendingRestartsOrLogout () {
 	set -- "$resartPlists"
 	IFS=$'\n'
 	##This works because i'm setting the seperator
-	# shellcheck disable=SC2048
+	# shellcheck disable=SC2206
 	declare -a resartPlists=($*)  
 	unset IFS
 
@@ -734,7 +738,7 @@ fn_check4PendingRestartsOrLogout () {
 	set -- "$logoutPlists" 
 	IFS=$'\n'
 	##This works because i'm setting the seperator
-	# shellcheck disable=SC2048
+	# shellcheck disable=SC2206
 	declare -a logoutPlists=($*)  
 	unset IFS
 
@@ -744,8 +748,6 @@ fn_check4PendingRestartsOrLogout () {
 		# if the user has already had a fresh restart then delete the plist
 		# other wise the advise and schedule the logout.
 
-		local name
-		name=$(fn_getPlistValue "name" "restart_jss" "$i")
 		local packageName
 		packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
 		local plistrunDate
@@ -788,8 +790,6 @@ fn_check4PendingRestartsOrLogout () {
 		# OR if the user has already had a fresh login then delete the plist
 		# other wise the advise and schedule the logout.
 
-			local name
-			name=$(fn_getPlistValue "name" "logout_jss" "$i")
 			local packageName
 			packageName=$(fn_getPlistValue "packageName" "logout_jss" "$i")
 			local plistloggedInUser
@@ -799,8 +799,8 @@ fn_check4PendingRestartsOrLogout () {
 			local plistrunDate
 			plistrunDate=$(fn_getPlistValue "runDate" "logout_jss" "$i")
 
-			local plistrunDateFriendly
-			plistrunDateFriendly=$( date -r $plistrunDate )
+			# local plistrunDateFriendly
+			# plistrunDateFriendly=$( date -r $plistrunDate )
 			
 			# local timeSinceLogin=$((lastLogin-plistrunDate))
 			local timeSinceReboot
@@ -839,7 +839,7 @@ fn_check4PendingRestartsOrLogout () {
 			# this will skip the processing of that plist
 				logInUEX "User in the logout plist is not the same user as the one currently logged in do not force a logout"
 			else 
-			# the user has NOT logged out since $plistrunDateFriendly				
+				# the user has NOT logged out since $plistrunDateFriendly				
 				# set the logout to true so that the user is prompted
 				log4_JSS "Other logouts are queued"
 				logoutQueued=true
@@ -860,7 +860,7 @@ fn_EjectPreviouslyMountedUpdateDisks () {
 
 	## Eject disks with known names for containing macOS Updates"
 	for disk2Eject in "${knownDisks[@]}" ; do
-		knownDisksFound=( $( /usr/sbin/diskutil list | grep "$disk2Eject" | awk '{print$NF}' | sed 's/.\{2\}$//' ))
+		knownDisksFound=( "$( /usr/sbin/diskutil list | grep "$disk2Eject" | awk '{print$NF}' | sed 's/.\{2\}$//' )")
 		for eachKnownDisk in "${knownDisksFound[@]}" ; do
 			if [[ "$eachKnownDisk" == *"disk"* ]] ; then
 				echo "ejecting disk $eachKnownDisk"
@@ -870,7 +870,7 @@ fn_EjectPreviouslyMountedUpdateDisks () {
 	done
 
 	## Eject disks with the naming convetion "Apple_HFS macOS 10.1* Update"
-	commonDiskNames=( $( /usr/sbin/diskutil list | grep "Apple_HFS macOS 10.1" | grep "Update" | awk '{print$NF}' | sed 's/.\{2\}$//' ))
+	commonDiskNames=( "$( /usr/sbin/diskutil list | grep "Apple_HFS macOS 10.1" | grep "Update" | awk '{print$NF}' | sed 's/.\{2\}$//' )" )
 	for eachFoundDisk in "${commonDiskNames[@]}" ; do
 		if [[ "$eachFoundDisk" == *"disk"* ]] ; then
 			echo "ejecting disk $eachFoundDisk"
@@ -900,7 +900,7 @@ else
 fi
 
 if [[ $solidstate = true ]] ; then
-	installDuration=$(($installDuration / 2))
+	installDuration=$((installDuration / 2))
 fi
 
 if [[ "$checks" == *"block"* ]] && [[ $installDuration -lt 5 ]] ; then 
@@ -919,12 +919,12 @@ fi
 IFS=";"
 set -- "$NameConsolidated" 
 ##This works because i'm setting the seperator
-# shellcheck disable=SC2048
+# shellcheck disable=SC2206
 declare -a NameConsolidated=($*)
 
 set -- "$triggers" 
 ##This works because i'm setting the seperator
-# shellcheck disable=SC2048
+# shellcheck disable=SC2206
 declare -a triggers=($*)
 UEXpolicyTrigger=$(echo "${triggers[0]}" | tr '[:upper:]' '[:lower:]')
 UEXcachingTrigger="$UEXpolicyTrigger""_cache"
@@ -939,7 +939,7 @@ if [[ -z "$ClearHelpTicketRequirementTrigger" ]] ; then
 	ClearHelpTicketRequirementTrigger="$UEXpolicyTrigger""_clear_helpticket"
 fi
 
-unset triggers[0]
+unset "triggers[0]"
 
 unset IFS
 
@@ -956,10 +956,10 @@ spaceRequired=${NameConsolidated[3]}
 IFS=";"
 set -- "$maxdeferConsolidated" 
 ##This works because i'm setting the seperator
-# shellcheck disable=SC2048
+# shellcheck disable=SC2206
 declare -a maxdeferConsolidated=($*)
 
-if [[ $spaceRequired ]] || [[ "$maxdeferConsolidated" == *";"* ]] ; then
+if [[ $spaceRequired ]] || [[ "${maxdeferConsolidated[*]}" == *";"* ]] ; then
 	maxdefer="${maxdeferConsolidated[0]}"
 	diskCheckDelaylimit="${maxdeferConsolidated[1]}"
 else
@@ -1102,34 +1102,38 @@ fi
 ##								MS Update Variable Settings								##
 ##########################################################################################
 msupdateBinary="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
-autoUpdateLogFile="/Library/Logs/Microsoft/autoupdate.log"
+# autoUpdateLogFile="/Library/Logs/Microsoft/autoupdate.log"
 
 fn_check_4_msupdate () {
 	echo "" > "$msupdateLog"
 	echo "" > "$msupdateLogPlist"
-	sudo -u "$currentConsoleUserName" "$msupdateBinary" -l > "$msupdateLog"
-	sudo -u "$currentConsoleUserName" "$msupdateBinary" -l -f p > "$msupdateLogPlist"
+	sudo -u "$currentConsoleUserName" "$msupdateBinary" -l | /usr/bin/tee -a "$msupdateLog"
+	sudo -u "$currentConsoleUserName" "$msupdateBinary" -l -f p | /usr/bin/tee -a "$msupdateLogPlist"
 }
 
 
 fn_getMSupdatePackageURLs_and_names () {
 	IFS=$'\n'
-	msUPdatePackageURLS=($(cat "$msupdateLogPlist" | grep -A 1 "Location" | /usr/bin/awk -F'<string>|</string>' '{print $2}'))
+	##only download the delta update
+	msUPdatePackageURLS=( $( grep -v "FullUpdaterLocation" "$msupdateLogPlist" |  grep -A 1 "Location" | /usr/bin/awk -F'<string>|</string>' '{print $2}') )
 	unset IFS
+	# echo "msUPdatePackageURLS is: $msUPdatePackageURLS"
 }
 
 fn_downloadMSupdatePackages () {
 	packages=""
 	for msUpdatePackage in "${msUPdatePackageURLS[@]}" ; do
 		
-		msUpdatePackageFileName=$( echo "$msUpdatePackage" | sed 's@.*/@@' )
-		log4_JSS "msUpdatePackageFileName is: $msUpdatePackageFileName"
+		# msUpdatePackageFileName=$( echo "$msUpdatePackage" | sed 's@.*/@@' )
+		msUpdatePackageFileName="$( basename "$msUpdatePackage" )"
+		# msUpdatePackageFileName="${msUpdatePackage##*/}"
+		# log4_JSS "msUpdatePackageFileName is: $msUpdatePackageFileName"
 
 
 		local MSupdateDownloadDestination
 		MSupdateDownloadDestination="$waitingRoomDIR""$msUpdatePackageFileName"
 		local tmpMSupdateDownloadDestination
-		tmpMSupdateDownloadDestination="/tmp/""$msUpdatePackageFileName"
+		tmpMSupdateDownloadDestination="/private/tmp/""$msUpdatePackageFileName"
 		# create the folder if it's not there
 		if [[ ! -d "waitingRoomDIR" ]] ; then 
 			mkdir -p "$waitingRoomDIR" 
@@ -1156,7 +1160,7 @@ fn_downloadMSupdatePackages () {
 			packages+="$msUpdatePackageFileName"
 		else
 			log4_JSS "Downloading $msUpdatePackageFileName Failed"
-			msUpdateDownloadFailed=true
+			# msUpdateDownloadFailed=true
 		fi
 
 	done
@@ -1168,9 +1172,13 @@ fi
 
 if [[ "$msupdate" = true ]] ; then
 	log4_JSS "UEX is Running Microsoft Updates"
-	msupdateLog="/tmp/msupdate.txt"
-	msupdateLogPlist="/tmp/msupdate.plist"
+	msupdateLog="/private/tmp/msupdate.txt"
+	msupdateLogPlist="/private/tmp/msupdate.plist"
 	/bin/rm "$msupdateLog" > /dev/null 2>&1
+	/bin/rm "$msupdateLogPlist" > /dev/null 2>&1
+	touch "$msupdateLog"
+	touch "$msupdateLogPlist"
+	
 
 	if [[ "$selfservicePackage" = true ]] ; then	
 		status="Microsoft Software Updates,
@@ -1185,10 +1193,11 @@ checking for updates..."
 
 	fn_downloadMSupdatePackages
 
-	msupdatesUpdatesList=$( cat $msupdateLog )
+	msupdatesUpdatesList=$( cat "$msupdateLog" )
 
 	if [[ "$msupdatesUpdatesList" == *"Updates available:"* ]] || [[ "$debug" == true ]] ; then
 		msupdateUpdatesAvail=true
+		
 	else
 		msupdateUpdatesAvail=false
 	# 	echo No new software available.
@@ -1215,9 +1224,7 @@ No updates available."
 		if [[ "$msupdatesUpdatesList" == *"AutoUpdate"* ]] ; then
 			
 			#extract ID of update for msupdate
-			AutoUpdateUpdateID=$( echo "$msupdatesUpdatesList" | grep AutoUpdate | awk '{ print $1 }' )
-
-			
+			# AutoUpdateUpdateID=$( echo "$msupdatesUpdatesList" | grep AutoUpdate | awk '{ print $1 }' )
 			# sudo -u "$currentConsoleUserName" "$msupdateBinary" -i -a "$AutoUpdateUpdateID"
 
 
@@ -1257,7 +1264,7 @@ No updates available."
 			
 			#extract ID of update for msupdate
 			OutlookUpdateID=$( echo "$msupdatesUpdatesList" | grep Outlook | awk '{ print $1 }' )
-	 		OutlookNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Outlook" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# OutlookNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Outlook" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 	
 	 		## This is needed to get the parent proccess and prevent unwanted blocking
 			# shellcheck disable=SC2009
@@ -1269,9 +1276,9 @@ No updates available."
 				if [[ $apps == *".app" ]] ; then  apps+=";" ;  fi
 				apps+="Microsoft Outlook.app"
 				# For Self Service Queue the install until after it's over
-				# msUpdates2RunAfterUEX+=($OutlookUpdateID)
+				# msUpdates2RunAfterUEX+=( "$OutlookUpdateID" )
 			else
-				msUpdates2RunSilent+=($OutlookUpdateID)
+				msUpdates2RunSilent+=( "$OutlookUpdateID" )
 			fi # Outlook App is Running
 		fi # contains Outlook Update
 
@@ -1279,7 +1286,7 @@ No updates available."
 			
 			#extract ID of update for msupdate
 			WordUpdateID=$( echo "$msupdatesUpdatesList" | grep Word | awk '{ print $1 }' )
-	 		WordUpdateName=$( echo "$msupdatesUpdatesList" | grep Word | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# WordUpdateName=$( echo "$msupdatesUpdatesList" | grep Word | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# WordSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$WordUpdateName\"" )
 
 	 		## This is needed to get the parent proccess and prevent unwanted blocking
@@ -1292,9 +1299,9 @@ No updates available."
 				if [[ $apps == *".app" ]] ; then  apps+=";" ;  fi
 				apps+="Microsoft Word.app"
 				# For Self Service Queue the install until after it's over
-				# msUpdates2RunAfterUEX+=($WordUpdateID)
+				# msUpdates2RunAfterUEX+=( "$WordUpdateID" )
 			else
-				msUpdates2RunSilent+=($WordUpdateID)
+				msUpdates2RunSilent+=( "$WordUpdateID" )
 			fi # Word App is Running
 		fi # contains Word Update
 
@@ -1302,7 +1309,7 @@ No updates available."
 			
 			#extract ID of update for msupdate
 			PowerPointUpdateID=$( echo "$msupdatesUpdatesList" | grep PowerPoint | awk '{ print $1 }' )
-	 		PowerPointNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "PowerPoint" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# PowerPointNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "PowerPoint" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 
 	 		## This is needed to get the parent proccess and prevent unwanted blocking
 			# shellcheck disable=SC2009
@@ -1314,9 +1321,9 @@ No updates available."
 				if [[ $apps == *".app" ]] ; then  apps+=";" ;  fi
 				apps+="Microsoft PowerPoint.app"
 				# For Self Service Queue the install until after it's over
-				# msUpdates2RunAfterUEX+=($PowerPointUpdateID)
+				# msUpdates2RunAfterUEX+=( "$PowerPointUpdateID" )
 			else
-				msUpdates2RunSilent+=($PowerPointUpdateID)
+				msUpdates2RunSilent+=( "$PowerPointUpdateID" )
 			fi # PowerPoint App is Running
 		fi # contains PowerPoint Update
 
@@ -1324,7 +1331,7 @@ No updates available."
 			
 			#extract ID of update for msupdate
 			ExcelUpdateID=$( echo "$msupdatesUpdatesList" | grep Excel | awk '{ print $1 }' )
-			ExcelUpdateName=$( echo "$msupdatesUpdatesList" | grep Excel | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+			# ExcelUpdateName=$( echo "$msupdatesUpdatesList" | grep Excel | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# ExcelSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$ExcelUpdateName\"" )
 
 	 		## This is needed to get the parent proccess and prevent unwanted blocking
@@ -1337,9 +1344,9 @@ No updates available."
 				if [[ $apps == *".app" ]] ; then  apps+=";" ;  fi
 				apps+="Microsoft Excel.app"
 				# For Self Service Queue the install until after it's over
-				# msUpdates2RunAfterUEX+=($ExcelUpdateID)
+				# msUpdates2RunAfterUEX+=( "$ExcelUpdateID" )
 			else
-				msUpdates2RunSilent+=($ExcelUpdateID)
+				msUpdates2RunSilent+=( "$ExcelUpdateID" )
 			fi # Excel App is Running
 		fi # contains Excel Update
 
@@ -1355,9 +1362,9 @@ No updates available."
 		# 		if [[ $apps == *".app" ]] ; then  apps+=";" ;  fi
 		# 		apps+="Microsoft Teams.app"
 			## For Self Service Queue the install until after it's over# 	
-			msUpdates2RunAfterUEX+=($TeamsUpdateID)
+			msUpdates2RunAfterUEX+=( "$TeamsUpdateID" )
 			# else
-			# 	msUpdates2RunSilent+=($TeamsUpdateID)
+			# 	msUpdates2RunSilent+=( "$TeamsUpdateID" )
 		# 	fi # Teams App is Running
 		# fi # contains Teams Update
 
@@ -1373,9 +1380,9 @@ No updates available."
 		# 		if [[ $apps == *".app" ]] ; then  apps+=";" ;  fi
 		# 		apps+="OneDrive.app"
 			## For Self Service Queue the install until after it's over# 	
-			msUpdates2RunAfterUEX+=($OneDriveUpdateID)
+			msUpdates2RunAfterUEX+=( "$OneDriveUpdateID" )
 			# else
-			# 	msUpdates2RunSilent+=($OneDriveUpdateID)
+			# 	msUpdates2RunSilent+=( "$OneDriveUpdateID" )
 		# 	fi # OneDrive App is Running
 		# fi # contains OneDrive Update
 
@@ -1383,7 +1390,7 @@ No updates available."
 			
 			#extract ID of update for msupdate
 			OneNoteUpdateID=$( echo "$msupdatesUpdatesList" | grep OneNote | awk '{ print $1 }' )
-	 		OneNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep OneNote | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# OneNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep OneNote | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# OneNoteSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OneNoteUpdateName\"" )
 
 	 		## This is needed to get the parent proccess and prevent unwanted blocking
@@ -1396,9 +1403,9 @@ No updates available."
 				if [[ $apps == *".app" ]] ; then  apps+=";" ;  fi
 				apps+="Microsoft OneNote.app"
 				# For Self Service Queue the install until after it's over
-				# msUpdates2RunAfterUEX+=($OneNoteUpdateID)
+				# msUpdates2RunAfterUEX+=( "$OneNoteUpdateID" )
 			else
-				msUpdates2RunSilent+=($OneNoteUpdateID)
+				msUpdates2RunSilent+=( "$OneNoteUpdateID" )
 			fi # OneNote App is Running
 		fi # contains OneNote Update
 
@@ -1406,7 +1413,7 @@ No updates available."
 			
 			#extract ID of update for msupdate
 			SFBUpdateID=$( echo "$msupdatesUpdatesList" | grep "Skype For Business" | awk '{ print $1 }' )
-	 		SFBNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Skype For Business" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
+	 		# SFBNoteUpdateName=$( echo "$msupdatesUpdatesList" | grep "Skype For Business" | awk '{for(i=2; i<=NF; ++i) printf "%s ", $i; print ""}' | xargs )
 	 		# SFBNoteSilentInstallQueued=$( cat "$autoUpdateLogFile" | grep "update for silent installation: \"$OneNoteUpdateName\"" )
 
 	 		## This is needed to get the parent proccess and prevent unwanted blocking
@@ -1419,9 +1426,9 @@ No updates available."
 				if [[ $apps == *".app" ]] ; then  apps+=";" ;  fi
 				apps+="Skype for Business.app"
 				# For Self Service Queue the install until after it's over
-				# msUpdates2RunAfterUEX+=($SFBUpdateID)
+				# msUpdates2RunAfterUEX+=( "$SFBUpdateID" )
 			else
-				msUpdates2RunSilent+=($SFBUpdateID)
+				msUpdates2RunSilent+=( "$SFBUpdateID" )
 			fi # SFB App is Running
 		fi # contains SFB Update
 
@@ -1446,7 +1453,7 @@ if [[ "$checks" == *"suspackage"* ]] ; then
 fi
 
 if [[ "$suspackage" = true ]] ; then
-	appleSUSlog="/tmp/swu.log"
+	appleSUSlog="/private/tmp/swu.log"
 
 
 	if [[ "$selfservicePackage" = true ]] ; then	
@@ -1561,12 +1568,15 @@ No updates available."
 			apps="xayasdf.app;asdfasfd.app"
 		fi
 
-		updatesfiltered=$( cat $appleSUSlog | grep "*" -A 1 | grep -v "*" | awk -F ',' '{print $1}' | awk -F '\t' '{print $2}' | sed '/^\s*$/d' )
+		##This is looking explicitly for the * character
+		# shellcheck disable=SC2063
+		updatesfiltered=$( grep "*" -A 1 "$appleSUSlog" | grep -v "*" | awk -F ',' '{print $1}' | awk -F '\t' '{print $2}' | sed '/^\s*$/d' )
 
 		set -- "$updatesfiltered" 
+		IFS="--"
 		##This works because i'm setting the seperator
-		# shellcheck disable=SC2048
-		IFS="--"; declare -a updatesfiltered=($*)  
+		# shellcheck disable=SC2206
+		declare -a updatesfiltered=($*)  
 		unset IFS
 
 		log4_JSS '**Updates Available**'
@@ -1581,7 +1591,7 @@ fi
 
 #need to produce blocking lost for plist 
 apps4plist="$apps"
-packages4plist="$packages"
+# packages4plist="$packages"
 
 #Separate list of
 
@@ -1590,12 +1600,12 @@ IFS=";"
 
 set -- "$apps"
 ##This works because i'm setting the seperator
-# shellcheck disable=SC2048
+# shellcheck disable=SC2206
 declare -a apps=($*)
 
 set -- "$packages"
 ##This works because i'm setting the seperator
-# shellcheck disable=SC2048
+# shellcheck disable=SC2206
 declare -a packages=($*)
 
 unset IFS
@@ -1643,8 +1653,8 @@ resources=(
 )
 for i in "${resources[@]}"; do
 	# resourceName="$(echo "$i" | sed 's@.*/@@')"
-	resourceName="${i##*/}"
-	pathToResource=$( dirname "$i" )
+	# resourceName="${i##*/}"
+	# pathToResource="$( dirname "$i" )"
    if [[ ! -e "$i" ]] && [[ "$i" ]] ; then
       # does not exist...
       missingResources=true
@@ -1675,10 +1685,10 @@ fi
 ##########################################################################################
 ##							Default variables for  Post install							##
 ##########################################################################################
-pathToScript=$0
-# pathToPackage=$1
-targetLocation=$2
-targetVolume=$3
+## Not needed ...yet
+# pathToScript=$0
+# targetLocation=$2
+# targetVolume=$3
 ##########################################################################################
 
 #need to produce blocking lost for plist 
@@ -1688,15 +1698,16 @@ apps2block="$apps4plist"
 ##								Date for Plists Creation								##
 ##########################################################################################
 runDate=$( date +%s )
-runDateFriendly=$( date -r$runDate )
+runDateFriendly="$( date -r "$runDate" )"
 ##########################################################################################
 
 ##########################################################################################
 #								Package name Processing									 #
 ##########################################################################################
 # packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
-packageName="${pathToPackage##*/}"
-pathToFolder=$( dirname "$pathToPackage" )
+# packageName="${pathToPackage##*/}"
+packageName="$( basename "$pathToPackage" )"
+pathToFolder="$( dirname "$pathToPackage" )"
 SSplaceholderDIR="$UEXFolderPath/selfservice_jss/"
 
 
@@ -1781,7 +1792,7 @@ logInUEX "******* START UEX Detail ******"
 logInUEX "User Experience Version: $uexvers"
 logInUEX "AppVendor=$AppVendor"
 logInUEX "AppName=$AppName"
-if [[ $spacerequired ]] ; then
+if [[ "$spaceRequired" ]] ; then
 	logInUEX "spaceRequired=$spaceRequired"
 fi
 logInUEX "checks=$checks"
@@ -2138,7 +2149,7 @@ if [[ "$checks" == *"block"* ]] ; then
 			
 			
 			if [[ "$foundappinalthpath" != "" ]] ; then 
-				altpathsfound+=(${foundappinalthpath})
+				altpathsfound+=("${foundappinalthpath}")
 				logInUEX4DebugMode "Application $app was found in $altpath"
 			else
 				logInUEX4DebugMode "Application $app not found in $altpath"
@@ -2147,7 +2158,7 @@ if [[ "$checks" == *"block"* ]] ; then
 		
 		
 		if  [ "$appfound" != "" ] || [[ "$userappfound" != "" ]] || [[ "$altpathsfound" != "" ]] ; then
-			appsinstalled+=(${app})
+			appsinstalled+=("${app}")
 		else 
 			logInUEX4DebugMode "Applicaiton not found in any specified paths."
 		fi
@@ -2209,7 +2220,7 @@ for app2quit in "${apps2quit[@]}" ; do
 	delete_me=$app2quit
 	for i in ${!appsinstalled[@]};do
 		if [[ "${appsinstalled[$i]}" == "$delete_me" ]] ; then
-			unset appsinstalled[$i]
+			unset "appsinstalled[$i]"
 		fi 
 	done
 done
@@ -2219,7 +2230,7 @@ for app2reopen in "${apps2ReOpen[@]}" ; do
 	delete_me=$app2reopen
 	for i in ${!appsinstalled[@]};do
 		if [[ "${appsinstalled[$i]}" == "$delete_me" ]] ; then
-			unset appsinstalled[$i]
+			unset "appsinstalled[$i]"
 		fi 
 	done
 done
@@ -2647,10 +2658,9 @@ else
 fi
 
 SelfServiceAppPath=$( /usr/bin/defaults read /Library/Preferences/com.jamfsoftware.jamf self_service_app_path 2>/dev/null)
-SelfServiceAppName=$( echo "$SelfServiceAppPath" |\
-					  /usr/bin/sed -ne 's|^.*/\(.*\).app$|\1|p' )
+SelfServiceAppName=$( echo "$SelfServiceAppPath" | /usr/bin/sed -ne 's|^.*/\(.*\).app$|\1|p' )
 
-SelfServiceAppFolder=$( dirname "$SelfServiceAppPath" )
+SelfServiceAppFolder="$( dirname "$SelfServiceAppPath" )"
 
 if [[ -z "${SelfServiceAppName}" ]] ; then
 	SelfServiceAppName="Self Service"
@@ -3205,7 +3215,7 @@ $jamfOpsTeamName"
 	"$jhPath" -windowType hud -lockHUD -title "$title" -heading "Compliance $actionation - $heading" -description "$complianceDescription" -button1 "OK" -icon "$icon" -windowPosition lr -timeout 300 | grep -v 239 &
 fi
 
-	if [[ ! -z $PostponeClickResult ]] && [ $PostponeClickResult -gt 0 ] && [[ $selfservicePackage != true ]] && [[ "$ssavail" == true ]] && [[ "$skipOver" != true ]] && [[ $skipNotices != "true" ]] ; then
+	if [[ -n $PostponeClickResult ]] && [ $PostponeClickResult -gt 0 ] && [[ $selfservicePackage != true ]] && [[ "$ssavail" == true ]] && [[ "$skipOver" != true ]] && [[ $skipNotices != "true" ]] ; then
 		"$jhPath" -windowType hud -title "$title" -heading "Start the $action anytime" -description "$selfservicerunoption" -showDelayOptions -timeout 20 -icon "$ssicon" -windowPosition lr | grep -v 239 & 
 	fi
 
@@ -3361,7 +3371,7 @@ Current work may be lost if you do not save before proceeding."
 		if [[ "$postponesLeft" -gt 0 ]] && [[ "$checks" != *"critical"* ]] ; then
 			"$jhPath" -windowType hud -lockHUD -icon "$baticon" -title "$title" -heading "Charger Required" -description "$battMessage" -button1 "OK" -timeout 60 > /dev/null 2>&1 &
 		else
-			batteryClickResultFile="/tmp/batteryClickResult$UEXpolicyTrigger.txt"
+			batteryClickResultFile="/private/tmp/batteryClickResult$UEXpolicyTrigger.txt"
 			##clear the previous response 
 			if [[ -f "$batteryClickResultFile" ]] ; then 
 				/bin/rm "$batteryClickResultFile"
@@ -3513,7 +3523,7 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 	# calculate time and date just before plist creation
 	runDate=$( date +%s )
 	runDate=$((runDate-300))
-	runDateFriendly=$( date -r$runDate )
+	runDateFriendly="$( date -r "$runDate" )"
 		
 	# Calculate the date that
 	delayDate=$((runDate+delaytime))
@@ -3767,7 +3777,7 @@ fi # no on logged in
 	if [[ "$checks" == *"block"* ]] ; then	
 		# calculate time and date just before plist creation
 		runDate=$( date +%s )
-		runDateFriendly=$( date -r$runDate )
+		runDateFriendly="$( date -r "$runDate" )"
 		
 		# Create Plist with all that properties to block the apps
 		# added Package & date info for restar safety measures
@@ -3795,7 +3805,7 @@ fi # no on logged in
 		
 		# calculate time and date just before plist creation
 		runDate=$( date +%s )
-		runDateFriendly=$( date -r$runDate )
+		runDateFriendly="$( date -r "$runDate" )"
 		
 		# Testing
 		# loggedInUser="cedarari"
