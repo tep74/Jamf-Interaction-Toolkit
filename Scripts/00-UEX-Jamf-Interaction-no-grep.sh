@@ -1114,8 +1114,6 @@ fn_check_4_msupdate () {
 
 fn_getMSupdatePackageURLs_and_names () {
 	IFS=$'\n'
-	##only download the delta update
-	msUPdatePackageURLS=( $( grep -v "FullUpdaterLocation" "$msupdateLogPlist" |  grep -A 1 "Location" | /usr/bin/awk -F'<string>|</string>' '{print $2}') )
 	unset IFS
 	# echo "msUPdatePackageURLS is: $msUPdatePackageURLS"
 }
@@ -1568,6 +1566,7 @@ No updates available."
 			apps="xayasdf.app;asdfasfd.app"
 		fi
 
+		updatesfiltered=$( grep "*" -A 1 "$appleSUSlog" | grep -v "*" | awk -F ',' '{print $1}' | awk -F '\t' '{print $2}' | sed '/^\s*$/d' )
 		##This is looking explicitly for the * character
 		# shellcheck disable=SC2063
 		updatesfiltered=$( grep "*" -A 1 "$appleSUSlog" | grep -v "*" | awk -F ',' '{print $1}' | awk -F '\t' '{print $2}' | sed '/^\s*$/d' )
