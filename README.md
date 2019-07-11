@@ -1,6 +1,5 @@
 # Jamf-Interaction-Toolkit
 
-https://travis-ci.com/cubandave/Jamf-Interaction-Toolkit.svg?branch=master
 [![Build Status](https://travis-ci.com/cubandave/Jamf-Interaction-Toolkit.svg?branch=master)](https://travis-ci.com/cubandave/Jamf-Interaction-Toolkit)
 ___
 
