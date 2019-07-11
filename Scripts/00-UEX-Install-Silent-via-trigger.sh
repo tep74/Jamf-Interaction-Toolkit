@@ -27,6 +27,7 @@ IFS=";"
 set -- "$triggers"
 ##This works because i'm setting the seperator
 # shellcheck disable=SC2206
+# shellcheck disable=SC2048
 declare -a triggers=($*)
 unset IFS
 

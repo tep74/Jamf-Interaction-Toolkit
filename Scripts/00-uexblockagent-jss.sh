@@ -185,6 +185,7 @@ runBlocking="$( ls "$UEXFolderPath"/block_jss/*.plist )"
 		IFS=";"
 		##This works because i'm setting the seperator
 		# shellcheck disable=SC2206
+		# shellcheck disable=SC2048
 		declare -a apps=($*)  
 		unset IFS
 
