@@ -109,7 +109,7 @@ log4_JSS () {
 ##################################	
 
 IFS=$'\n'
-blockPlists=($( ls "$UEXFolderPath"/block_jss/ | grep ".plist" ))
+blockPlists=("$( ls "$UEXFolderPath"/block_jss/*.plist )")
 unset IFS
 
 ##################################
@@ -122,13 +122,13 @@ lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}
 # 		PLIST PROCESSING		 #
 ##################################
 
-runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
+runBlocking="$( ls "$UEXFolderPath"/block_jss/*.plist )"
 	while [ "$runBlocking" ] ; do
 	
-	runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
+	runBlocking="$( ls "$UEXFolderPath"/block_jss/*.plist )"
 	
 	IFS=$'\n'
-	blockPlists=($( ls "$UEXFolderPath"/block_jss/ | grep ".plist" ))
+	blockPlists=("$( ls "$UEXFolderPath"/block_jss/*.plist )")
 	unset IFS
 	
 	for i in "${blockPlists[@]}" ; do
@@ -184,7 +184,7 @@ runBlocking=$( ls "$UEXFolderPath"/block_jss/ | grep ".plist" )
 		set -- "$apps"
 		IFS=";"
 		##This works because i'm setting the seperator
-		# shellcheck disable=SC2048
+		# shellcheck disable=SC2206
 		declare -a apps=($*)  
 		unset IFS
 

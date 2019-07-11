@@ -82,7 +82,7 @@ compname=$( scutil --get ComputerName )
 ##########################################################################################
 
 fn_getPlistValue () {
-	/usr/libexec/PlistBuddy -c "print $1" /Library/Application\ Support/JAMF/UEX/"$2"/"$3"
+	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath/$2/$3"
 }
 
 logInUEX () {
@@ -99,26 +99,26 @@ log4_JSS () {
 
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' )
 
-lastLogin=$( syslog -F raw -k Facility com.apple.system.lastlog | grep "$loggedInUser" | grep -v tty | awk 'END{print}' | awk '{ print $4 }' | sed -e 's/]//g' )
+# lastLogin=$( syslog -F raw -k Facility com.apple.system.lastlog | grep "$loggedInUser" | grep -v tty | awk 'END{print}' | awk '{ print $4 }' | sed -e 's/]//g' )
 # lastLoginFriendly=$( date -r$lastLogin )
 
 lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s" )
-# lastRebootFriendly=$( date -r$lastReboot )
+lastRebootFriendly=$( date -r "$lastReboot" )
 
 IFS=$'\n' 
-resartPlists=( $( ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist" ) )
+resartPlists=( "$( ls "$UEXFolderPath"/restart_jss/*.plist )" )
 
-# resartPlists=$( ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist" )
+# resartPlists=$( ls $UEXFolderPath/restart_jss/ | grep ".plist" )
 # set -- "$resartPlists"
 # ##This works because i'm setting the seperator
 # # shellcheck disable=SC2048
 # IFS=$'\n' ; declare -a resartPlists=($*)  
 # unset IFS
 
-logoutPlists=( $( ls /Library/Application\ Support/JAMF/UEX/logout_jss/ | grep ".plist" ) )
+logoutPlists=( "$( ls "$UEXFolderPath"/logout_jss/*.plist )" )
 unset IFS
 
-# logoutPlists=$( ls /Library/Application\ Support/JAMF/UEX/logout_jss/ | grep ".plist" )
+# logoutPlists=$( ls $UEXFolderPath/logout_jss/ | grep ".plist" )
 # set -- "$logoutPlists" 
 # ##This works because i'm setting the seperator
 # # shellcheck disable=SC2048
@@ -152,28 +152,28 @@ for i in "${resartPlists[@]}" ; do
 	# if the user has already had a fresh restart then delete the plist
 	# other wise the advise and schedule the logout.
 
-	name=$(fn_getPlistValue "name" "restart_jss" "$i")
+	# name=$(fn_getPlistValue "name" "restart_jss" "$i")
 	packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
 	plistrunDate=$(fn_getPlistValue "runDate" "restart_jss" "$i")
 
 	timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
-	echo timeSinceReboot is $timeSinceReboot
+	echo "timeSinceReboot is $timeSinceReboot"
 	
 	logname="${packageName##*/}"
 	logfilename="$logname".log
-	resulttmp="$logname"_result.log
+	# resulttmp="$logname"_result.log
 	logfilepath="$logdir""$logfilename"
 	
 	if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then
 		# the computer has rebooted since $runDateFriendly
 		#delete the plist
-		logInUEX "Deleting the restart plsit $i because the computer has rebooted since $runDateFriendly"
+		logInUEX "Deleting the restart plsit $i because the computer has rebooted since $lastRebootFriendly"
 		rm "$UEXFolderPath/restart_jss/$i"
 	else 
 		# the computer has NOT rebooted since $runDateFriendly
 		lastline=$( awk 'END{print}' "$logfilepath" )
 		if [[ "$lastline" != *"Prompting the user"* ]] ; then 
-			logInUEX "The computer has NOT rebooted since $runDateFriendly"
+			logInUEX "The computer has NOT rebooted since $lastRebootFriendly"
 			logInUEX "Prompting the user that a restart is required"
 		fi
 		restart="true"
@@ -190,15 +190,15 @@ if [[ $restart != "true" ]] ; then
 	# OR if the user has already had a fresh login then delete the plist
 	# other wise the advise and schedule the logout.
 
-		name=$(fn_getPlistValue "name" "logout_jss" "$i")
+		# name=$(fn_getPlistValue "name" "logout_jss" "$i")
 		packageName=$(fn_getPlistValue "packageName" "logout_jss" "$i")
 		plistloggedInUser=$(fn_getPlistValue "loggedInUser" "logout_jss" "$i")
 		checked=$(fn_getPlistValue "checked" "logout_jss" "$i")
 		plistrunDate=$(fn_getPlistValue "runDate" "logout_jss" "$i")
 
-		plistrunDateFriendly=$( date -r $plistrunDate )
+		plistrunDateFriendly="$( date -r "$plistrunDate" )"
 		
-		timeSinceLogin=$((lastLogin-plistrunDate))
+		# timeSinceLogin=$((lastLogin-plistrunDate))
 		timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 		
 		#######################
@@ -206,7 +206,7 @@ if [[ $restart != "true" ]] ; then
 		#######################
 		logname="${packageName##*/}"
 		logfilename="$logname".log
-		resulttmp="$logname"_result.log
+		# resulttmp="$logname"_result.log
 		logfilepath="$logdir""$logfilename"
 		
 		
@@ -261,7 +261,7 @@ osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. '{print $2}' )
 ##########################################################################################
 ##					Notification if there are scheduled logouts							##
 ##########################################################################################
-if [ $loggedInUser ] ; then
+if [[ "$loggedInUser" ]] ; then
     if [[ "$logout" == "true" ]] ; then
    
     # message
@@ -275,14 +275,16 @@ if [ $loggedInUser ] ; then
        
         if [[ "$osMajor" -ge 14 ]] ; then
 	        # Force logout by killing the login window for that user
-	        messylogout`ps -Ajc | grep loginwindow | grep "$loggedInUser" | grep -v grep | awk '{print $2}' | xargs kill`
+	        ## messylogout
+	        # shellcheck disable=SC2009
+	        ps -Ajc | grep loginwindow | grep "$loggedInUser" | grep -v grep | awk '{print $2}' | xargs kill
 		else
 			 # Nicer logout (http://apple.stackexchange.com/questions/103571/using-the-terminal-command-to-shutdown-restart-and-sleep-my-mac)
 			osascript -e 'tell application "loginwindow" to «event aevtrlgo»'
 		fi # OS is ge 14
     fi
 else
-    rm /Library/Application\ Support/JAMF/UEX/logout_jss/*
+    rm "$UEXFolderPath"/logout_jss/*
 fi
 	
 ##########################################################################################
