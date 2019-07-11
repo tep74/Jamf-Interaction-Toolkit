@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# used for major debugging
+# set -x
+
+##########################################################################################
+##						Get The Jamf Interaction Configuration 							##
+##########################################################################################
+
+fn_read_uex_Preference () {
+	local domain="$1"
+	defaults read /Library/Preferences/github.cubandave.uex.plist "$domain"
+}
+
+UEXFolderPath="$(fn_read_uex_Preference "UEXFolderPath")"
+# in case the plist hasn't been create on this version then set it to the previous standard
+if [[ -z "$UEXFolderPath" ]] ; then
+	UEXFolderPath="/Library/Application Support/JAMF/UEX"
+fi
+
+
 ##########################################################################################
 ##########################################################################################
 # 
@@ -8,22 +27,23 @@
 # restarts and logouts
 # 
 # Name: PleaseWaitUpdater.sh
-# Version Number: 4.1
+# Version Number: 4.2
 # 
 # Created Jan 18, 2016 by 
-# David Ramirez (David.Ramirez@adidas.com)
+# cubandave(https://github.com/cubandave)
 # 
 # 
-# Copyright (c) 2015 the adidas Group
-# All rights reserved.
+# cubandave/Jamf-Interaction-Toolkit is licensed under the
+# Apache License 2.0
+# https://github.com/cubandave/Jamf-Interaction-Toolkit/blob/master/LICENSE
 ##########################################################################################
 ########################################################################################## 
 
 
-PleaseWaitApp="/Library/Application Support/JAMF/UEX/resources/PleaseWait.app"
+# PleaseWaitApp="$UEXFolderPath/resources/PleaseWait.app"
 pleasewaitPhase="/private/tmp/com.pleasewait.phase"
 pleasewaitProgress="/private/tmp/com.pleasewait.progress"
-pleasewaitInstallProgress="/private/tmp/com.pleasewait.installprogress"
+# pleasewaitInstallProgress="/private/tmp/com.pleasewait.installprogress"
 
 ##########################################################################################
 # 									Functions											 #
@@ -41,23 +61,27 @@ fn_getPlistValue () {
 sleep 10
 
 # while PleaseWait.app is running 
-while [ ! -z $( pgrep PleaseWait ) ] ; do 
+while [ -n "$( pgrep PleaseWait )" ] ; do 
 
+IFS=$'\n'
 # Get a list of plist from the UEX folder
-plists=`find "/Library/Application Support/JAMF/UEX" -name '*.plist' | grep -v resources`
-set -- "$plists" 
-IFS=$'\n'; declare -a plists=($*)  
+plists=( "$( find "$UEXFolderPath" -name '*.plist' | grep -v resources )" )
 unset IFS
 
-installjss="/Library/Application Support/JAMF/UEX/install_jss/"
+# set -- "$plists" 
+# IFS=$'\n'
+# ##This works because i'm setting the seperator
+# # shellcheck disable=SC2048
+# declare -a plists=($*)
+# unset IFS
+
+installjss="$UEXFolderPath/install_jss/"
 
 #Cycle through list of plists
 	for plist in "${plists[@]}" ; do
 		
 		# if there is a place holder for an install in progress
 		if [[ "$plist" == *"UEX/install"* ]] ;then		
-			# name=`/usr/libexec/PlistBuddy -c "print name" "$plist"`
-			# checks=`/usr/libexec/PlistBuddy -c "print checks" "$plist"`
 
 			name=$(fn_getPlistValue "name" "$plist")
 			checks=$(fn_getPlistValue "checks" "$plist")
@@ -94,17 +118,20 @@ installjss="/Library/Application Support/JAMF/UEX/install_jss/"
 	
 		# if the plist is a block plist then notify the user that the apps can't be opened 
 		if [[ "$plist" == *"UEX/block"* ]] ;then
-			# apps=`/usr/libexec/PlistBuddy -c "print apps2block" "$plist"`
 			apps=$(fn_getPlistValue "apps2block" "$plist")
 
 			# Create array of apps to run through checks
 			set -- "$apps" 
-			IFS=";"; declare -a apps=($*)  
+			IFS=";"
+			##This works because i'm setting the seperator
+			# shellcheck disable=SC2206
+			# shellcheck disable=SC2048
+			declare -a apps=($*)  
 			unset IFS
 			# Cycle through list of prohibited apps from the block plist config file
 			for app in "${apps[@]}" ; do
-				echo Please do not open these applications > $pleasewaitPhase
-				echo $app | sed 's/.\{4\}$//' > $pleasewaitProgress
+				echo "Please do not open these applications" > $pleasewaitPhase
+				echo "${app//.app/}" > $pleasewaitProgress
 				sleep 3
 			done
 		
@@ -115,7 +142,7 @@ installjss="/Library/Application Support/JAMF/UEX/install_jss/"
 	
 	# 	if there are logout plist present then notify that a logout will be required
 		if [[ "$plist" == *"UEX/logout"* ]] ;then
-			plistName="$(echo "$plist" | sed 's@.*/@@')"
+			plistName="${plist##*/}"
 			if [ -e "$installjss""$plistName" ] ; then
 				echo "A logout will be required..." > $pleasewaitPhase
 				echo "after $action completes." > $pleasewaitProgress
@@ -125,7 +152,7 @@ installjss="/Library/Application Support/JAMF/UEX/install_jss/"
 	
 	# 	if there are restart plist present then notify that a restart will be required
 		if [[ "$plist" == *"UEX/restart"* ]] ;then
-			plistName="$(echo "$plist" | sed 's@.*/@@')"
+			plistName="${plist##*/}"
 			if [ -e "$installjss""$plistName" ] ; then
 				echo "A restart will be required..." > $pleasewaitPhase
 				echo "after $action completes." > $pleasewaitProgress
@@ -142,7 +169,7 @@ done
 ##########################################################################################
 # 
 # 
-# Jan 18, 2016 	v1.0	--DR--	Stage 1 Delivered
-# Apr 24, 2018 	v3.7	--DR--	Funtctions added
-# Oct 24, 2018 	v4.0	--DR--	All Change logs are available now in the release notes on GITHUB
+# Jan 18, 2016 	v1.0	--cubandave--	Stage 1 Delivered
+# Apr 24, 2018 	v3.7	--cubandave--	Funtctions added
+# Oct 24, 2018 	v4.0	--cubandave--	All Change logs are available now in the release notes on GITHUB
 #

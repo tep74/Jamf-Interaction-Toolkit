@@ -1,20 +1,30 @@
 #!/bin/bash
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
-loggedInUserHome=`dscl . read /Users/$loggedInUser NFSHomeDirectory | awk '{ print $2 }'`
+
+# used for major debugging
+# set -x
+
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
 
 ##########################################################################################
-##								Paramaters for Customization 							##
+##						Get The Jamf Interaction Configuration 							##
 ##########################################################################################
 
-title="Your IT Department"
+fn_read_uex_Preference () {
+	local domain="$1"
+	defaults read /Library/Preferences/github.cubandave.uex.plist "$domain"
+}
 
-# Jamf Pro 10 icon if you want another custom one then please update it here.
-# or you can customize this with an image you've included in UEX resources or is already local on the computer
-customLogo="/Library/Application Support/JAMF/Jamf.app/Contents/Resources/AppIcon.icns"
+UEXFolderPath="$(fn_read_uex_Preference "UEXFolderPath")"
+# in case the plist hasn't been create on this version then set it to the previous standard
+if [[ -z "$UEXFolderPath" ]] ; then
+	UEXFolderPath="/Library/Application Support/JAMF/UEX"
+fi
 
-# if you you jamf Pro 10 to brand the image with your self sevice icon will be here
-# or you can customize this with an image you've included in UEX resources or is already local on the computer
-SelfServiceIcon="$loggedInUserHome/Library/Application Support/com.jamfsoftware.selfservice.mac/Documents/Images/brandingimage.png"
+title="$(fn_read_uex_Preference "title")"
+
+customLogo="$(fn_read_uex_Preference "customLogo")"
+
+SelfServiceIcon="$(fn_read_uex_Preference "SelfServiceIcon")"
 
 ##########################################################################################
 ##########################################################################################
@@ -26,27 +36,18 @@ SelfServiceIcon="$loggedInUserHome/Library/Application Support/com.jamfsoftware.
 # logout if required.
 # 
 # Name: logout-notification.sh
-# Version Number: 4.1
+# Version Number: 4.2
 # 
 # Created Jan 18, 2016 by 
-# David Ramirez (David.Ramirez@adidas.com)
+# cubandave(https://github.com/cubandave)
 #
-# Updates January 23rd, 2017 by
-# DR = David Ramirez (D avid.Ramirez@adidas-group.com) 
+# Updates found on github
+# https://github.com/cubandave/Jamf-Interaction-Toolkit/commits/master
 # 
-# Copyright (c) 2018 the adidas Group
-# All rights reserved.
+# cubandave/Jamf-Interaction-Toolkit is licensed under the
+# Apache License 2.0
+# https://github.com/cubandave/Jamf-Interaction-Toolkit/blob/master/LICENSE
 ##########################################################################################
-########################################################################################## 
-
-##########################################################################################
-##						STATIC VARIABLES FOR CocoaDialog DIALOGS						##
-##########################################################################################
-
-CocoaDialog="/Library/Application Support/JAMF/UEX/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog"
-
-##########################################################################################
-
 
 ##########################################################################################
 ##							STATIC VARIABLES FOR JH DIALOGS								##
@@ -55,7 +56,7 @@ CocoaDialog="/Library/Application Support/JAMF/UEX/resources/cocoaDialog.app/Con
 jhPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 
 #if the icon file doesn't exist then set to a standard icon
-if [[ -e "$SelfServiceIcon" ]]; then
+if [[ -e "$SelfServiceIcon" ]] ; then
 	icon="$SelfServiceIcon"
 elif [ -e "$customLogo" ] ; then
 	icon="$customLogo"
@@ -68,9 +69,10 @@ fi
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-# logname=$(echo $packageName | sed 's/.\{4\}$//')
+# logname="${packageName##*/}"
 # logfilename="$logname".log
-logdir="/Library/Application Support/JAMF/UEX/UEX_Logs/"
+logdir="$UEXFolderPath/UEX_Logs/"
+compname=$( scutil --get ComputerName )
 # resulttmp="$logname"_result.log
 ##########################################################################################
 
@@ -80,57 +82,62 @@ logdir="/Library/Application Support/JAMF/UEX/UEX_Logs/"
 ##########################################################################################
 
 fn_getPlistValue () {
-	/usr/libexec/PlistBuddy -c "print $1" /Library/Application\ Support/JAMF/UEX/$2/"$3"
+	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath/$2/$3"
 }
 
 logInUEX () {
-	echo $(date)	$compname	:	"$1" >> "$logfilepath"
-}
-
-logInUEX4DebugMode () {
-	if [ $debug = true ] ; then	
-		logMessage="-DEBUG- $1"
-		logInUEX $logMessage
-	fi
+	echo "$(date)"	"$compname"	:	"$1" >> "$logfilepath"
 }
 
 log4_JSS () {
-	echo $(date)	$compname	:	"$1"  | tee -a "$logfilepath"
+	echo "$(date)"	"$compname"	:	"$1"  | tee -a "$logfilepath"
 }
 
 ##########################################################################################
 ##								USER AND PLIST PROCESSING								##
 ##########################################################################################
 
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }'`
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' )
 
-lastLogin=`syslog -F raw -k Facility com.apple.system.lastlog | grep $loggedInUser | grep -v tty | awk 'END{print}' | awk '{ print $4 }' | sed -e 's/]//g'`
-lastLoginFriendly=`date -r$lastLogin`
+# lastLogin=$( syslog -F raw -k Facility com.apple.system.lastlog | grep "$loggedInUser" | grep -v tty | awk 'END{print}' | awk '{ print $4 }' | sed -e 's/]//g' )
+# lastLoginFriendly=$( date -r$lastLogin )
 
-lastReboot=`date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s"`
-lastRebootFriendly=`date -r$lastReboot`
+lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s" )
+lastRebootFriendly=$( date -r "$lastReboot" )
 
-rundate=`date +%s`
+IFS=$'\n' 
+resartPlists=( "$( ls "$UEXFolderPath"/restart_jss/*.plist )" )
 
-resartPlists=`ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist"`
-set -- "$resartPlists"
-IFS=$'\n' ; declare -a resartPlists=($*)  
+# resartPlists=$( ls $UEXFolderPath/restart_jss/ | grep ".plist" )
+# set -- "$resartPlists"
+# ##This works because i'm setting the seperator
+# # shellcheck disable=SC2048
+# IFS=$'\n' ; declare -a resartPlists=($*)  
+# unset IFS
+
+logoutPlists=( "$( ls "$UEXFolderPath"/logout_jss/*.plist )" )
 unset IFS
 
-logoutPlists=`ls /Library/Application\ Support/JAMF/UEX/logout_jss/ | grep ".plist"`
-set -- "$logoutPlists" 
-IFS=$'\n' ; declare -a logoutPlists=($*)  
-unset IFS
+# logoutPlists=$( ls $UEXFolderPath/logout_jss/ | grep ".plist" )
+# set -- "$logoutPlists" 
+# ##This works because i'm setting the seperator
+# # shellcheck disable=SC2048
+# IFS=$'\n' ; declare -a logoutPlists=($*)  
+# unset IFS
 
 ##########################################################################################
 ##					Notification if there are scheduled restarts						##
 ##########################################################################################
 
 sleep 15
-otherJamfprocess=`ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent | grep -v uexlogoutagent`
+## This is needed to rule out only what's needed
+# shellcheck disable=SC2009
+otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent | grep -v uexlogoutagent )
 while [ "$otherJamfprocess" ] ; do 
 	sleep 15
-	otherJamfprocess=`ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent | grep -v uexlogoutagent`
+## This is needed to rule out only what's needed
+# shellcheck disable=SC2009
+	otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent | grep -v uexlogoutagent )
 done
 
 # only run the Plist processing command once all other jamf policies have completed
@@ -145,29 +152,28 @@ for i in "${resartPlists[@]}" ; do
 	# if the user has already had a fresh restart then delete the plist
 	# other wise the advise and schedule the logout.
 
-	name=$(fn_getPlistValue "name" "restart_jss" "$i")
+	# name=$(fn_getPlistValue "name" "restart_jss" "$i")
 	packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
 	plistrunDate=$(fn_getPlistValue "runDate" "restart_jss" "$i")
 
-	timeSinceReboot=`echo "${lastReboot} - ${plistrunDate}" | bc`		
-	echo timeSinceReboot is $timeSinceReboot
+	timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
+	echo "timeSinceReboot is $timeSinceReboot"
 	
-	logname=$(echo $packageName | sed 's/.\{4\}$//')
+	logname="${packageName##*/}"
 	logfilename="$logname".log
-	resulttmp="$logname"_result.log
+	# resulttmp="$logname"_result.log
 	logfilepath="$logdir""$logfilename"
-	resultlogfilepath="$logdir""$resulttmp"
 	
 	if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then
 		# the computer has rebooted since $runDateFriendly
 		#delete the plist
-		logInUEX "Deleting the restart plsit $i because the computer has rebooted since $runDateFriendly"
-		rm "/Library/Application Support/JAMF/UEX/restart_jss/$i"
+		logInUEX "Deleting the restart plsit $i because the computer has rebooted since $lastRebootFriendly"
+		rm "$UEXFolderPath/restart_jss/$i"
 	else 
 		# the computer has NOT rebooted since $runDateFriendly
-		lastline=`awk 'END{print}' "$logfilepath"`
+		lastline=$( awk 'END{print}' "$logfilepath" )
 		if [[ "$lastline" != *"Prompting the user"* ]] ; then 
-			logInUEX "The computer has NOT rebooted since $runDateFriendly"
+			logInUEX "The computer has NOT rebooted since $lastRebootFriendly"
 			logInUEX "Prompting the user that a restart is required"
 		fi
 		restart="true"
@@ -184,31 +190,30 @@ if [[ $restart != "true" ]] ; then
 	# OR if the user has already had a fresh login then delete the plist
 	# other wise the advise and schedule the logout.
 
-		name=$(fn_getPlistValue "name" "logout_jss" "$i")
+		# name=$(fn_getPlistValue "name" "logout_jss" "$i")
 		packageName=$(fn_getPlistValue "packageName" "logout_jss" "$i")
 		plistloggedInUser=$(fn_getPlistValue "loggedInUser" "logout_jss" "$i")
 		checked=$(fn_getPlistValue "checked" "logout_jss" "$i")
 		plistrunDate=$(fn_getPlistValue "runDate" "logout_jss" "$i")
 
-		plistrunDateFriendly=`date -r $plistrunDate`
+		plistrunDateFriendly="$( date -r "$plistrunDate" )"
 		
-		timeSinceLogin=$((lastLogin-plistrunDate))
-		timeSinceReboot=`echo "${lastReboot} - ${plistrunDate}" | bc`		
+		# timeSinceLogin=$((lastLogin-plistrunDate))
+		timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 		
 		#######################
 		# Logging files setup #
 		#######################
-		logname=$(echo $packageName | sed 's/.\{4\}$//')
+		logname="${packageName##*/}"
 		logfilename="$logname".log
-		resulttmp="$logname"_result.log
+		# resulttmp="$logname"_result.log
 		logfilepath="$logdir""$logfilename"
-		resultlogfilepath="$logdir""$resulttmp"
 		
 		
 		if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then
 			# the computer has rebooted since $runDateFriendly
 			#delete the plist
-			rm "/Library/Application Support/JAMF/UEX/logout_jss/$i"
+			rm "$UEXFolderPath/logout_jss/$i"
 			logInUEX "There are no restart interactions required"
 			logInUEX "Deleted logout plist because the user has restarted already"
 			
@@ -216,7 +221,7 @@ if [[ $restart != "true" ]] ; then
 		# if the user has a fresh login since then delete the plist
 		# if the plist has been touched once then the user has been logged out once
 		# then delete the plist
-			rm "/Library/Application Support/JAMF/UEX/logout_jss/$i"
+			rm "$UEXFolderPath/logout_jss/$i"
 			logInUEX "Deleted logout plist because the user has logged out already"
 		elif [[ "$plistloggedInUser" != "$loggedInUser" ]] ; then
 		# if the user in the plist is not the user as the one currently logged in do not force a logout
@@ -226,8 +231,8 @@ if [[ $restart != "true" ]] ; then
 		# the user has NOT logged out since $plistrunDateFriendly
 		# change the plist state to checked=true so that it's deleted the next time.
 			sleep 1
-			/usr/libexec/PlistBuddy -c "set checked true" "/Library/Application Support/JAMF/UEX/logout_jss/$i"
-			lastline=`awk 'END{print}' "$logfilepath"`
+			/usr/libexec/PlistBuddy -c "set checked true" "$UEXFolderPath/logout_jss/$i"
+			lastline=$( awk 'END{print}' "$logfilepath" )
 			if [[ "$lastline" != *"Notifying the user"* ]] ; then 
 				logInUEX "There are no restart interactions required."
 				logInUEX "the user has NOT logged out since $plistrunDateFriendly"
@@ -240,7 +245,7 @@ if [[ $restart != "true" ]] ; then
 	done
 elif [[ $restart == "true" ]] ; then 
 # start the restart plist so the user will prompted to restart instead
-# 	launchctl load -w /Library/LaunchDaemons/com.adidas-group.UEX-restart.plist > /dev/null 2>&1
+# 	launchctl load -w /Library/LaunchDaemons/github.cubandave.UEX-restart.plist > /dev/null 2>&1
 	
 	/usr/local/bin/jamf policy -trigger uexrestartagent &
 fi
@@ -251,12 +256,12 @@ unset IFS
 ##########################################################################################
 # no login  RUN NOW
 # (skip to install stage)
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
-osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. {'print $2'} )
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
+osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. '{print $2}' )
 ##########################################################################################
 ##					Notification if there are scheduled logouts							##
 ##########################################################################################
-if [ $loggedInUser ] ; then
+if [[ "$loggedInUser" ]] ; then
     if [[ "$logout" == "true" ]] ; then
    
     # message
@@ -265,19 +270,21 @@ if [ $loggedInUser ] ; then
     Your user will be automatically logged out at the end of the countdown.'
  
         # dialog with 10 minute countdown
-        logoutclickbutton=`"$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Logout Now"`
+		"$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Logout Now"
      
        
-        if [[ "$osMajor" -ge 14 ]]; then
+        if [[ "$osMajor" -ge 14 ]] ; then
 	        # Force logout by killing the login window for that user
-	        messylogout`ps -Ajc | grep loginwindow | grep "$loggedInUser" | grep -v grep | awk '{print $2}' | xargs kill`
+	        ## messylogout
+	        # shellcheck disable=SC2009
+	        ps -Ajc | grep loginwindow | grep "$loggedInUser" | grep -v grep | awk '{print $2}' | xargs kill
 		else
 			 # Nicer logout (http://apple.stackexchange.com/questions/103571/using-the-terminal-command-to-shutdown-restart-and-sleep-my-mac)
 			osascript -e 'tell application "loginwindow" to «event aevtrlgo»'
 		fi # OS is ge 14
     fi
 else
-    rm /Library/Application\ Support/JAMF/UEX/logout_jss/*
+    rm "$UEXFolderPath"/logout_jss/*
 fi
 	
 ##########################################################################################
@@ -293,8 +300,8 @@ exit 0
 ##########################################################################################
 # 
 # 
-# Jan 18, 2016 	v1.0	--DR--	Stage 1 Delivered
-# Sep 5, 2016 	v2.0	--DR--	Logging added
-# Apr 24, 2018 	v3.7	--DR--	Funtctions added
-# Oct 24, 2018 	v4.0	--DR--	All Change logs are available now in the release notes on GITHUB
+# Jan 18, 2016 	v1.0	--cubandave--	Stage 1 Delivered
+# Sep 5, 2016 	v2.0	--cubandave--	Logging added
+# Apr 24, 2018 	v3.7	--cubandave--	Funtctions added
+# Oct 24, 2018 	v4.0	--cubandave--	All Change logs are available now in the release notes on GITHUB
 # 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # set -x
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
 
 ###################
 # Variables
@@ -93,17 +93,17 @@ FNput_postXML ()
 	FNgetID "$1" "$2"
 	pid=$retreivedID
 
-	if [ $pid ] ; then
+	if [ "$pid" ] ; then
 		echo "updating $1: ($pid) \"$2\"" 
-		FNputXML $1 $pid "$3"
+		FNputXML "$1" "$pid" "$3"
 		echo ""
 	else
 		echo "creating $1: \"$2\""
-		FNpostXML $1 "$3"
+		FNpostXML "$1" "$3"
 		echo ""
 	fi
 
-	FNtestXML $1 "$2"
+	FNtestXML "$1" "$2"
 	}
 
 FNput_postXMLFile () 
@@ -112,17 +112,17 @@ FNput_postXMLFile ()
 	FNgetID "$1" "$2"
 	pid=$retreivedID
 
-	if [ $pid ] ; then
+	if [ "$pid" ] ; then
 		echo "updating $1: ($pid) \"$2\"" 
-		FNputXMLFile $1 $pid "$3"
+		FNputXMLFile "$1" "$pid" "$3"
 		echo ""
 	else
 		echo "creating $1: \"$2\""
-		FNpostXMLFile $1 "$3"
+		FNpostXMLFile "$1" "$3"
 		echo ""
 	fi
 
-	FNtestXML $1 "$2"
+	FNtestXML "$1" "$2"
 	}
 
 FNputXMLFile () 
@@ -140,11 +140,11 @@ FNpostXMLFile ()
 FNtestXML () 
 	{
 
-	FNgetID $1 "$2"
+	FNgetID "$1" "$2"
 	pid=$retreivedID
 
-	if [ $pid ] ; then
-		# echo "$1 \"$2\" exists ($pid)" 
+	if [ "$pid" ] ; then
+		# echo ""$1" \"$2\" exists ($pid)" 
 		echo ""
 	else
 		echo "ERROR $1 \"$2\" does not exist" 
@@ -156,13 +156,9 @@ FNgetID ()
 	{
 		retreivedID=""
 		retreivedXML=""
-		retreivedXML4ParserError=""
 		name="$2"
-		apiName=`/bin/echo ${2// /"%20"}`
 
-		# retreivedXMLofResource=`/usr/bin/curl -s -k "${jss_url}/JSSResource/$1" -u "${jss_user}:${jss_pass}" -H "Accept: application/xml"`
-		retreivedID=`/usr/bin/curl -s -k "${jss_url}/JSSResource/$1" -u "${jss_user}:${jss_pass}" -H "Accept: application/xml" | xmllint --format - | grep -B 1 "$name" | /usr/bin/awk -F'<id>|</id>' '{print $2}' | sed '/^\s*$/d'`
-		# retreivedID=`/bin/echo $retreivedXMLofResource | xmllint --format - | grep -B 1 "$name" | /usr/bin/awk -F'<id>|</id>' '{print $2}' | sed '/^\s*$/d'`
+		retreivedID=$( /usr/bin/curl -s -k "${jss_url}/JSSResource/$1" -u "${jss_user}:${jss_pass}" -H "Accept: application/xml" | xmllint --format - | grep -B 1 "$name" | /usr/bin/awk -F'<id>|</id>' '{print $2}' | sed '/^\s*$/d' )
 
     }
 
@@ -171,9 +167,7 @@ FNgetXML ()
 		local resourceName="$1"
 		local IDtoRead="$2"
 
-		# retreivedXMLofResource=`/usr/bin/curl -s -k "${jss_url}/JSSResource/$1" -u "${jss_user}:${jss_pass}" -H "Accept: application/xml"`
-		# retreivedID=`/usr/bin/curl -s -k "${jss_url}/JSSResource/$1" -u "${jss_user}:${jss_pass}" -H "Accept: application/xml" | xmllint --format - | grep -B 1 "$name" | /usr/bin/awk -F'<id>|</id>' '{print $2}' | sed '/^\s*$/d'`
-		retreivedXML=`/usr/bin/curl -s -k "${jss_url}/JSSResource/$resourceName/id/$IDtoRead" -u "${jss_user}:${jss_pass}" -H "Accept: application/xml"`
+		retreivedXML=$( /usr/bin/curl -s -k "${jss_url}/JSSResource/$resourceName/id/$IDtoRead" -u "${jss_user}:${jss_pass}" -H "Accept: application/xml" )
 
     }
 
@@ -189,7 +183,8 @@ fn_createAgentPolicy () {
 	local scriptID=""
 	local policyScript="$1"
 	local policyTrigger="$2"
-	local agentPolicyName=`echo "${policyScript//.sh}"`
+	local agentPolicyName
+	agentPolicyName="${policyScript//.sh}"
 	local agentPolicyName+=" - Trigger"
 	echo "$agentPolicyName"
 
@@ -227,7 +222,8 @@ fn_createAPIPolicy () {
 	local scriptID=""
 	local policyScript="$1"
 	local policyTrigger="$2"
-	local APIPolicyName=`echo "${policyScript//.sh}"`
+	local APIPolicyName 
+	APIPolicyName="${policyScript//.sh}"
 	local APIPolicyName+=" - Disk Space - Trigger"
 	local parameter4="$3"
 	local parameter5="$4"
@@ -237,11 +233,11 @@ fn_createAPIPolicy () {
 	local scriptID="$retreivedID"
 
 	FNgetID "policies" "$APIPolicyName"
-	if [ $retreivedID ] ; then
+	if [ "$retreivedID" ] ; then
 		FNgetXML "policies" "$retreivedID"
 
-		parameter6=`echo "$retreivedXML" | xmllint --xpath "/policy/scripts/script/parameter6/text()" -`
-		parameter7=`echo "$retreivedXML" | xmllint --xpath "/policy/scripts/script/parameter7/text()" -`
+		parameter6=$( echo "$retreivedXML" | xmllint --xpath "/policy/scripts/script/parameter6/text()" - )
+		parameter7=$( echo "$retreivedXML" | xmllint --xpath "/policy/scripts/script/parameter7/text()" - )
 	fi
 
 	local APIPolicyXML="<policy>
@@ -276,7 +272,7 @@ FNput_postXML "policies" "$APIPolicyName" "$APIPolicyXML"
 }
 
 fn_checkForSMTPServer () {
-	echo $(/usr/bin/curl -s -k "${jss_url}/JSSResource/smtpserver" -u "${jss_user}:${jss_pass}" -H "Accept: application/xml" | xmllint --format - | grep -c "<enabled>true</enabled>")
+	/usr/bin/curl -s -k "${jss_url}/JSSResource/smtpserver" -u "${jss_user}:${jss_pass}" -H "Accept: application/xml" | xmllint --format - | grep -c "<enabled>true</enabled>"
 }
 
 fn_createTriggerPolicy () {
@@ -510,7 +506,7 @@ fn_openAPIPolicies () {
 # create category
 	FNcreateCategory "$UEXCategoryName"
 	UEXCategoryID="$retreivedID"
-	echo $UEXCategoryID
+	echo "$UEXCategoryID"
 
 
 if [[ "$helpTicketsEnabledViaAppRestriction" = true ]] || [[ "$helpTicketsEnabledViaGeneralStaticGroup" = true ]] ;then
@@ -572,13 +568,13 @@ fi
 	# "Checks"
 	# "Apps for Quick and Block"
 	# "InstallDuration - Must be integer"
-	# "Maximum Deferral of Posponements;Service Desk Disk Space Limit - Must be integer"
-	# "Packages separated by semi-colon"
-	# "Trigger Names separated by semi-colon"
+	# "MaxDefer;DiskTicketLimit"
+	# "Packages separated by ;"
+	# "Trigger Names separated by ;"
 	# "Custom Message - optional"
 
 	for UEXInteractionScript in "${UEXInteractionScripts[@]}" ; do
-		fn_setScriptParameters "$UEXInteractionScript" "Vendor;AppName;Version;SpaceReq" "Checks" "Apps for Quick and Block" "InstallDuration - Must be integer" "Maximum Deferral of Posponements;Service Desk Disk Space Limit - Must be integer" "Packages separated by semi-colon" "Trigger Names separated by semi-colon" "Custom Message - optional"
+		fn_setScriptParameters "$UEXInteractionScript" "Vendor;AppName;Version;SpaceReq" "Checks" "Apps for Quick and Block" "InstallDuration - Must be integer" "MaxDefer;DiskTicketLimit" "Packages separated by ;" "Trigger Names separated by ;" "Custom Message - optional"
 	done
 
 

@@ -1,23 +1,38 @@
 #!/bin/bash
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
-loggedInUserHome=`dscl . read /Users/$loggedInUser NFSHomeDirectory | awk '{ print $2 }'`
+
+# used for major debugging
+# set -x
+
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
 
 ##########################################################################################
-##								Paramaters for Customization 							##
+##						Manual Jamf Interaction Configuration 							##
 ##########################################################################################
-
-title="Your IT Department"
-
-# Jamf Pro 10 icon if you want another custom one then please update it here.
-# or you can customize this with an image you've included in UEX resources or is already local on the computer
-customLogo="/Library/Application Support/JAMF/Jamf.app/Contents/Resources/AppIcon.icns"
-
-# if you you jamf Pro 10 to brand the image with your self sevice icon will be here
-# or you can customize this with an image you've included in UEX resources or is already local on the computer
-SelfServiceIcon="$loggedInUserHome/Library/Application Support/com.jamfsoftware.selfservice.mac/Documents/Images/brandingimage.png"
-
 
 enable_filevault_reboot=false
+
+
+##########################################################################################
+##						Get The Jamf Interaction Configuration 							##
+##########################################################################################
+
+fn_read_uex_Preference () {
+	local domain="$1"
+	defaults read /Library/Preferences/github.cubandave.uex.plist "$domain"
+}
+
+UEXFolderPath="$(fn_read_uex_Preference "UEXFolderPath")"
+# in case the plist hasn't been create on this version then set it to the previous standard
+if [[ -z "$UEXFolderPath" ]] ; then
+	UEXFolderPath="/Library/Application Support/JAMF/UEX"
+fi
+
+title="$(fn_read_uex_Preference "title")"
+
+customLogo="$(fn_read_uex_Preference "customLogo")"
+
+SelfServiceIcon="$(fn_read_uex_Preference "SelfServiceIcon")"
+
 
 ##########################################################################################
 ##########################################################################################
@@ -29,16 +44,17 @@ enable_filevault_reboot=false
 # restart if required.
 # 
 # Name: restart-notification.sh
-# Version Number: 4.1
+# Version Number: 4.2
 # 
 # Created Jan 18, 2016 by 
-# David Ramirez (David.Ramirez@adidas.com)
+# cubandave(https://github.com/cubandave)
 #
-# Updates January 23rd, 2017 by
-# DR = David Ramirez (David.Ramirez@adidas.com) 
+# Updates found on github
+# https://github.com/cubandave/Jamf-Interaction-Toolkit/commits/master
 # 
-# Copyright (c) 2018 the adidas Group
-# All rights reserved.
+# cubandave/Jamf-Interaction-Toolkit is licensed under the
+# Apache License 2.0
+# https://github.com/cubandave/Jamf-Interaction-Toolkit/blob/master/LICENSE
 ##########################################################################################
 ########################################################################################## 
 
@@ -46,7 +62,7 @@ enable_filevault_reboot=false
 ##						STATIC VARIABLES FOR CocoaDialog DIALOGS						##
 ##########################################################################################
 
-CocoaDialog="/Library/Application Support/JAMF/UEX/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog"
+CocoaDialog="$UEXFolderPath/resources/cocoaDialog.app/Contents/MacOS/CocoaDialog"
 
 ##########################################################################################
 
@@ -58,7 +74,7 @@ CocoaDialog="/Library/Application Support/JAMF/UEX/resources/cocoaDialog.app/Con
 jhPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 
 #if the icon file doesn't exist then set to a standard icon
-if [[ -e "$SelfServiceIcon" ]]; then
+if [[ -e "$SelfServiceIcon" ]] ; then
 	icon="$SelfServiceIcon"
 elif [ -e "$customLogo" ] ; then
 	icon="$customLogo"
@@ -70,9 +86,10 @@ fi
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-# logname=$(echo $packageName | sed 's/.\{4\}$//')
+# logname="${packageName##*/}"
 # logfilename="$logname".log
-logdir="/Library/Application Support/JAMF/UEX/UEX_Logs/"
+logdir="$UEXFolderPath/UEX_Logs/"
+compname=$( scutil --get ComputerName )
 # resulttmp="$logname"_result.log
 ##########################################################################################
 
@@ -81,78 +98,76 @@ logdir="/Library/Application Support/JAMF/UEX/UEX_Logs/"
 ##########################################################################################
 
 fn_getPlistValue () {
-	/usr/libexec/PlistBuddy -c "print $1" /Library/Application\ Support/JAMF/UEX/$2/"$3"
+	/usr/libexec/PlistBuddy -c "print $1" "$UEXFolderPath/$2/$3"
 }
 
 logInUEX () {
-	echo $(date)	$compname	:	"$1" >> "$logfilepath"
+	echo "$(date)"	"$compname"	:	"$1" >> "$logfilepath"
 }
 
 fn_getPassword () {
 	"$CocoaDialog" standard-inputbox --no-show --title "$title" --informative-text "Please enter in your password" -no-newline --icon-file "$icon" | tail +2
 }
 
-logInUEX4DebugMode () {
-	if [ $debug = true ] ; then	
-		logMessage="-DEBUG- $1"
-		logInUEX $logMessage
-	fi
-}
-
 log4_JSS () {
-	echo $(date)	$compname	:	"$1"  | tee -a "$logfilepath"
+	echo "$(date)"	"$compname"	:	"$1"  | tee -a "$logfilepath"
 }
 
 ##########################################################################################
 ##			CALCULATIONS TO SEE IF A RESTART HAS OCCURRED SINCE BEING REQUIRED			##
 ##########################################################################################
 
-lastReboot=`date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s"`
-lastRebootFriendly=`date -r$lastReboot`
+lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s" )
+lastRebootFriendly=$( date -r "$lastReboot" )
 
-rundate=`date +%s`
+# runDate=$( date +%s )
 
-plists=`ls /Library/Application\ Support/JAMF/UEX/restart_jss/ | grep ".plist"`
-
-set -- "$plists" 
-IFS=$'\n' ; declare -a plists=($*)  
+IFS=$'\n'
+plists=( "$( ls "$UEXFolderPath"/restart_jss/*.plist )" )
 unset IFS
+
+# plists=$( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" )
+
+# set -- "$plists" 
+# ##This works because i'm setting the seperator
+# # shellcheck disable=SC2048
+# IFS=$'\n' ; declare -a plists=($*)  
+# unset IFS
 
 for i in "${plists[@]}" ; do
 	# Check all the plist in the folder for any required actions
 	# if the user has already had a fresh restart then delete the plist
 	# other wise the advise and schedule the logout.
 	
-	name=$(fn_getPlistValue "name" "restart_jss" "$i")
+	# name=$(fn_getPlistValue "name" "restart_jss" "$i")
 	packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
 	plistrunDate=$(fn_getPlistValue "runDate" "restart_jss" "$i")
-	runDateFriendly=`date -r $plistrunDate`
+	# runDateFriendly=$( date -r $plistrunDate )
 	
 # 	echo lastReboot is $lastReboot
 # 	echo plistRunDate is $plistRunDate
 	
-	timeSinceReboot=`echo "${lastReboot} - ${plistrunDate}" | bc`
+	timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 	
 	#######################
 	# Logging files setup #
 	#######################
-	logname=$(echo $packageName | sed 's/.\{4\}$//')
+	logname="${packageName##*/}"
 	logfilename="$logname".log
-	resulttmp="$logname"_result.log
+	# resulttmp="$logname"_result.log
 	logfilepath="$logdir""$logfilename"
-	resultlogfilepath="$logdir""$resulttmp"
 	
 # 	echo timeSinceReboot is $timeSinceReboot
 	if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then
 		# the computer has rebooted since $runDateFriendly
 		#delete the plist
-		logInUEX "Deleting the restart plsit $i because the computer has rebooted since $runDateFriendly"
-		rm "/Library/Application Support/JAMF/UEX/restart_jss/$i"
+		logInUEX "Deleting the restart plsit $i because the computer has rebooted since $lastRebootFriendly"
+		rm "$UEXFolderPath/restart_jss/$i"
 	else 
 		# the computer has NOT rebooted since $runDateFriendly
-		lastline=`awk 'END{print}' "$logfilepath"`
+		lastline=$( awk 'END{print}' "$logfilepath" )
 		if [[ "$lastline" != *"Prompting the user"* ]] ; then 
-			logInUEX "The computer has NOT rebooted since $runDateFriendly"
+			logInUEX "The computer has NOT rebooted since $lastRebootFriendly"
 			logInUEX "Prompting the user that a restart is required"
 		fi
 		restart="true"
@@ -166,22 +181,26 @@ done
 ##########################################################################################
 # no login  RUN NOW
 # (skip to install stage)
-loggedInUser=`/bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root`
+loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
 
 ##########################################################################################
 ##					Notification if there are scheduled restarts						##
 ##########################################################################################
 
-osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. {'print $2'} )
+osMajor=$( /usr/bin/sw_vers -productVersion | awk -F. '{print $2}' )
 
 sleep 15
-otherJamfprocess=`ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent`
-otherJamfprocess+=`ps aux | grep [Ss]plashBuddy`
+## This is needed to rule out only what's needed
+# shellcheck disable=SC2009
+otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent )
+otherJamfprocess+=$( pgrep SplashBuddy )
 if [[ "$restart" == "true" ]] ; then
 	while [[ $otherJamfprocess != "" ]] ; do 
 		sleep 15
-		otherJamfprocess=`ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent`
-		otherJamfprocess+=`ps aux | grep [Ss]plashBuddy`
+		## This is needed to rule out only what's needed
+		# shellcheck disable=SC2009
+		otherJamfprocess=$( ps aux | grep jamf | grep -v grep | grep -v launchDaemon | grep -v jamfAgent | grep -v uexrestartagent )
+		otherJamfprocess+=$( pgrep SplashBuddy )
 	done
 fi
 
@@ -191,17 +210,17 @@ if [[ $otherJamfprocess == "" ]] ; then
 
 
 ##########################################################################################
-##						FileVautl Authenticated reboot									##
+##						FileVault Authenticated reboot									##
 ##########################################################################################
 
-		fvUsers=($(fdesetup list | awk -F',' '{ print $1}'))
-		fvAutrestartSupported=`fdesetup supportsauthrestart`
+		fvUsers=("$(fdesetup list | awk -F',' '{ print $1}')")
+		fvAutrestartSupported=$( fdesetup supportsauthrestart )
 
 		for user2Check in "${fvUsers[@]}"; do
-			# Check if the logged in user can unlock the disk by lopping through the user that are abel to unlock it
+			# Check if the logged in user can unlock the disk by lopping through the user that are able to unlock it
 
-			if [[ "$loggedInUser" == "$user2Check" ]]; then
-				# set the unlock disk variable so that the user can be proompted if they want to do an authenticated restart
+			if [[ "$loggedInUser" == "$user2Check" ]] ; then
+				# set the unlock disk variable so that the user can be prompted if they want to do an authenticated restart
 				userCanUnLockDisk=true
 				break
 			fi
@@ -217,9 +236,9 @@ Would you to like enter your password to have the computer unlock the disk autom
 Note: Automatic unlock does not always occur.'
 	
 		#notice
-		fvUnlockButton=`"$jhPath" -windowType hud -lockHUD -heading "$fvUnlockHeading" -windowPostion lr -title "$title" -description "$fvUnlockNotice" -icon "$icon" -timeout 300 -countdown -alignCountdown center -button1 "No" -button2 "Yes" `
+		fvUnlockButton=$( "$jhPath" -windowType hud -lockHUD -heading "$fvUnlockHeading" -windowPostion lr -title "$title" -description "$fvUnlockNotice" -icon "$icon" -timeout 300 -countdown -alignCountdown center -button1 "No" -button2 "Yes"  )
 		
-			if [[ "$fvUnlockButton" = 2 ]]; then
+			if [[ "$fvUnlockButton" = 2 ]] ; then
 				log4_JSS "User chose to restart with an authenticatedRestart"
 				authenticatedRestart=true
 				passwordLooper=0
@@ -228,7 +247,7 @@ Note: Automatic unlock does not always occur.'
 					userPassword=""
 					userPassword="$(fn_getPassword)"
 
-				if [[ "$userPassword" ]]; then
+				if [[ "$userPassword" ]] ; then
 					#statements
 					authenticatedRestart=true
 					expect -c "
@@ -250,8 +269,8 @@ Note: Automatic unlock does not always occur.'
 	Click "Try Again" or "Cancel".'
 		
 				#notice
-				fvUnlockErrorButton=`"$jhPath" -windowType hud -lockHUD -heading "$fvUnlockHeading" -windowPostion lr -title "$title" -description "$fvUnlockErrorNotice" -icon "$icon" -timeout 300 -countdown -alignCountdown center -button1 "Cancel" -button2 "Try Again" `
-				if [[ "$fvUnlockErrorButton" = 2 ]]; then
+				fvUnlockErrorButton=$( "$jhPath" -windowType hud -lockHUD -heading "$fvUnlockHeading" -windowPostion lr -title "$title" -description "$fvUnlockErrorNotice" -icon "$icon" -timeout 300 -countdown -alignCountdown center -button1 "Cancel" -button2 "Try Again"  )
+				if [[ "$fvUnlockErrorButton" = 2 ]] ; then
 					#statements
 					passwordLooper=0
 				else
@@ -263,25 +282,25 @@ Note: Automatic unlock does not always occur.'
 
 			fi # if the user chose to try an authenticated restart
 
-		fi # if user can unlock a disk supporting autheciated restart
+		fi # if user can unlock a disk supporting authenticated restart
 
 ##########################################################################################
 ##									Standard reboot										##
 ##########################################################################################
 		
-		if [ $loggedInUser ] && [[ "$authenticatedRestart" != true ]] ; then
+		if [[ "$loggedInUser" ]] && [[ "$authenticatedRestart" != true ]] ; then
 		# message
 		notice='In order for the changes to complete you must restart your computer. Please save your work and click "Restart Now" within the allotted time. 
 	
 Your computer will be automatically restarted at the end of the countdown.'
 	
 		#notice
-		restartclickbutton=`"$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Restart Now"`
+		"$jhPath" -windowType hud -lockHUD -windowPostion lr -title "$title" -description "$notice" -icon "$icon" -timeout 3600 -countdown -alignCountdown center -button1 "Restart Now"
 	
 			if [[ "$authenticatedRestart" = true ]] ;then
 				log4_JSS "ENTRY 2: User chose to restart with an authenticatedRestart"
 
-			elif [[ "$osMajor" -ge 14 ]]; then
+			elif [[ "$osMajor" -ge 14 ]] ; then
 				#statements
 				shutdown -r now
 			else
@@ -310,8 +329,8 @@ exit 0
 ##########################################################################################
 # 
 # 
-# Jan 18, 2016 	v1.0	--DR--	Stage 1 Delivered
-# Sep 5, 2016 	v2.0	--DR--	Logging added
-# Apr 24, 2018 	v3.7	--DR--	Funtctions added
-# Oct 24, 2018 	v4.0	--DR--	All Change logs are available now in the release notes on GITHUB
+# Jan 18, 2016 	v1.0	--cubandave--	Stage 1 Delivered
+# Sep 5, 2016 	v2.0	--cubandave--	Logging added
+# Apr 24, 2018 	v3.7	--cubandave--	Funtctions added
+# Oct 24, 2018 	v4.0	--cubandave--	All Change logs are available now in the release notes on GITHUB
 # 

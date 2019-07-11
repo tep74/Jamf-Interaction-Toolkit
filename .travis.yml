@@ -1,0 +1,5 @@
+language: shell
+sudo: false
+script:
+  - shopt -s globstar
+  - shellcheck **/*.sh

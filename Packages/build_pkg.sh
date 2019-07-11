@@ -1,11 +1,11 @@
 #!/bin/bash
 
-VERSION=`date +%Y%m%d%H%M`
+VERSION=$( date +%Y%m%d%H%M )
 
 # Get the absolute path of the directory containing this script
 # https://unix.stackexchange.com/questions/9541/find-absolute-path-from-a-script
 
-dir=$(unset CDPATH && cd "$(dirname "$0")" && echo $PWD)
+dir=$( unset CDPATH && cd "$(dirname "$0")" && echo "$PWD" )
 
 # if [ -d "${dir}/payload/Library/Application Support/SplashBuddy/presentation.bundle/Base.lproj" ]; then
 #     echo "Renaming Base.lproj to en.lproj…"
@@ -22,7 +22,7 @@ dir=$(unset CDPATH && cd "$(dirname "$0")" && echo $PWD)
 # Build package
 
 /usr/bin/pkgbuild --root "${dir}/payload" \
-	 --identifier ag.adidas.UEXresources.Installer \
-	 --version ${VERSION} \
+	 --identifier github.cubandave.UEX.installer \
+	 --version "$VERSION" \
 	 --component-plist "${dir}/UEXresources-component.plist" \
 	 "${dir}/UEXresourcesInstaller-${VERSION}.pkg"
