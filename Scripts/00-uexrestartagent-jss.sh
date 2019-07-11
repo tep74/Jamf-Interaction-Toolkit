@@ -229,7 +229,7 @@ if [[ $otherJamfprocess == "" ]] ; then
 
 		# only if some one is logged in and can unlock the disk and it's supported
 		## Only if FV is on too because #60
-		if [[ $loggedInUser ]] && [[ "$userCanUnLockDisk" = true ]] && [[ "$fvAutrestartSupported" = true ]] && [[ "$enable_filevault_reboot" = true ]] && [[ "$fvStatus" == *"on"*]] ; then
+		if [[ $loggedInUser ]] && [[ "$userCanUnLockDisk" = true ]] && [[ "$fvAutrestartSupported" = true ]] && [[ "$enable_filevault_reboot" = true ]] && [[ "$fvStatus" == *"on"* ]] ; then
 	
 			fvUnlockHeading="FileVault Authorized Restart"
 			fvUnlockNotice='In order for the changes to complete you must restart your computer. Please save your work. 
