@@ -187,8 +187,8 @@ customMessage=${11}
 
 # for debugging
 # NameConsolidated="UEX;Quit Dialog;1.0"
-# checks=$( echo "merp nopreclose msupdate" | tr '[:upper:]' '[:lower:]' )
-# apps=""
+# checks=$( echo "merp nopreclose block" | tr '[:upper:]' '[:lower:]' )
+# apps="Safari.app;Chess.app;iTunes.app;World of Apps.app;Photos.app"
 # installDuration=15
 # maxdeferConsolidated="1"
 # packages=""
@@ -219,7 +219,7 @@ pathToPackage="$waitingRoomDIR""$NameConsolidated4plist".pkg
 packageName="$( basename "$pathToPackage" )"
 # packageName="${pathToPackage##*/}"
 packageName="$( basename "$pathToPackage" )"
-pathToFolder="$( dirname "$pathToPackage" )"
+
 
 
 ##########################################################################################
@@ -297,7 +297,7 @@ if [[ $debug = true ]] ; then
 		# packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
 		# packageName="${pathToPackage##*/}"
 		packageName="$( basename "$pathToPackage" )"
-		pathToFolder="$( dirname "$pathToPackage" )"
+		
 	fi
 	
 	mkdir -p "$debugDIR" > /dev/null 2>&1
@@ -639,6 +639,7 @@ fn_waitForApps2Quit4areYouSure () {
 			appsRunning+=("${app}")
 
 		fi
+		unset IFS
 	done
 
 	if [[ "${appsRunning[*]}" != *".app"* ]] ; then
@@ -726,7 +727,9 @@ fn_check4PendingRestartsOrLogout () {
 	lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s" )
 	# lastRebootFriendly=$( date -r$lastReboot )
 
-	resartPlists=$( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" )
+	## keeping for tesging shellcheck
+	# resartPlists=$( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" )
+	resartPlists=$( ls "$UEXFolderPath"/restart_jss/*.plist )
 	set -- "$resartPlists"
 	IFS=$'\n'
 	##This works because i'm setting the seperator
@@ -734,7 +737,9 @@ fn_check4PendingRestartsOrLogout () {
 	declare -a resartPlists=($*)  
 	unset IFS
 
-	logoutPlists=$( ls "$UEXFolderPath"/logout_jss/ | grep ".plist" )
+	## keeping for tesging shellcheck
+	# logoutPlists=$( ls "$UEXFolderPath"/logout_jss/ | grep ".plist" )
+	logoutPlists=$( ls "$UEXFolderPath"/logout_jss/*.plist )
 	set -- "$logoutPlists" 
 	IFS=$'\n'
 	##This works because i'm setting the seperator
@@ -1114,6 +1119,8 @@ fn_check_4_msupdate () {
 
 fn_getMSupdatePackageURLs_and_names () {
 	IFS=$'\n'
+	##only download the delta update
+	msUPdatePackageURLS=( "$( grep -v "FullUpdaterLocation" "$msupdateLogPlist" |  grep -A 1 "Location" | /usr/bin/awk -F'<string>|</string>' '{print $2}')" )
 	unset IFS
 	# echo "msUPdatePackageURLS is: $msUPdatePackageURLS"
 }
@@ -1566,7 +1573,6 @@ No updates available."
 			apps="xayasdf.app;asdfasfd.app"
 		fi
 
-		updatesfiltered=$( grep "*" -A 1 "$appleSUSlog" | grep -v "*" | awk -F ',' '{print $1}' | awk -F '\t' '{print $2}' | sed '/^\s*$/d' )
 		##This is looking explicitly for the * character
 		# shellcheck disable=SC2063
 		updatesfiltered=$( grep "*" -A 1 "$appleSUSlog" | grep -v "*" | awk -F ',' '{print $1}' | awk -F '\t' '{print $2}' | sed '/^\s*$/d' )
@@ -1706,7 +1712,7 @@ runDateFriendly="$( date -r "$runDate" )"
 # packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
 # packageName="${pathToPackage##*/}"
 packageName="$( basename "$pathToPackage" )"
-pathToFolder="$( dirname "$pathToPackage" )"
+
 SSplaceholderDIR="$UEXFolderPath/selfservice_jss/"
 
 
@@ -1795,15 +1801,14 @@ if [[ "$spaceRequired" ]] ; then
 	logInUEX "spaceRequired=$spaceRequired"
 fi
 logInUEX "checks=$checks"
-if [[ "$checks" == *"quit"* ]] || [[ "$checks" == *"block"* ]] ; then logInUEX "$apps=$apps2block" ; fi
-logInUEX "altpaths=${altpaths[@]}"
+if [[ "$checks" == *"quit"* ]] || [[ "$checks" == *"block"* ]] ; then logInUEX "apps=$apps2block" ; fi
+logInUEX "altpaths=${altpaths[*]}"
 logInUEX "maxdefer=$maxdefer"
 
 if [[ $diskCheckDelaylimit ]] ; then 
 	logInUEX "diskCheckDelaylimit=$diskCheckDelaylimit"
 fi
-logInUEX "packages=${packages[@]}"
-logInUEX "command=$command"
+logInUEX "packages=${packages[*]}"
 logInUEX "******* END UEX Detail ******"
 
 logInUEX "******* script started ******"
@@ -1815,18 +1820,18 @@ logInUEX "******* script started ******"
 
 
 if [[ ! -e "$jamfBinary" ]] ; then 
-warningmsg=$( "$CocoaDialog" ok-msgbox --icon caution --title "$title" --text "Error"  
+"$CocoaDialog" ok-msgbox --icon caution --title "$title" --text "Error"  \
     --informative-text "There is Scheduled $action being attempted but the computer doesn't have JAMF Management software installed correctly. Please contact $ServiceDeskName for support." \
-    --float --no-cancel )
+    --float --no-cancel
     badvariable=true
     logInUEX "ERROR: JAMF binary not found"
 fi
 
 jamfhelper="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 if [[ ! -e "$jamfhelper" ]] ; then 
-warningmsg=$( "$CocoaDialog" ok-msgbox --icon caution --title "$title" --text "Error"   
+"$CocoaDialog" ok-msgbox --icon caution --title "$title" --text "Error"  \
     --informative-text "There is Scheduled $action being attempted but the computer doesn't have JAMF Management software installed correctly. Please contact $ServiceDeskName for support." \
-    --float --no-cancel )
+    --float --no-cancel
     badvariable=true
     logInUEX "ERROR: jamfHelper not found"
 fi
@@ -2099,13 +2104,10 @@ fi
 
 if [[ "$( fn_BatteryStatus )" =~ "AC" ]] ; then
 	#on AC power
-	power=true
 	log4_JSS "Computer on AC power"
 else
 	#on battery power
-	power=false
 	log4_JSS "Computer on battery power"
-
 fi
 
 
@@ -2156,18 +2158,23 @@ if [[ "$checks" == *"block"* ]] ; then
 		done
 		
 		
-		if  [ "$appfound" != "" ] || [[ "$userappfound" != "" ]] || [[ "$altpathsfound" != "" ]] ; then
+		if  [ "$appfound" != "" ] || [[ "$userappfound" != "" ]] || [[ "${altpathsfound[*]}" != "" ]] ; then
 			appsinstalled+=("${app}")
 		else 
 			logInUEX4DebugMode "Applicaiton not found in any specified paths."
 		fi
 	done
 
-	if [[ "${#apps[@]}" -le 4 ]] ; then
-		apps4dialog=$( IFS=$'\n'; echo "${apps[*]}" | sed 's/.\{4\}$//' )
-	else
-		apps4dialog=$( IFS=$'\n'; printf '%-35s\t||\t%-35s\n' $( echo "${apps[*]}" | sed 's/.\{4\}$//') )
-	fi
+	##replaced with new method
+	# if [[ "${#apps[@]}" -le 4 ]] ; then
+	# 	##testing for shellcheck
+	# 	# apps4dialog=$( IFS=$'\n'; echo "${apps[*]}" | sed 's/.\{4\}$//' )
+	# 	apps4dialog=$( IFS=$'\n'; echo "${apps[*]//.app/}")
+	# else
+	# 	##testing for shellcheck
+	# 	# apps4dialog=$( IFS=$'\n'; printf "%-35s\t||\t%-35s\n $( echo "${apps[*]}" | sed 's/.\{4\}$//')" )
+	# 	apps4dialog=$( IFS=$'\n'; printf "%-35s\t||\t%-35s\n ${apps[*]//.app/}" )
+	# fi
 	
 fi
 
@@ -2189,7 +2196,7 @@ pathtopkg="$waitingRoomDIR"
 ##########################################################################################
 
 
-if [[ "$checks" == *"block"* ]] && [[ $appsinstalled == "" ]] ; then 
+if [[ "$checks" == *"block"* ]] && [[ "${appsinstalled[*]}" == "" ]] ; then 
 	# original_string='i love Suzi and Marry'
 	# string_to_replace_Suzi_with=Sara
 	# result_string="${original_string/Suzi/$string_to_replace_Suzi_with}"
@@ -2204,20 +2211,25 @@ fi
 #Generate list of apps that are running that need to be quit
 fn_generatateApps2quit
 
+##replaced with new method
 # Create dialog list with each item on a new line for the dialog windows
 # If the list is too long then put two on a line separated by ||
-if [[ "$checks" == *"quit"* ]] ; then
-	if [[ "${#apps2quit[@]}" -le 4 ]] ; then
-		apps4dialog=$( IFS=$'\n'; echo "${apps2quit[*]}" | sed 's/.\{4\}$//' )
-	else
-		apps4dialog=$( IFS=$'\n'; printf '%-35s\t||\t%-35s\n' $( echo "${apps2quit[*]}" | sed 's/.\{4\}$//') )
-	fi
-fi
+# if [[ "$checks" == *"quit"* ]] ; then
+# 	if [[ "${#apps2quit[@]}" -le 4 ]] ; then
+# 		## testing for shellcheck
+# 		# apps4dialog=$( IFS=$'\n'; echo "${apps2quit[*]}" | sed 's/.\{4\}$//' )
+# 		apps4dialog=$( IFS=$'\n'; echo "${apps2quit[*]//.app/}" )
+# 	else
+# 		## testing for shellcheck
+# 		# apps4dialog=$( IFS=$'\n'; printf '%-35s\t||\t%-35s\n' $( echo "${apps2quit[*]}" | sed 's/.\{4\}$//') )
+# 		apps4dialog=$( IFS=$'\n'; printf "%-35s\t||\t%-35s\n ${apps2quit[*]//.app/}"  )
+# 	fi
+# fi
 
 # modify lists for quitting and removing apps from lists
 for app2quit in "${apps2quit[@]}" ; do
 	delete_me=$app2quit
-	for i in ${!appsinstalled[@]};do
+	for i in "${!appsinstalled[@]}" ; do
 		if [[ "${appsinstalled[$i]}" == "$delete_me" ]] ; then
 			unset "appsinstalled[$i]"
 		fi 
@@ -2227,7 +2239,7 @@ done
 # modify lists for quitting and removing apps from lists
 for app2reopen in "${apps2ReOpen[@]}" ; do
 	delete_me=$app2reopen
-	for i in ${!appsinstalled[@]};do
+	for i in "${!appsinstalled[@]}" ; do
 		if [[ "${appsinstalled[$i]}" == "$delete_me" ]] ; then
 			unset "appsinstalled[$i]"
 		fi 
@@ -2236,21 +2248,33 @@ done
 
 # apps4dialogquit=$( IFS=$'\n'; printf '• Quit %s\n' $( echo "${apps[*]}" | sed 's/.\{4\}$//') )
 
-apps4dialogquit=$( IFS=$'\n'; printf '%-25s\t%-25s\n' $( echo "${apps2quit[*]}" | sed 's/.\{4\}$//') )
-apps4dialogreopen=$( IFS=$'\n'; printf '%-25s\t%-25s\n' $( echo "${apps2ReOpen[*]}" | sed 's/.\{4\}$//') )
-apps4dialogblock=$( IFS=$'\n'; printf '%-25s\t%-25s\n' $( echo "${appsinstalled[*]}" | sed 's/.\{4\}$//') )
+## Testing ShellCheck
+# apps4dialogquit=$( IFS=$'\n'; printf '%-25s\t%-25s\n' $( echo "${apps2quit[*]}" | sed 's/.\{4\}$//') )
+# apps4dialogreopen=$( IFS=$'\n'; printf '%-25s\t%-25s\n' $( echo "${apps2ReOpen[*]}" | sed 's/.\{4\}$//') )
+# apps4dialogblock=$( IFS=$'\n'; printf '%-25s\t%-25s\n' $( echo "${appsinstalled[*]}" | sed 's/.\{4\}$//') )
+
+# shellcheck disable=SC2183
+# shellcheck disable=SC2086
+apps4dialogquit=$( IFS=$'\n'; printf '%-25s\t%-25s\n' ${apps2quit[*]//.app/} )
+# shellcheck disable=SC2183
+# shellcheck disable=SC2086
+apps4dialogreopen=$( IFS=$'\n'; printf '%-25s\t%-25s\n' ${apps2ReOpen[*]//.app/} )
+# shellcheck disable=SC2183
+# shellcheck disable=SC2086
+apps4dialogblock=$( IFS=$'\n'; printf '%-25s\t%-25s\n' ${appsinstalled[*]//.app/} )
+unset IFS
 ##########################################################################################
 ## 									Logout and restart Processing						##
 ##########################################################################################
 
 
-if [[ "$checks" == *"quit"* ]] && [[ "$checks" == *"logout"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] ; then
+if [[ "$checks" == *"quit"* ]] && [[ "$checks" == *"logout"* ]] && [[ "${apps2quit[*]}" == "" ]] && [[ "${apps2ReOpen[*]}" == "" ]] ; then
 	logInUEX " None of the apps are running that would need to be quit. Switching to logout only."
 	checks="${checks/quit/}"
 fi
 
 
-if [[ "$checks" == *"quit"* ]] && [[ "$checks" == *"restart"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] ; then
+if [[ "$checks" == *"quit"* ]] && [[ "$checks" == *"restart"* ]] && [[ "${apps2quit[*]}" == "" ]] && [[ "${apps2ReOpen[*]}" == "" ]] ; then
 	logInUEX " None of the apps are running that would need to be quit. Switching to restart only."
 	checks="${checks/quit/}"
 fi
@@ -2288,19 +2312,19 @@ else
 	elif [[ "$checks" == *"logout"* ]] && [[ "$restartQueued" == true ]] && [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]]  && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lockmac"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ; then
 		log4_JSS "If install is only a logout requirement the user has already approved a restart previously in this session"
 		preApprovedInstall=true
-	elif [[ $restartQueued = true ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" =~ *"AC"* ]] &&  [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lockmac"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ;then
+	elif [[ $restartQueued = true ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" == *"AC"* ]] &&  [[ "$checks" != *"quit"* ]] && [[ "$checks" != *"block"* ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lockmac"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]] ;then
 		log4_JSS "If install is only a restart requirement with a power requiremnet but power is connected and the the user has already approved a restart previously in this session"
 		preApprovedInstall=true
-	elif [[ "$restartQueued" == true ]] && [[ "$checks" == *"quit"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" =~ *"AC"* ]] && [[ "$checks" != *"lockmac"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
+	elif [[ "$restartQueued" == true ]] && [[ "$checks" == *"quit"* ]] && [[ "${apps2quit[*]}" == "" ]] && [[ "${apps2ReOpen[*]}" == "" ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" == *"power"* ]] && [[ "$( fn_BatteryStatus )" == *"AC"* ]] && [[ "$checks" != *"lockmac"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
 		log4_JSS "if the install has a quit and restart requirement with power required and conencted. Also, none of apps are running that need to be quit and the user has already approved a restart previously in this session"
 		preApprovedInstall=true
-	elif [[ "$restartQueued" == true ]] && [[ "$checks" == *"quit"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lockmac"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
+	elif [[ "$restartQueued" == true ]] && [[ "$checks" == *"quit"* ]] && [[ "${apps2quit[*]}" == "" ]] && [[ "${apps2ReOpen[*]}" == "" ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lockmac"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
 		log4_JSS "if the install has a quit and restart requirement but none of apps are running that need to be quit and the user has already approved a restart previously in this session"
 		preApprovedInstall=true
-	elif [[ "$restartQueued" == true ]] && [[ "$checks" == *"logout"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lockmac"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
+	elif [[ "$restartQueued" == true ]] && [[ "$checks" == *"logout"* ]] && [[ "${apps2quit[*]}" == "" ]] && [[ "${apps2ReOpen[*]}" == "" ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lockmac"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
 		log4_JSS "if the install has a quit and logout requirement but none of apps are running that need to be quit and the user has already approved a logout previously in this session "
 		preApprovedInstall=true
-	elif [ "$logoutQueued" = true ] && [[ "$checks" == *"logout"* ]] && [[ $apps2quit == "" ]] && [[ $apps2ReOpen == "" ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lockmac"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
+	elif [ "$logoutQueued" = true ] && [[ "$checks" == *"logout"* ]] && [[ "${apps2quit[*]}" == "" ]] && [[ "${apps2ReOpen[*]}" == "" ]] && [[ "$checks" != *"power"* ]] && [[ "$checks" != *"lockmac"* ]] && [[ "$checks" != *"loginwindow"* ]] && [[ "$checks" != *"saveallwork"* ]]  ; then
 		log4_JSS "if the install has a quit and logout requirement but none of apps are running that need to be quit and the user has already approved a logout previously in this session "
 		preApprovedInstall=true
 	fi
@@ -2369,12 +2393,12 @@ if [[ "$spaceRequired" ]] ; then
 	elif [[ "$unit" == MB ]] ; then
 		convertedfree=0
 	elif [[ "$unit" == TB ]] ; then
-		convertedfree=$(($space * 1000))
+		convertedfree=$((space * 1000))
 	fi
 
-	if [ $convertedfree -lt $spaceRequired ] ; then
+	if [[ "$convertedfree" -lt "$spaceRequired" ]] ; then
 		insufficientSpace=true
-		remaining=$( echo $spaceRequired - $convertedfree | bc )
+		remaining=$( echo "$spaceRequired" - "$convertedfree" | bc )
 		log4_JSS "The computer has insufficient space."
 		log4_JSS "Free in GB: $convertedfree"
 		log4_JSS "Required in GB: $spaceRequired"
@@ -2476,7 +2500,7 @@ if [[ $installDuration -gt 10 ]] ; then
 "
 fi
 
-if [[ "$checks" == *"quit"* ]] && [[ "${apps2quit[@]}" == *".app"*  ]] || [[ "$checks" == *"saveallwork"* ]] || [[ "$apps2ReOpen" ]]  ; then
+if [[ "$checks" == *"quit"* ]] && [[ "${apps2quit[*]}" == *".app"*  ]] || [[ "$checks" == *"saveallwork"* ]] || [[ "${apps2ReOpen[*]}" ]]  ; then
 	PostponeMsg+="Before the $action starts:
 "
 elif [[ "$Laptop" ]] && [[ "$checks" == *"power"* ]] && [[ "$checks" != *"custom"* ]] ; then
@@ -2502,7 +2526,7 @@ else
 fi
 
 
-if [[ "${apps2quit[@]}" == *".app"*  ]] && [[ "$checks" != *"custom"* ]] ; then
+if [[ "${apps2quit[*]}" == *".app"*  ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="• $quittingDesc:
 $apps4dialogquit
 
@@ -2510,23 +2534,23 @@ $apps4dialogquit
 fi
 
 
-if [[ "${apps2quit[@]}" == *".app"*  ]] && [[ "$checks" != *"custom"* ]] && [[ "$apps2ReOpen" ]] && [[ "$checks" == *"restart"* ]] ;then
+if [[ "${apps2quit[*]}" == *".app"*  ]] && [[ "$checks" != *"custom"* ]] && [[ "${apps2ReOpen[*]}" ]] && [[ "$checks" == *"restart"* ]] ;then
 	PostponeMsg+="$apps4dialogreopen
 "
-elif [[ "${apps2quit[@]}" == *".app"* ]] && [[ "$checks" != *"custom"* ]] && [[ "$apps2ReOpen" ]] && [[ "$checks" == *"logout"* ]] ; then
+elif [[ "${apps2quit[*]}" == *".app"* ]] && [[ "$checks" != *"custom"* ]] && [[ "${apps2ReOpen[*]}" ]] && [[ "$checks" == *"logout"* ]] ; then
 	PostponeMsg+="$apps4dialogreopen
 "
-elif [[ "$apps2ReOpen" ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] ;then
+elif [[ "${apps2ReOpen[*]}" ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] ;then
 	PostponeMsg+="• $quittingDesc:
 $apps4dialogreopen
 
 "
-elif [[ "$apps2ReOpen" ]] && [[ "$checks" == *"logout"* ]] && [[ "$checks" != *"custom"* ]] ; then
+elif [[ "${apps2ReOpen[*]}" ]] && [[ "$checks" == *"logout"* ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="• $quittingDesc:
 $apps4dialogreopen
 
 "
-elif [[ "$apps2ReOpen" ]] && [[ "$checks" != *"custom"* ]] ; then
+elif [[ "${apps2ReOpen[*]}" ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="• Apps will quit then reopen after:
 $apps4dialogreopen
 
@@ -2534,30 +2558,30 @@ $apps4dialogreopen
 fi
 
 
-# if [[ "${appsinstalled[@]}" == *".app"* ]] && [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] ; then
+# if [[ "${appsinstalled[*]}" == *".app"* ]] && [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] ; then
 # 	PostponeMsg+="• During the $action, do not open:
 # $apps4dialogblock
 
 # "
-if [[ "$apps2ReOpen" ]] && [[ "${appsinstalled[@]}" != *".app"* ]] && [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] ; then
+if [[ "${apps2ReOpen[*]}" ]] && [[ "${appsinstalled[*]}" != *".app"* ]] && [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="• During the $action, do not open them.
 
 "
-elif [[ "${apps2quit[@]}" == *".app"* ]] && [[ "${appsinstalled[@]}" != *".app"* ]] && [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] ; then
+elif [[ "${apps2quit[*]}" == *".app"* ]] && [[ "${appsinstalled[*]}" != *".app"* ]] && [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="• During the $action, do not re-open them.
 
 "
-elif [[ "$apps2ReOpen" ]] && [[ "${appsinstalled[@]}" == *".app"* ]] && [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] ; then
+elif [[ "${apps2ReOpen[*]}" ]] && [[ "${appsinstalled[*]}" == *".app"* ]] && [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="• During the $action, do not re-open them, or:
 $apps4dialogblock
 
 "
-elif [[ "${apps2quit[@]}" == *".app"* ]] && [[ "${appsinstalled[@]}" == *".app"* ]] && [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] ; then
+elif [[ "${apps2quit[*]}" == *".app"* ]] && [[ "${appsinstalled[*]}" == *".app"* ]] && [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="• During the $action, do not re-open them, or:
 $apps4dialogblock
 
 "
-elif [[ "${appsinstalled[@]}" == *".app"* ]] && [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] ; then
+elif [[ "${appsinstalled[*]}" == *".app"* ]] && [[ "$checks" == *"block"* ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="• During the $action, do not open:
 $apps4dialogblock
 
@@ -2665,7 +2689,7 @@ if [[ -z "${SelfServiceAppName}" ]] ; then
 	SelfServiceAppName="Self Service"
 fi
 
-SelfServiceAppNameDockPlist=$( /bin/echo ${SelfServiceAppName// /"%20"} )
+SelfServiceAppNameDockPlist=$( /bin/echo "${SelfServiceAppName// /"%20"}" )
 SelfServersioninDock=$( sudo -u "$loggedInUser" -H defaults read com.apple.Dock | grep "$SelfServiceAppNameDockPlist" )
 
 # dynamically detect the location of where the user can find self service and update the dialog
@@ -2767,7 +2791,7 @@ spaceMsg+="
 ##########################################################################################
 # notice about needing charger connect if you want to install at logout
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
-usernamefriendly=$( id -P $loggedInUser | awk -F: '{print $8}' )
+usernamefriendly=$( id -P "$loggedInUser" | awk -F: '{print $8}' )
 
 logoutMessage="To start the $action:
 
@@ -2938,6 +2962,7 @@ for app in "${presentationApps[@]}" ; do
 	## This is needed to get the parent proccess and prevent unwanted blocking
 	# shellcheck disable=SC2009
 	appid=$( ps aux | grep "$app/Contents/MacOS/" | grep -v grep | grep -v jamf | awk '{ print $2 }' )
+	unset IFS
 # 	echo Processing application $app
 	if  [ "$appid" != "" ] ; then
 		log4_JSS "Application $app is Running"
@@ -2977,7 +3002,7 @@ while [ $reqlooper = 1 ] ; do
 			SpaceButton=$("$jhPath" -windowType hud -lockHUD -title "$title" -heading "$heading" -description "$spaceMsg" -button1 "OK" -icon "$diskicon" -timeout 600 -windowPosition center -timeout $jhTimeOut | grep -v 239 )
 		fi
 
-		if [ $SpaceButton = "2" ] ; then
+		if [[ "$SpaceButton" = "2" ]] ; then
 			log4_JSS "User clicked the 'Find Clutter Button'"
 			fn_find_Clutter
 		fi
@@ -3015,7 +3040,7 @@ while [ $reqlooper = 1 ] ; do
 		echo 0 > "$PostponeClickResultFile"
 		PostponeClickResult=0
 
-	elif [ -z "$apps2quit" ] && [ -z "$apps2ReOpen" ] && [[ "$checks" == *"quit"* ]] && [[ "$checks" != *"restart"* ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"notify"* ]] ; then
+	elif [ -z "${apps2quit[*]}" ] && [ -z "${apps2ReOpen[*]}" ] && [[ "$checks" == *"quit"* ]] && [[ "$checks" != *"restart"* ]] && [[ "$checks" != *"logout"* ]] && [[ "$checks" != *"notify"* ]] ; then
 		log4_JSS "No apps need to be quit so $action can occur."
 		echo 0 > "$PostponeClickResultFile"
 		PostponeClickResult=0
@@ -3081,9 +3106,9 @@ while [ $reqlooper = 1 ] ; do
 
 	# this is a safety net for closing and for 10.9 skiping jamfHelper windows
 	counter=0
-	jamfHelperOn=$( ps aux | grep jamfHelper | grep -v grep )
-	while [[ $jamfHelperOn != "" ]] ; do
-		let counter=counter+1
+	jamfHelperOn=$( pgrep jamfHelper )
+	while [[ "$jamfHelperOn" != "" ]] ; do
+		counter=$((counter+1))
 		sleep 1
 	
 		if [ "$counter" -ge $timeLimit ] ; then 
@@ -3098,19 +3123,19 @@ while [ $reqlooper = 1 ] ; do
 			# Start the function to kill jamfHelper and start the install if apps are quit
 			fn_waitForApps2Quit
 
-		elif [[ "$checks" == *"block"* ]] && [[ "${apps2ReOpen[@]}" == *".app"*  ]] && [[ "$checks" != *"restart"* ]] && [[ "$checks" != *"logout"* ]] && [[ $insufficientSpace != true ]] ; then
+		elif [[ "$checks" == *"block"* ]] && [[ "${apps2ReOpen[*]}" == *".app"*  ]] && [[ "$checks" != *"restart"* ]] && [[ "$checks" != *"logout"* ]] && [[ $insufficientSpace != true ]] ; then
 			# Start the function to kill jamfHelper and start the install if apps are quit
 			fn_waitForApps2Quit
 		fi
 
-		jamfHelperOn=$( ps aux | grep jamfHelper | grep -v grep )
+		jamfHelperOn=$( pgrep jamfHelper )
 	done
 
 
-	PostponeClickResult=$( cat $PostponeClickResultFile )
+	PostponeClickResult=$( cat "$PostponeClickResultFile" )
 	# echo PostponeClickResult is $PostponeClickResult
 
-	if [ -z $PostponeClickResult ] ; then
+	if [[ -z "$PostponeClickResult" ]] ; then
 
 		# new safety override for not having the charger
 		# BatteryTest=$( pmset -g batt )
@@ -3178,6 +3203,8 @@ while [ $reqlooper = 1 ] ; do
 		log4_JSS "User either skipped or Jamf helper did not return a result."
 	else # User chose an option
 		skipOver=false
+		## Exception required to get rid of last charcter
+		# shellcheck disable=SC2001
 		PostponeClickResult=$( echo $PostponeClickResult | sed 's/1$//' )
 		if [[ "$PostponeClickResult" = 0 ]] ; then
 			PostponeClickResult=""
@@ -3226,9 +3253,18 @@ fi
 	#Generate list of apps that are running that need to be quit
 	fn_generatateApps2quit
 
-	apps4dialogquit=$( IFS=$'\n'; printf '%-25s\t%-25s\n' $( echo "${apps2quit[*]}" | sed 's/.\{4\}$//') )
-	apps4dialogreopen=$( IFS=$'\n'; printf '%-25s\t%-25s\n' $( echo "${apps2ReOpen[*]}" | sed 's/.\{4\}$//') )
+	## Testing Shellcheck
+	# apps4dialogquit=$( IFS=$'\n'; printf '%-25s\t%-25s\n' $( echo "${apps2quit[*]}" | sed 's/.\{4\}$//') )
+	# apps4dialogreopen=$( IFS=$'\n'; printf '%-25s\t%-25s\n' $( echo "${apps2ReOpen[*]}" | sed 's/.\{4\}$//') )
 	
+	# shellcheck disable=SC2183
+	# shellcheck disable=SC2086
+	apps4dialogquit=$( IFS=$'\n'; printf '%-25s\t%-25s\n' ${apps2quit[*]//.app/} )
+	# shellcheck disable=SC2183
+	# shellcheck disable=SC2086
+	apps4dialogreopen=$( IFS=$'\n'; printf '%-25s\t%-25s\n' ${apps2ReOpen[*]//.app/} )
+	unset IFS
+
 	areyousureHeading="Please save your work"
 
 	if [[ "$checks" == *"saveallwork"* ]] ; then
@@ -3249,7 +3285,7 @@ Current work may be lost if you do not save before proceeding."
 	areYouSure=""
 	logInUEX "skipNotices is $skipNotices"
 	if [[ "$skipNotices" != true ]] ; then
-		if [[ "$apps2quit" == *".app"* ]] && [ -z $PostponeClickResult ] || [[ "$apps2ReOpen" == *".app"* ]] && [ -z $PostponeClickResult ] || [[ "$checks" == *"saveallwork"* ]] && [ -z $PostponeClickResult ] ; then
+		if [[ "${apps2quit[*]}" == *".app"* ]] && [[ -z "$PostponeClickResult" ]] || [[ "${apps2ReOpen[*]}" == *".app"* ]] && [[ -z "$PostponeClickResult" ]] || [[ "$checks" == *"saveallwork"* ]] && [[ -z "$PostponeClickResult" ]] ; then
 			
 
 		#########################
@@ -3259,10 +3295,10 @@ Current work may be lost if you do not save before proceeding."
 
 			fn_generatateApps2quit "safequit"
 			# Safe quit options
-			if [[ $apps2kill != "" ]] && [[ "$checks" != *"nopreclose"* ]] ; then
+			if [[ "${apps2kill[*]}" != "" ]] && [[ "$checks" != *"nopreclose"* ]] ; then
 
 				# if the app to re launch is not blank it means the apps were quit manually when the install window was up
-				if 	[ -z "${apps2Relaunch[@]}" ] ; then
+				if 	[[ -z "${apps2Relaunch[*]}" ]] ; then
 					apps2Relaunch=()
 				fi
 				for app in "${apps2kill[@]}" ; do
@@ -3276,7 +3312,7 @@ Current work may be lost if you do not save before proceeding."
 							# for id in $appid; do
 								# Application  $app is still running.
 								# Killing $app. pid is $id 
-								apps2Relaunch+=($app)
+								apps2Relaunch+=( "$app" )
 								log4_JSS "Safe quitting $app"
 								sudo -u "$loggedInUser" -H osascript -e "activate app \"$app\""
 								sudo -u "$loggedInUser" -H osascript -e "quit app \"$app\""
@@ -3293,7 +3329,7 @@ Current work may be lost if you do not save before proceeding."
 		
 		fn_generatateApps2quit
 
-		if [[ "$apps2quit" == *".app"* ]] && [ -z $PostponeClickResult ] || [[ "$apps2ReOpen" == *".app"* ]] && [ -z $PostponeClickResult ] || [[ "$checks" == *"saveallwork"* ]] && [ -z $PostponeClickResult ] ; then
+		if [[ "${apps2quit[*]}" == *".app"* ]] && [[ -z "$PostponeClickResult" ]] || [[ "${apps2ReOpen[*]}" == *".app"* ]] && [[ -z "$PostponeClickResult" ]] || [[ "$checks" == *"saveallwork"* ]] && [[ -z "$PostponeClickResult" ]] ; then
 			fn_generatateApps2quit "areyousure"
 			# if [[ "$checks" == *"critical"* ]] || [[ $delayNumber -ge $maxdefer ]] ; then
 			# 	areYouSure=$( "$jhPath" -windowType hud -lockHUD -icon "$icon" -title "$title" -heading "$areyousureHeading" -description "$areyousureMessage" -button1 "Continue" -timeout 300 -countdown)
@@ -3348,7 +3384,7 @@ Current work may be lost if you do not save before proceeding."
 					# Start the function to kill jamfHelper and start the install if apps are quit
 					fn_waitForApps2Quit4areYouSure
 
-				elif [[ "$checks" == *"block"* ]] && [[ "${apps2ReOpen[@]}" == *".app"*  ]] ; then
+				elif [[ "$checks" == *"block"* ]] && [[ "${apps2ReOpen[*]}" == *".app"*  ]] ; then
 					# Start the function to kill jamfHelper and start the install if apps are quit
 					fn_waitForApps2Quit4areYouSure
 				fi
@@ -3381,10 +3417,10 @@ Current work may be lost if you do not save before proceeding."
 
 
 		batlooper=1
-		jamfHelperOn=$( ps aux | grep jamfHelper | grep -v grep )
+		jamfHelperOn=$( pgrep jamfHelper )
 		while [ $batlooper = 1 ] && [[ $jamfHelperOn != "" ]] ; do
 			# BatteryTest=$( pmset -g batt )
-			jamfHelperOn=$( ps aux | grep jamfHelper | grep -v grep )
+			jamfHelperOn=$( pgrep jamfHelper )
 			# /bin/echo batteryClickResult is $batteryClickResult
 
 			if [[ "$( fn_BatteryStatus )" != *"AC"* ]] && [[ "$checks" == *"critical"* ]] ; then 
@@ -3456,7 +3492,7 @@ else # loginuser is null therefore no one is logged in and
 		echo delay exists
 		# installNow=$( /usr/libexec/PlistBuddy -c "print loginscreeninstall" "$UEXFolderPath"/defer_jss/"$packageName".plist 2>/dev/null )
 		installNow=$(fn_getPlistValue "loginscreeninstall" "defer_jss" "$packageName.plist")
-		echo $installNow
+		echo "$installNow"
 		if [[ $installNow == "true" ]] ; then 
 			log4_JSS "Install at login permitted"
 			# install at login permitted
@@ -3508,7 +3544,7 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 	if [[ $PostponeClickResult = 86400 ]] ; then
 		# get the time tomorrow at 9am and delay until that time.
 		tomorrow=$( date -v+1d )
-		tomorrowTime=$( echo $tomorrow | awk '{ print $4}' )
+		tomorrowTime=$( echo "$tomorrow" | awk '{ print $4}' )
 		tomorrow9am="${tomorrow/$tomorrowTime/09:00:00}"
 		tomorrow9amEpoch=$( date -j -f '%a %b %d %T %Z %Y' "$tomorrow9am" '+%s' )
 		nowEpoch=$( date +%s )
@@ -3534,8 +3570,8 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 		log4_JSS "SELF SERVICE PACKAGE: Skipping Delay Service"
 
 		fn_check4Packages ""
-		if [[ $packageMissing = true ]] && [[ $insufficientSpace != true ]] ; then
-			triggerNgo $UEXcachingTrigger
+		if [[ "$packageMissing" = true ]] && [[ "$insufficientSpace" != true ]] ; then
+			triggerNgo "$UEXcachingTrigger"
 		fi
 
 	else # not a self service package
@@ -3543,18 +3579,17 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 		log4_JSS "The next $action prompt is postponed until after $delayDateFriendly"
 		
 		# if the defer folder if empty and i'm creating the first deferal then invetory updates are needed to the comptuer is in scope of the deferral service
-		deferfolderContents=$( ls "$UEXFolderPath/defer_jss/" | grep plist )
+		deferfolderContents=$( ls "$UEXFolderPath"/defer_jss/*.plist )
 		if [[ -z "$deferfolderContents" ]] ; then
 			InventoryUpdateRequired=true
 		fi
 
-		watingroomdir="/Library/Application Support/JAMF/Waiting Room/"
+		waitingRoomDIR="/Library/Application Support/JAMF/Waiting Room/"
 
 		
 		if [[ -a "$UEXFolderPath"/defer_jss/"$packageName".plist ]] ; then
 			# Create Plist with postpone properties 
 			fn_setPlistValue "package" "$packageName" "defer_jss" "$packageName.plist"
-			fn_setPlistValue "folder" "$deferpackages" "defer_jss" "$packageName.plist"
 			fn_setPlistValue "delayDate" "$delayDate" "defer_jss" "$packageName.plist"
 			fn_setPlistValue "delayDateFriendly" "$delayDateFriendly" "defer_jss" "$packageName.plist"
 			fn_setPlistValue "delayNumber" "$delayNumber" "defer_jss" "$packageName.plist"
@@ -3568,7 +3603,6 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 		else
 			# Create Plist with postpone properties 
 			fn_addPlistValue "package" "string" "$packageName" "defer_jss" "$packageName.plist"
-			fn_addPlistValue "folder" "string" "$deferpackages" "defer_jss" "$packageName.plist"
 			fn_addPlistValue "delayDate" "string" "$delayDate" "defer_jss" "$packageName.plist"
 			fn_addPlistValue "delayDateFriendly" "string" "$delayDateFriendly" "defer_jss" "$packageName.plist"
 			fn_addPlistValue "delayNumber" "string" "$delayNumber" "defer_jss" "$packageName.plist"
@@ -3716,10 +3750,10 @@ fi # no on logged in
 		# Generate the list of apps still running that need to
 		fn_generatateApps2quit
 
-		if [[ $apps2kill != "" ]] ; then
+		if [[ "${apps2kill[*]}" != "" ]] ; then
 
 			# if the app to relaunch is not blank it means the apps were quit manually when the install window was up
-			if 	[ -z "${apps2Relaunch[@]}" ] ; then
+			if 	[[ -z "${apps2Relaunch[*]}" ]] ; then
 				apps2Relaunch=()
 			fi
 
@@ -3734,7 +3768,7 @@ fi # no on logged in
 						
 						#add to the relaunch list once
 						#testing for #36
-						apps2Relaunch+=($app)
+						apps2Relaunch+=( "$app" )
 						
 						for id in $appid; do
 							# Application  $app is still running.
@@ -3747,21 +3781,21 @@ fi # no on logged in
 								sleep 2
 							fi
 
-							processstatus=$( ps -p $id )
+							processstatus=$( ps -p "$id" )
 							if [[ "$processstatus" == *"$app"* ]] ; then
 								log4_JSS "$app is still running. Killing process id $id."
 								# log4_JSS "Re-opening $app"
 								# osascript -e "activate app \"$app\""
 								# osascript -e "quit app \"$app\""
-								kill $id
+								kill "$id"
 								sleep 1
 							fi
 
-							processstatus=$( ps -p $id )
+							processstatus=$( ps -p "$id" )
 							if [[ "$processstatus" == *"$app"* ]] ; then
 								#statements
 								log4_JSS "The process $id was still running for application $app. Force killing Application."
-								kill -9 $id
+								kill -9 "$id"
 							fi 
 						done 
 					fi
@@ -3900,7 +3934,7 @@ cat <<EOT >> "$pleaseWaitDaemon"
 	<string>github.cubandave.UEX-PleaseWait</string>
 	<key>ProgramArguments</key>
 	<array>
-		<string>$UEXFolderPath/resources/PleaseWait.app/Contents/MacOS/PleaseWait</string>
+		<string>$PleaseWaitApp/Contents/MacOS/PleaseWait</string>
 	</array>
 	<key>RunAtLoad</key>
 	<false/>
@@ -4031,26 +4065,28 @@ EOT
 			#Debug Line
 			logInUEX4DebugMode "exit code for installer is $?"
 			
+			##keeping this to search for values 
+			# shellcheck disable=SC2002
 			installResults=$( cat "$resultlogfilepath" | tr '[:upper:]' '[:lower:]' )
 			if 	[[ "$installResults" == *"failed"* ]] || [[ "$installResults" == *"error"* ]] ; then
 				failedInstall=true
 			fi 
 			
-			echo $(date)	$compname	:	RESULT: $(cat "$resultlogfilepath") >> "$logfilepath"
+			echo "$(date)	$compname	:	RESULT: $(cat "$resultlogfilepath")" >> "$logfilepath"
 	
 			logInUEX "Install Completed"
 			# Deleting the package from temp directory
-			if [[ $type == "package" ]] ; then
+			# if [[ $type == "package" ]] ; then
 				logInUEX "Deleting the package from temp directory"
 				logInUEX "Deleting $PKG"
 				/bin/rm "$pkg2install" >& "$resultlogfilepath"
-				echo $(date)	$compname	:	RESULT: $(cat "$resultlogfilepath") >> "$logfilepath"
-			fi
+				echo "$(date)	$compname	:	RESULT: $(cat "$resultlogfilepath")" >> "$logfilepath"
+			# fi
 		done
 	fi
 	
 	if [[ "$checks" == *"trigger"* ]] ; then
-		for trigger in ${triggers[@]} ; do
+		for trigger in "${triggers[@]}" ; do
 
 			fn_trigger "$trigger"
 			# echo "$jamfBinary" policy -forceNoRecon -trigger "$trigger"
@@ -4084,7 +4120,7 @@ EOT
 	logInUEX "Deleting defer plist so the agent doesn not start it again"
 	
 	# go thourgh all the deferal plist and if any of them mention the same triggr then delete them
-	plists=$( ls "$UEXFolderPath"/defer_jss/ | grep ".plist" )
+	plists=$( ls "$UEXFolderPath"/defer_jss/*.plist )
 	IFS=$'\n'
 	for i in $plists ; do
 		# deferPolicyTrigger=$( /usr/libexec/PlistBuddy -c "print policyTrigger" "$UEXFolderPath"/defer_jss/"$i" )
@@ -4094,6 +4130,7 @@ EOT
 			/bin/rm "$UEXFolderPath"/defer_jss/"$i" > /dev/null 2>&1
 		fi
 	done
+	unset IFS
 	
 	
 ##########################################################################################
@@ -4126,7 +4163,7 @@ EOT
 	/bin/rm "$pleaseWaitDaemon" > /dev/null 2>&1
 	
 	# kill the app and clean up the files
-	echo $(date)	$compname	:	Quitting the PleaseWait application. >> "$logfilepath"
+	logInUEX "Quitting the PleaseWait application."
 	killall PleaseWait > /dev/null 2>&1
 	
 	chflags nouchg $pleasewaitPhase > /dev/null 2>&1
@@ -4188,7 +4225,7 @@ $action completed."
 		
 		#kill all cocoaDialog windows 
 		logInUEX "Killing cocoadialog window"
-		kill $(ps -e | grep cocoaDialog | grep -v grep | awk '{print $1}') > /dev/null 2>&1
+		kill "$( pgrep cocoaDialog )" > /dev/null 2>&1
 	fi
 
 

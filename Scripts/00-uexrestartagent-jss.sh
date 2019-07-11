@@ -118,12 +118,12 @@ log4_JSS () {
 ##########################################################################################
 
 lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s" )
-lastRebootFriendly=$( date -r$lastReboot )
+lastRebootFriendly=$( date -r "$lastReboot" )
 
-rundate=$( date +%s )
+# runDate=$( date +%s )
 
 IFS=$'\n'
-plists=( $( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" ) )
+plists=( "$( ls "$UEXFolderPath"/restart_jss/*.plist )" )
 unset IFS
 
 # plists=$( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" )
@@ -139,10 +139,10 @@ for i in "${plists[@]}" ; do
 	# if the user has already had a fresh restart then delete the plist
 	# other wise the advise and schedule the logout.
 	
-	name=$(fn_getPlistValue "name" "restart_jss" "$i")
+	# name=$(fn_getPlistValue "name" "restart_jss" "$i")
 	packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
 	plistrunDate=$(fn_getPlistValue "runDate" "restart_jss" "$i")
-	runDateFriendly=$( date -r $plistrunDate )
+	# runDateFriendly=$( date -r $plistrunDate )
 	
 # 	echo lastReboot is $lastReboot
 # 	echo plistRunDate is $plistRunDate
@@ -154,20 +154,20 @@ for i in "${plists[@]}" ; do
 	#######################
 	logname="${packageName##*/}"
 	logfilename="$logname".log
-	resulttmp="$logname"_result.log
+	# resulttmp="$logname"_result.log
 	logfilepath="$logdir""$logfilename"
 	
 # 	echo timeSinceReboot is $timeSinceReboot
 	if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then
 		# the computer has rebooted since $runDateFriendly
 		#delete the plist
-		logInUEX "Deleting the restart plsit $i because the computer has rebooted since $runDateFriendly"
+		logInUEX "Deleting the restart plsit $i because the computer has rebooted since $lastRebootFriendly"
 		rm "$UEXFolderPath/restart_jss/$i"
 	else 
 		# the computer has NOT rebooted since $runDateFriendly
 		lastline=$( awk 'END{print}' "$logfilepath" )
 		if [[ "$lastline" != *"Prompting the user"* ]] ; then 
-			logInUEX "The computer has NOT rebooted since $runDateFriendly"
+			logInUEX "The computer has NOT rebooted since $lastRebootFriendly"
 			logInUEX "Prompting the user that a restart is required"
 		fi
 		restart="true"
@@ -213,7 +213,7 @@ if [[ $otherJamfprocess == "" ]] ; then
 ##						FileVault Authenticated reboot									##
 ##########################################################################################
 
-		fvUsers=($(fdesetup list | awk -F',' '{ print $1}'))
+		fvUsers=("$(fdesetup list | awk -F',' '{ print $1}')")
 		fvAutrestartSupported=$( fdesetup supportsauthrestart )
 
 		for user2Check in "${fvUsers[@]}"; do
@@ -288,7 +288,7 @@ Note: Automatic unlock does not always occur.'
 ##									Standard reboot										##
 ##########################################################################################
 		
-		if [ $loggedInUser ] && [[ "$authenticatedRestart" != true ]] ; then
+		if [[ "$loggedInUser" ]] && [[ "$authenticatedRestart" != true ]] ; then
 		# message
 		notice='In order for the changes to complete you must restart your computer. Please save your work and click "Restart Now" within the allotted time. 
 	

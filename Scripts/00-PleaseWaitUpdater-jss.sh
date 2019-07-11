@@ -61,11 +61,11 @@ fn_getPlistValue () {
 sleep 10
 
 # while PleaseWait.app is running 
-while [ ! -z "$( pgrep PleaseWait )" ] ; do 
+while [ -n "$( pgrep PleaseWait )" ] ; do 
 
 IFS=$'\n'
 # Get a list of plist from the UEX folder
-plists=($( find "/Library/Application Support/JAMF/UEX" -name '*.plist' | grep -v resources ))
+plists=( "$( find "/Library/Application Support/JAMF/UEX" -name '*.plist' | grep -v resources )" )
 unset IFS
 
 # set -- "$plists" 
@@ -124,7 +124,7 @@ installjss="$UEXFolderPath/install_jss/"
 			set -- "$apps" 
 			IFS=";"
 			##This works because i'm setting the seperator
-			# shellcheck disable=SC2048
+			# shellcheck disable=SC2206
 			declare -a apps=($*)  
 			unset IFS
 			# Cycle through list of prohibited apps from the block plist config file
