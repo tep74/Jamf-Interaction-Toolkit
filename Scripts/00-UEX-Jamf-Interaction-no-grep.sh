@@ -734,6 +734,7 @@ fn_check4PendingRestartsOrLogout () {
 	IFS=$'\n'
 	##This works because i'm setting the seperator
 	# shellcheck disable=SC2206
+# shellcheck disable=SC2048
 	declare -a resartPlists=($*)  
 	unset IFS
 
@@ -744,6 +745,7 @@ fn_check4PendingRestartsOrLogout () {
 	IFS=$'\n'
 	##This works because i'm setting the seperator
 	# shellcheck disable=SC2206
+# shellcheck disable=SC2048
 	declare -a logoutPlists=($*)  
 	unset IFS
 
@@ -925,11 +927,14 @@ IFS=";"
 set -- "$NameConsolidated" 
 ##This works because i'm setting the seperator
 # shellcheck disable=SC2206
+# shellcheck disable=SC2048
+# shellcheck disable=SC2048
 declare -a NameConsolidated=($*)
 
 set -- "$triggers" 
 ##This works because i'm setting the seperator
 # shellcheck disable=SC2206
+# shellcheck disable=SC2048
 declare -a triggers=($*)
 UEXpolicyTrigger=$(echo "${triggers[0]}" | tr '[:upper:]' '[:lower:]')
 UEXcachingTrigger="$UEXpolicyTrigger""_cache"
@@ -962,6 +967,7 @@ IFS=";"
 set -- "$maxdeferConsolidated" 
 ##This works because i'm setting the seperator
 # shellcheck disable=SC2206
+# shellcheck disable=SC2048
 declare -a maxdeferConsolidated=($*)
 
 if [[ $spaceRequired ]] || [[ "${maxdeferConsolidated[*]}" == *";"* ]] ; then
@@ -1581,6 +1587,7 @@ No updates available."
 		IFS="--"
 		##This works because i'm setting the seperator
 		# shellcheck disable=SC2206
+# shellcheck disable=SC2048
 		declare -a updatesfiltered=($*)  
 		unset IFS
 
@@ -1606,11 +1613,13 @@ IFS=";"
 set -- "$apps"
 ##This works because i'm setting the seperator
 # shellcheck disable=SC2206
+# shellcheck disable=SC2048
 declare -a apps=($*)
 
 set -- "$packages"
 ##This works because i'm setting the seperator
 # shellcheck disable=SC2206
+# shellcheck disable=SC2048
 declare -a packages=($*)
 
 unset IFS
