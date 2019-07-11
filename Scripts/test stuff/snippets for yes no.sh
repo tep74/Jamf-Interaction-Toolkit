@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# shellcheck disable
 jhPath="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 
 
