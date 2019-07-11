@@ -215,7 +215,7 @@ if [[ $otherJamfprocess == "" ]] ; then
 
 		fvUsers=("$(fdesetup list | awk -F',' '{ print $1}')")
 		fvAutrestartSupported=$( fdesetup supportsauthrestart )
-		fvStatus=("$( fdesetup status | tr '[:upper:]' '[:lower:]' )")
+		fvStatus="$( fdesetup status | tr '[:upper:]' '[:lower:]' )"
 
 		for user2Check in "${fvUsers[@]}"; do
 			# Check if the logged in user can unlock the disk by lopping through the user that are able to unlock it
