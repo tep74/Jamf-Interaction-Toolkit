@@ -65,7 +65,7 @@ while [ -n "$( pgrep PleaseWait )" ] ; do
 
 IFS=$'\n'
 # Get a list of plist from the UEX folder
-plists=( "$( find "/Library/Application Support/JAMF/UEX" -name '*.plist' | grep -v resources )" )
+plists=( "$( find "$UEXFolderPath" -name '*.plist' | grep -v resources )" )
 unset IFS
 
 # set -- "$plists" 

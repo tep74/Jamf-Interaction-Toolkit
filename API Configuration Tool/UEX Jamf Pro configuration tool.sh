@@ -19,8 +19,8 @@ packages=(
 
 # This enables the interaction for Help Disk Tickets
 # by default it is disabled. For more info on how to use this check the wiki in the Help Desk Ticket Section
-helpTicketsEnabledViaAppRestriction=true
-helpTicketsEnabledViaGeneralStaticGroup=true
+helpTicketsEnabledViaAppRestriction=false
+helpTicketsEnabledViaGeneralStaticGroup=false
 restrictedAppName="User Needs Helps Clearing Space.app"
 staticGroupName="User Needs Help Clearing Disk Space"
 
