@@ -215,6 +215,7 @@ if [[ $otherJamfprocess == "" ]] ; then
 
 		fvUsers=("$(fdesetup list | awk -F',' '{ print $1}')")
 		fvAutrestartSupported=$( fdesetup supportsauthrestart )
+		fvStatus="$( fdesetup status | tr '[:upper:]' '[:lower:]' )"
 
 		for user2Check in "${fvUsers[@]}"; do
 			# Check if the logged in user can unlock the disk by lopping through the user that are able to unlock it
@@ -227,7 +228,8 @@ if [[ $otherJamfprocess == "" ]] ; then
 		done
 
 		# only if some one is logged in and can unlock the disk and it's supported
-		if [[ $loggedInUser ]] && [[ "$userCanUnLockDisk" = true ]] && [[ "$fvAutrestartSupported" = true ]] && [[ "$enable_filevault_reboot" = true ]] ; then
+		## Only if FV is on too because #60
+		if [[ $loggedInUser ]] && [[ "$userCanUnLockDisk" = true ]] && [[ "$fvAutrestartSupported" = true ]] && [[ "$enable_filevault_reboot" = true ]] && [[ "$fvStatus" == *"on"* ]] ; then
 	
 			fvUnlockHeading="FileVault Authorized Restart"
 			fvUnlockNotice='In order for the changes to complete you must restart your computer. Please save your work. 
