@@ -6,23 +6,73 @@ loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v 
 ##								Jamf Interaction Configuration 							##
 ##########################################################################################
 
-jss_url="https://cubandave.local:8443"
-jss_user="jssadmin"
-jss_pass="jamf1234"
+
+printf "Enter your jss_url [Default: https://cubandave.local:8443]:\n"
+read -r jss_url
+jss_url="${jss_url:-https://cubandave.local:8443}"
+
+printf "Enter an admin user name for your Jamf Server [Default: jssadmin]:\n"
+read -r jss_user
+jss_user="${jss_user:-jssadmin}"
+
+printf "Enter the password for the user [Default: jamf1234]:\n"
+read -s -r jss_pass
+jss_pass="${jss_pass:-jamf1234}"
+
+
+# jss_url="https://cubandave.local:8443"
+# jss_user="jssadmin"
+# jss_pass="jamf1234"
 
 # Set the category you'd like to use for all the policies
-UEXCategoryName="User Experience"
 
-packages=(
-"UEXresourcesInstaller-201903130155.pkg"
-)
+printf "Enter the name of the category you want to use [Default: User Experience]:\n"
+read -r UEXCategoryName
+UEXCategoryName="${UEXCategoryName:-User Experience}"
+
+# UEXCategoryName="User Experience"
+printf "Enter the package name for the UEX resources\n"
+read -r packages
+
+if [[ -z "$packages" ]] ; then echo "No Package Specified" ; exit 1 ; fi
+
+## Keeping here to make testing easier
+# packages=(
+# "UEXresourcesInstaller-201903130155.pkg"
+# )
 
 # This enables the interaction for Help Disk Tickets
 # by default it is disabled. For more info on how to use this check the wiki in the Help Desk Ticket Section
-helpTicketsEnabledViaAppRestriction=false
-helpTicketsEnabledViaGeneralStaticGroup=false
-restrictedAppName="User Needs Helps Clearing Space.app"
-staticGroupName="User Needs Help Clearing Disk Space"
+
+printf "'true' or 'false' Do you want to use the Restricted Software feature to be notfied to create Helpdesk tickets? [Default: false]:\n"
+read -r helpTicketsEnabledViaAppRestriction
+helpTicketsEnabledViaAppRestriction=${helpTicketsEnabledViaAppRestriction:-"false"}
+if [[ "$helpTicketsEnabledViaAppRestriction" != true ]] && [[ "$helpTicketsEnabledViaAppRestriction" != false ]] ; then echo "helpTicketsEnabledViaAppRestriction is not set to true or false" ; exit 1 ; fi
+
+
+if [[ "$helpTicketsEnabledViaAppRestriction" == true ]] ;then
+	printf "What is the name of the app triggering Restricted Software? [Default: \"User Needs Helps Clearing Space.app\"]:\n"
+	read -r restrictedAppName
+	restrictedAppName="${restrictedAppName:-User Needs Helps Clearing Space.app}"
+fi
+
+printf "'true' or 'false' Do you want to use a general static group to be notfied to create Helpdesk tickets? [Default: false]:\n"
+read -r helpTicketsEnabledViaGeneralStaticGroup
+helpTicketsEnabledViaGeneralStaticGroup=${helpTicketsEnabledViaGeneralStaticGroup:-"false"}
+if [[ "$helpTicketsEnabledViaGeneralStaticGroup" != true ]] && [[ "$helpTicketsEnabledViaGeneralStaticGroup" != false ]] ; then echo "helpTicketsEnabledViaGeneralStaticGroup is not set to true or false" ; exit 1 ; fi
+
+
+if [[ "$helpTicketsEnabledViaGeneralStaticGroup" == true ]] ;then
+	printf "What is the name of the Static Group computers will go into? [Default: \"User Needs Helps Clearing Space\"]:\n"
+	read -r staticGroupName
+	staticGroupName="${staticGroupName:-User Needs Helps Clearing Space}"
+fi
+
+
+# helpTicketsEnabledViaAppRestriction=false
+# helpTicketsEnabledViaGeneralStaticGroup=false
+# restrictedAppName="User Needs Helps Clearing Space.app"
+# staticGroupName="User Needs Help Clearing Disk Space"
 
 
 # if you use the general method of addind and removing the requiremnt for help desk support to clear
@@ -78,13 +128,13 @@ UEXInteractionScripts=(
 FNputXML () 
 	{
 		# echo /usr/bin/curl -s -k "${jss_url}/JSSResource/$1/id/$2" -u "${jss_user}:${jss_pass}" -H \"Content-Type: text/xml\" -X PUT -d "$3"
-		/usr/bin/curl -s -k "${jss_url}/JSSResource/$1/id/$2" -u "${jss_user}:${jss_pass}" -H "Content-Type: text/xml" -X PUT -d "$3"
+		/usr/bin/curl -s -k "${jss_url}/JSSResource/$1/id/$2" -u "${jss_user}:${jss_pass}" -H "Content-Type: text/xml" -X PUT -d "$3" > /dev/null
     }
 
 FNpostXML () 
 	{
 		# echo /usr/bin/curl -s -k "${jss_url}/JSSResource/$1/id/0" -u "${jss_user}:${jss_pass}" -H \"Content-Type: text/xml\" -X POST -d "$2"
-		/usr/bin/curl -s -k "${jss_url}/JSSResource/$1/id/0" -u "${jss_user}:${jss_pass}" -H "Content-Type: text/xml" -X POST -d "$2"
+		/usr/bin/curl -s -k "${jss_url}/JSSResource/$1/id/0" -u "${jss_user}:${jss_pass}" -H "Content-Type: text/xml" -X POST -d "$2" > /dev/null
     }
 
 FNput_postXML () 
@@ -96,11 +146,11 @@ FNput_postXML ()
 	if [ "$pid" ] ; then
 		echo "updating $1: ($pid) \"$2\"" 
 		FNputXML "$1" "$pid" "$3"
-		echo ""
+		# echo ""
 	else
 		echo "creating $1: \"$2\""
 		FNpostXML "$1" "$3"
-		echo ""
+		# echo ""
 	fi
 
 	FNtestXML "$1" "$2"
@@ -115,11 +165,11 @@ FNput_postXMLFile ()
 	if [ "$pid" ] ; then
 		echo "updating $1: ($pid) \"$2\"" 
 		FNputXMLFile "$1" "$pid" "$3"
-		echo ""
+		# echo ""
 	else
 		echo "creating $1: \"$2\""
 		FNpostXMLFile "$1" "$3"
-		echo ""
+		# echo ""
 	fi
 
 	FNtestXML "$1" "$2"
@@ -143,10 +193,10 @@ FNtestXML ()
 	FNgetID "$1" "$2"
 	pid=$retreivedID
 
-	if [ "$pid" ] ; then
+	if [ -z "$pid" ] ; then
 		# echo ""$1" \"$2\" exists ($pid)" 
-		echo ""
-	else
+		# echo ""
+	# else
 		echo "ERROR $1 \"$2\" does not exist" 
 		exit 1
 	fi
@@ -186,7 +236,7 @@ fn_createAgentPolicy () {
 	local agentPolicyName
 	agentPolicyName="${policyScript//.sh}"
 	local agentPolicyName+=" - Trigger"
-	echo "$agentPolicyName"
+	# echo "$agentPolicyName"
 
 	FNgetID scripts "$policyScript"
 	local scriptID="$retreivedID"
@@ -227,7 +277,7 @@ fn_createAPIPolicy () {
 	local APIPolicyName+=" - Disk Space - Trigger"
 	local parameter4="$3"
 	local parameter5="$4"
-	echo "$APIPolicyName"
+	# echo "$APIPolicyName"
 
 	FNgetID scripts "$policyScript"
 	local scriptID="$retreivedID"
@@ -379,6 +429,7 @@ fn_updateCategory () {
 		<category>$categoryName</category>
 		</$xmlStart>"
 
+		
 		FNputXML "$JSSResourceName" "$resourceID" "$categoryXML"
 }
 
@@ -416,7 +467,7 @@ fn_CreateAppRestrictionPolicy () {
 
 restrictedsoftwareXML="<restricted_software>
   <general>
-    <name>$staticGroupName</name>
+    <name>$restrictedAppName</name>
     <process_name>$restrictedAppName</process_name>
     <match_exact_process_name>true</match_exact_process_name>
     <send_notification>true</send_notification>
@@ -464,7 +515,7 @@ fn_create_staticGroup_for_Disk_Space () {
 
 fn_create_MonititoringSmartGroup_for_Disk_Space () {
 	SmartGroupXMLForDiskSpace="<computer_group>
-  <name>Monitoring - UEX - Help User Clearing Disk Space</name>
+  <name>Monitoring - UEX - $staticGroupName</name>
   <is_smart>true</is_smart>
   <site>
     <id>-1</id>
@@ -484,11 +535,11 @@ fn_create_MonititoringSmartGroup_for_Disk_Space () {
   </criteria>
 </computer_group>"
 
-	FNput_postXML "computergroups" "Monitoring - UEX - Help User Clearing Disk Space" "$SmartGroupXMLForDiskSpace"
+	FNput_postXML "computergroups" "Monitoring - UEX - $staticGroupName" "$SmartGroupXMLForDiskSpace"
 }
 
 fn_openMonitoringSmartGroup () {
-	FNgetID "computergroups" "Monitoring - UEX - Help User Clearing Disk Space"
+	FNgetID "computergroups" "Monitoring - UEX - $staticGroupName"
 	MonitoringGroupID="$retreivedID"
 	sudo -u "$loggedInUser" -H open "$jss_url/smartComputerGroups.html?id=$MonitoringGroupID&o=u"
 }
@@ -506,7 +557,6 @@ fn_openAPIPolicies () {
 # create category
 	FNcreateCategory "$UEXCategoryName"
 	UEXCategoryID="$retreivedID"
-	echo "$UEXCategoryID"
 
 
 if [[ "$helpTicketsEnabledViaAppRestriction" = true ]] || [[ "$helpTicketsEnabledViaGeneralStaticGroup" = true ]] ;then
@@ -545,6 +595,7 @@ fi
 			echo ERROR: Script "$script" not found on jamf server "$jss_url"
 			exit 1
 		else
+			echo "updating category on \"$script\" to \"$UEXCategoryName\""
 			fn_updateCategory "$retreivedID" "script" "$UEXCategoryName" "scripts"
 		fi
 	done
@@ -555,6 +606,7 @@ fi
 			echo ERROR: Package "$package" not found on jamf server "$jss_url"
 			exit 1
 		else
+			echo "updating category on \"$package\" to \"$UEXCategoryName\""
 			fn_updateCategory "$retreivedID" "package" "$UEXCategoryName" "packages"
 		fi
 	done
@@ -610,7 +662,6 @@ fi
 
 	fn_createSmartGroup "$smartGroupName" "1" "$criterionXML"
 	SmargroupID="$retreivedID"
-	echo "$SmargroupID"
 
 # create deferal policy
 defferalPolicyScopeXML="<all_computers>false</all_computers>
