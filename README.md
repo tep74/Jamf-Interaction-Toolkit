@@ -4,45 +4,59 @@
 ___
 
 Join the conversation @ **"#uex-tool-for-jamf"** On the MacAdmins Slack
+___
+# What is the Jamf Interaction Toolkit?
 
-I'll have a more comprehensive readme later
+![](./images/macos-mojave-preview.png) 
 
-Please check out the [Wiki Here ](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki)
+Jamf Interaction Toolkit, commonly known as UEX, was built with a few goals in mind:
 
-You can uses this verison right off the bat for testing.
-# Customized Branding
+* Setup software deployments that are:
+  * Branded and trusted
+  * Consistent across the enterprise 
+  * Notify the user when apps need to be quit or to not be opened
+  * Notify the user when the computer needs to be restarted
+  * Allow the user to postpone the action based on number of times instead of an end date
+* All of this has to be compatible with Jamf Pro.
+* All of this has to be work tandem with Self Service.
 
-Update the "title" and any desired icon paths in the following scripts
-* 00-UEX-Jamf-Interaction-no-grep.sh
-* 00-uexblockagent-jss.sh
-* 00-uexlogoutagent-jss.sh
-* 00-uexrestartagent-jss.sh
+Over time this tool has grown into a full set of versatile scripts that can essentially be used as your primary method for creating policies. 
 
-If you want to add the icons in the jamfHelper & CocoaDialog windows
-* Add them in the Payload inside the packages folder
-* Set the owner:group to 'root:wheel' (chown root:wheel $targetFile)
-* Set the RW mode to 755 (chmod 755 $targetFile)
-* Then to create your UEXresource package run the "build_pkg.sh"
+**OR**
 
-If you want to update the title and icon in the PleaseWait.app open the project in xcode from the PleaseWaitMini folder
-* Go the MainMenu.XIP and change the title in the inspector attributes
-* to update icon simply replace the PleaseWait.icns
-* Build your project with your teamID/Cert 
-* Replace the PleaseWait.app that's in the payload
-* Set the owner:group to 'root:wheel' ```chown -R root:wheel $targetfile```
-* Set the RW mode to 755 ```chmod -R 755 $targetFile```
-* don't forget to make a new UEX resource package
+You can just use it for your next **macOS Upgrade**.
 
-# How to upload to your jamf Pro server
+# What can it do?
 
-*  Create your UEXresourcesInstaller PKG with build.sh
-*  Upload the Pakcage to your jamf Pro Server
-*  Upload the 'UEX - Deferral Detection.xml' Extension Attibute to your jamf Pro Server
-*  Upload all the scripts in the 'Scripts' folder to your jamf Pro Server
-*  Open and edit the 'UEX Jamf Pro configuration tool.sh' with your UEX Resouce PKG name, and the jamf pro URL + credentials
-*  Run the script 
+The UEX Toolkit supports all types of deployment needs:
 
-# More coming soon on paramters and use cases and imagery and "all that Jazz" 
+* User needs to Quit an application[s] before an policy starts
+  * Prevent those apps from opening during the policy
+  * Re-open apps previously quit after the policy runs.
+* Inform the user of a restart or logout before a policy starts
+  * Require the computer to be connected to [power](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki/09-Checks...-All-the-Options-for-UEX#power)
+* Support running other policies after the user acknowledges a custom message [trigger](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki/09-Checks...-All-the-Options-for-UEX#trigger)
+* Support forceful running of [Compliance Policies](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki/05-Compliance-Policies)
+* [Detect if the user is in a presentation](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki/99-Presentation-Delay)
+* [FileVault authenticated restarts](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki/07-FileVault-Authenticated-Restarts)
+* [Apple Software Updates](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki/04---Apple-Software-Updates-via-UEX)
+* [Detection of insufficient space and workflows to create tickets](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki/06-Space-Detection-Notification-Service-Desk-Tickets)
+
+# What does it look like?
+
+* Example of a policy at Check-in for a MS Word update
+![](./images/word-block-preview.png) 
+* Example of a Google Chrome update From Self Service
+![](./images/google-chrome-preview.png) 
+
+# How to use it?
+1. Download the [latest release](https://github.com/cubandave/Jamf-Interaction-Toolkit/releases/latest)
+1. Please check out the [Wiki Here ](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki)
+1. Apply [Branding](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki/00-Setting-up-UEX-Including-Branding-and-Customising-UEX)
+1. [Upload all required pieces to your Jamf Pro server.](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki/00-Setting-up-UEX-Including-Branding-and-Customising-UEX#uploading-to-your-jamf-pro-server)
+1. Run the [API Config Tool](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki/00-Setting-up-UEX-Including-Branding-and-Customising-UEX#api-config-tool)
+![](./images/uex-API-config.gif)
+1. The world is your burrito. 🌯 ... [Creating Policies](https://github.com/cubandave/Jamf-Interaction-Toolkit/wiki/01-Creating-a-UEX-Policy)
 
 
 

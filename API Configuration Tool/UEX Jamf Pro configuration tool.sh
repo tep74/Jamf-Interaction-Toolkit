@@ -56,7 +56,7 @@ if [[ "$helpTicketsEnabledViaAppRestriction" == true ]] ;then
 	restrictedAppName="${restrictedAppName:-User Needs Helps Clearing Space.app}"
 fi
 
-printf "'true' or 'false' Do you want to use a general static group to be notfied to create Helpdesk tickets? [Default: false]:\n"
+printf "'true' or 'false' Do you want to use a general static group to be notified to create Helpdesk tickets? [Default: false]:\n"
 read -r helpTicketsEnabledViaGeneralStaticGroup
 helpTicketsEnabledViaGeneralStaticGroup=${helpTicketsEnabledViaGeneralStaticGroup:-"false"}
 if [[ "$helpTicketsEnabledViaGeneralStaticGroup" != true ]] && [[ "$helpTicketsEnabledViaGeneralStaticGroup" != false ]] ; then echo "helpTicketsEnabledViaGeneralStaticGroup is not set to true or false" ; exit 1 ; fi
