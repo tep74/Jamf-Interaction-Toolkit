@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Now requiring root to make packages
+if [[ $(id -u) -ne 0 ]] ; then echo "Please run as root with the command below.
+sudo sh \"$0\"" ; exit 1 ; fi
+
 VERSION=$( date +%Y%m%d%H%M )
 
 # Get the absolute path of the directory containing this script
@@ -7,15 +11,10 @@ VERSION=$( date +%Y%m%d%H%M )
 
 dir=$( unset CDPATH && cd "$(dirname "$0")" && echo "$PWD" )
 
-# if [ -d "${dir}/payload/Library/Application Support/SplashBuddy/presentation.bundle/Base.lproj" ]; then
-#     echo "Renaming Base.lproj to en.lproj…"
-#     mv "${dir}/payload/Library/Application Support/SplashBuddy/presentation.bundle/Base.lproj" "${dir}/payload/Library/Application Support/SplashBuddy/presentation.bundle/en.lproj"
-# fi
+# Every user should have read rights
 
-# Every use should have read rights and scripts should be executable
-
-/bin/chmod -R o+r "${dir}/payload/"
-/bin/chmod +x "${dir}/scripts"
+/usr/sbin/chown -R root:wheel "${dir}/payload/"
+/bin/chmod -R 755 "${dir}/payload/"
 
 /usr/bin/find "${dir}" -name .DS_Store -delete
 
