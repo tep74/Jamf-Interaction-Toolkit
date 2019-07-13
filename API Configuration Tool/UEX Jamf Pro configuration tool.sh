@@ -2,9 +2,9 @@
 # set -x
 loggedInUser=$( /bin/ls -l /dev/console | /usr/bin/awk '{ print $3 }' | grep -v root )
 
-###################
-# Variables
-###################
+##########################################################################################
+##								Jamf Interaction Configuration 							##
+##########################################################################################
 
 jss_url="https://cubandave.local:8443"
 jss_user="jssadmin"
