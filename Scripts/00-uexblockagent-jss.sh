@@ -75,8 +75,6 @@ fi
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-# logname="${packageName##*/}"
-# logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 compname=$( scutil --get ComputerName )
 ##########################################################################################
@@ -139,7 +137,7 @@ runBlocking="$( ls "$UEXFolderPath"/block_jss/| grep ".plist" )"
 	
 	for i in "${blockPlists[@]}" ; do
 		# Run through the plists and check for app blocking requirements
-		packageName=$(fn_getPlistValue "packageName" "block_jss" "$i")
+		uexNameConsolidated=$(fn_getPlistValue "uexNameConsolidated" "block_jss" "$i")
 		apps=$(fn_getPlistValue "apps2block" "block_jss" "$i")
 		checks=$(fn_getPlistValue "checks" "block_jss" "$i"	)
 		runDate=$(fn_getPlistValue "runDate" "block_jss" "$i")
@@ -170,7 +168,7 @@ runBlocking="$( ls "$UEXFolderPath"/block_jss/| grep ".plist" )"
 
 		debugDIR="$UEXFolderPath/debug/"
 
-		if [ -e "$debugDIR""$packageName" ] ; then 
+		if [ -e "$debugDIR""$uexNameConsolidated" ] ; then 
 			debug=true
 		else
 			debug=false
@@ -182,8 +180,8 @@ runBlocking="$( ls "$UEXFolderPath"/block_jss/| grep ".plist" )"
 		#######################
 		# Logging files setup #
 		#######################
-		logname="${packageName##*/}"
-		logfilename="$logname".log
+		logname="$uexNameConsolidated"
+		logfilename="${logname//.plist/}".log
 		logfilepath="$logdir""$logfilename"
 	
 		# Create array of apps to run through checks

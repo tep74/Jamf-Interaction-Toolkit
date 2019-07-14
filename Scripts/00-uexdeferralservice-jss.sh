@@ -42,8 +42,6 @@ fi
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-# logname="${packageName##*/}"
-# logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 compname=$( scutil --get ComputerName )
 ##########################################################################################
@@ -109,7 +107,7 @@ for i in $plists ; do
 	
 	# Process the plist	
 	delayDate=$(fn_getPlistValue "delayDate" "defer_jss" "$i")
-	packageName=$(fn_getPlistValue "package" "defer_jss" "$i")
+	uexNameConsolidated=$(fn_getPlistValue "uexNameConsolidated" "defer_jss" "$i")
 	loginscreeninstall=$(fn_getPlistValue "loginscreeninstall" "defer_jss" "$i")
 	checks=$(fn_getPlistValue "checks" "defer_jss" "$i")
 	policyTrigger=$(fn_getPlistValue "policyTrigger" "defer_jss" "$i")
@@ -117,8 +115,8 @@ for i in $plists ; do
 	#######################
 	# Logging files setup #
 	#######################
-	logname="${packageName##*/}"
-	logfilename="$logname".log
+	logname="$uexNameConsolidated"
+	logfilename="${logname//.plist/}".log
 	logfilepath="$logdir""$logfilename"
 	
 	# calculate the time elapsed

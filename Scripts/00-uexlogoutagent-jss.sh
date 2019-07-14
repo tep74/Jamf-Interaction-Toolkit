@@ -69,8 +69,6 @@ fi
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-# logname="${packageName##*/}"
-# logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 compname=$( scutil --get ComputerName )
 # resulttmp="$logname"_result.log
@@ -156,15 +154,14 @@ for i in "${resartPlists[@]}" ; do
 	# other wise the advise and schedule the logout.
 
 	# name=$(fn_getPlistValue "name" "restart_jss" "$i")
-	packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
+	uexNameConsolidated=$(fn_getPlistValue "uexNameConsolidated" "restart_jss" "$i")
 	plistrunDate=$(fn_getPlistValue "runDate" "restart_jss" "$i")
 
 	timeSinceReboot=$( echo "${lastReboot} - ${plistrunDate}" | bc )
 	echo "timeSinceReboot is $timeSinceReboot"
 	
-	logname="${packageName##*/}"
-	logfilename="$logname".log
-	# resulttmp="$logname"_result.log
+	logname="$uexNameConsolidated"
+	logfilename="${logname//.plist/}".log
 	logfilepath="$logdir""$logfilename"
 	
 	if [[ $timeSinceReboot -gt 0 ]] || [ -z "$plistrunDate" ]  ; then
@@ -194,7 +191,7 @@ if [[ $restart != "true" ]] ; then
 	# other wise the advise and schedule the logout.
 
 		# name=$(fn_getPlistValue "name" "logout_jss" "$i")
-		packageName=$(fn_getPlistValue "packageName" "logout_jss" "$i")
+		uexNameConsolidated=$(fn_getPlistValue "uexNameConsolidated" "logout_jss" "$i")
 		plistloggedInUser=$(fn_getPlistValue "loggedInUser" "logout_jss" "$i")
 		checked=$(fn_getPlistValue "checked" "logout_jss" "$i")
 		plistrunDate=$(fn_getPlistValue "runDate" "logout_jss" "$i")
@@ -207,9 +204,8 @@ if [[ $restart != "true" ]] ; then
 		#######################
 		# Logging files setup #
 		#######################
-		logname="${packageName##*/}"
-		logfilename="$logname".log
-		# resulttmp="$logname"_result.log
+		logname="$uexNameConsolidated"
+		logfilename="${logname//.plist/}".log
 		logfilepath="$logdir""$logfilename"
 		
 		

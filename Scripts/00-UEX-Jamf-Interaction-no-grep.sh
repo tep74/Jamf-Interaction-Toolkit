@@ -209,23 +209,18 @@ customMessage=${11}
 ##########################################################################################
 #								Package name Processing									 #
 ##########################################################################################
-NameConsolidated4plist="$NameConsolidated"
 
 #### Caching detection ####
 waitingRoomDIR="/Library/Application Support/JAMF/Waiting Room/"
 
-pathToPackage="$waitingRoomDIR""$NameConsolidated4plist".pkg
-# packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
-packageName="$( basename "$pathToPackage" )"
-# packageName="${pathToPackage##*/}"
-packageName="$( basename "$pathToPackage" )"
+uexNameConsolidated="$NameConsolidated"
 
 
 
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-logname="${packageName##*/}"
+logname="$uexNameConsolidated"
 logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 resulttmp="$logname"_result.log
@@ -247,7 +242,7 @@ chmod -R 777 "$logdir"
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-logname="${packageName##*/}"
+logname="$uexNameConsolidated"
 logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 resulttmp="$logname"_result.log
@@ -274,7 +269,7 @@ chmod -R 777 "$logdir"
 
 debugDIR="$UEXFolderPath/debug/"
 
-if [[ -e "$debugDIR""$packageName" ]] ; then 
+if [[ -e "$debugDIR""$uexNameConsolidated" ]] ; then 
 	debug=true
 fi
 
@@ -291,17 +286,8 @@ fi
 if [[ $debug = true ]] ; then
 	"$jhPath" -windowType hud -windowPosition ll -title "$title" -description "UEX Script Running in debug mode." -button1 "OK" -timeout 30 > /dev/null 2>&1 &
 	
-		# for testing paths
-	if [[ $pathToPackage == "" ]] ; then
-		pathToPackage="/Users/ramirdai/Desktop/aG - Google - Google Chrome 47.0.2526.73 - OSX EN - SRXXXXX - 1.0.pkg"
-		# packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
-		# packageName="${pathToPackage##*/}"
-		packageName="$( basename "$pathToPackage" )"
-		
-	fi
-	
 	mkdir -p "$debugDIR" > /dev/null 2>&1
-	touch "$debugDIR""$packageName"
+	touch "$debugDIR""$uexNameConsolidated"
 fi
 
 
@@ -727,7 +713,6 @@ fn_check4PendingRestartsOrLogout () {
 	lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}')" "+%s" )
 	# lastRebootFriendly=$( date -r$lastReboot )
 
-	## keeping for tesging shellcheck
 	## Need the plist as a file name in list format
 	# shellcheck disable=SC2010
 	resartPlists=$( ls "$UEXFolderPath"/restart_jss/ | grep "plist" )
@@ -739,7 +724,6 @@ fn_check4PendingRestartsOrLogout () {
 	declare -a resartPlists=($*)  
 	unset IFS
 
-	## keeping for tesging shellcheck
 	## Need the plist as a file name in list format
 	# shellcheck disable=SC2010
 	logoutPlists=$( ls "$UEXFolderPath"/logout_jss/ | grep "plist" )
@@ -757,8 +741,8 @@ fn_check4PendingRestartsOrLogout () {
 		# if the user has already had a fresh restart then delete the plist
 		# other wise the advise and schedule the logout.
 
-		local packageName
-		packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
+		local uexNameConsolidated
+		uexNameConsolidated=$(fn_getPlistValue "uexNameConsolidated" "restart_jss" "$i")
 		local plistrunDate
 		plistrunDate=$(fn_getPlistValue "runDate" "restart_jss" "$i")
 
@@ -767,7 +751,7 @@ fn_check4PendingRestartsOrLogout () {
 		logInUEX "timeSinceReboot is $timeSinceReboot"
 		
 		local logname
-		logname="${packageName##*/}"
+		logname="${uexNameConsolidated//.plist/}"
 		local logfilename
 		logfilename="$logname".log
 		local resulttmp
@@ -799,8 +783,8 @@ fn_check4PendingRestartsOrLogout () {
 		# OR if the user has already had a fresh login then delete the plist
 		# other wise the advise and schedule the logout.
 
-			local packageName
-			packageName=$(fn_getPlistValue "packageName" "logout_jss" "$i")
+			local uexNameConsolidated
+			uexNameConsolidated=$(fn_getPlistValue "uexNameConsolidated" "logout_jss" "$i")
 			local plistloggedInUser
 			plistloggedInUser=$(fn_getPlistValue "loggedInUser" "logout_jss" "$i")
 			local checked
@@ -819,7 +803,7 @@ fn_check4PendingRestartsOrLogout () {
 			# Logging files setup #
 			#######################
 			local logname
-			logname="${packageName##*/}"
+			logname="$uexNameConsolidated"
 			local logfilename
 			logfilename="$logname".log
 			local resulttmp
@@ -1031,7 +1015,7 @@ ssUpdatePolicyRunning=$( ps aux | grep "00-UEX-Update-via-Self-Service" | grep -
 # shellcheck disable=SC2009
 ssUninstallPolicyRunning=$( ps aux | grep "00-UEX-Uninstall-via-Self-Service" | grep -v grep | grep -v PATH | awk '{print $NF}' | tr '[:upper:]' '[:lower:]' )
 
-if [[ -e "$SSplaceholderDIR""$packageName" ]] ; then 
+if [[ -e "$SSplaceholderDIR""$uexNameConsolidated" ]] ; then 
 	selfservicePackage=true
 	 logInUEX "******* SELF SERVICE INSTALL *******"
 elif [[ "$sspolicyRunning" == *"$UEXpolicyTrigger"* ]] ; then
@@ -1720,9 +1704,6 @@ runDateFriendly="$( date -r "$runDate" )"
 ##########################################################################################
 #								Package name Processing									 #
 ##########################################################################################
-# packageName="$(echo "$pathToPackage" | sed 's@.*/@@')"
-# packageName="${pathToPackage##*/}"
-packageName="$( basename "$pathToPackage" )"
 
 SSplaceholderDIR="$UEXFolderPath/selfservice_jss/"
 
@@ -1776,7 +1757,7 @@ chown -R root:wheel "$UEXFolderPath" > /dev/null 2>&1
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-logname="${packageName##*/}"
+logname="$uexNameConsolidated"
 logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 resulttmp="$logname"_result.log
@@ -2348,9 +2329,9 @@ fi #Suspackage && macOS upgrade safety net
 
 #get the delay number form the plist or set it to zero
 
-if [ -e "$UEXFolderPath"/defer_jss/"$packageName".plist ] ; then 
-	# delayNumber=$( /usr/libexec/PlistBuddy -c "print delayNumber" "$UEXFolderPath"/defer_jss/"$packageName".plist 2>/dev/null )
-	delayNumber=$(fn_getPlistValue "delayNumber" "defer_jss" "$packageName.plist")
+if [ -e "$UEXFolderPath"/defer_jss/"$uexNameConsolidated".plist ] ; then 
+	# delayNumber=$( /usr/libexec/PlistBuddy -c "print delayNumber" "$UEXFolderPath"/defer_jss/"$uexNameConsolidated".plist 2>/dev/null )
+	delayNumber=$(fn_getPlistValue "delayNumber" "defer_jss" "$uexNameConsolidated.plist")
 else
 	delayNumber=0
 fi
@@ -2371,7 +2352,7 @@ logInUEX4DebugMode "postponesLeft is $postponesLeft"
 
 if [[ "$spaceRequired" ]] ; then
 
-	diskCheckDelayNumber=$(fn_getPlistValue "diskCheckDelayNumber" "defer_jss" "$packageName.plist")
+	diskCheckDelayNumber=$(fn_getPlistValue "diskCheckDelayNumber" "defer_jss" "$uexNameConsolidated.plist")
 	log4_JSS "diskCheckDelayNumber is $diskCheckDelayNumber"
 
 	if [[ -z "$diskCheckDelayNumber" ]] ; then
@@ -2878,11 +2859,11 @@ fi
 PostponeClickResult=""
 skipNotices="false"
 
-if [ -e "$UEXFolderPath"/defer_jss/"$packageName".plist ] ; then 
+if [ -e "$UEXFolderPath"/defer_jss/"$uexNameConsolidated".plist ] ; then 
 
-	delayNumber=$(fn_getPlistValue "delayNumber" "defer_jss" "$packageName.plist")
-	presentationDelayNumber=$(fn_getPlistValue "presentationDelayNumber" "defer_jss" "$packageName.plist")
-	inactivityDelay=$(fn_getPlistValue "inactivityDelay" "defer_jss" "$packageName.plist")
+	delayNumber=$(fn_getPlistValue "delayNumber" "defer_jss" "$uexNameConsolidated.plist")
+	presentationDelayNumber=$(fn_getPlistValue "presentationDelayNumber" "defer_jss" "$uexNameConsolidated.plist")
+	inactivityDelay=$(fn_getPlistValue "inactivityDelay" "defer_jss" "$uexNameConsolidated.plist")
 
 else
 	delayNumber=0
@@ -3499,10 +3480,10 @@ fi
 else # loginuser is null therefore no one is logged in and 
 
 	logInUEX "No one is logged in"
-	if [[ -a "$UEXFolderPath"/defer_jss/"$packageName".plist ]] ; then
+	if [[ -a "$UEXFolderPath"/defer_jss/"$uexNameConsolidated".plist ]] ; then
 		echo delay exists
-		# installNow=$( /usr/libexec/PlistBuddy -c "print loginscreeninstall" "$UEXFolderPath"/defer_jss/"$packageName".plist 2>/dev/null )
-		installNow=$(fn_getPlistValue "loginscreeninstall" "defer_jss" "$packageName.plist")
+		# installNow=$( /usr/libexec/PlistBuddy -c "print loginscreeninstall" "$UEXFolderPath"/defer_jss/"$uexNameConsolidated".plist 2>/dev/null )
+		installNow=$(fn_getPlistValue "loginscreeninstall" "defer_jss" "$uexNameConsolidated.plist")
 		echo "$installNow"
 		if [[ $installNow == "true" ]] ; then 
 			log4_JSS "Install at login permitted"
@@ -3596,35 +3577,32 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 		if [[ -z "$deferfolderContents" ]] ; then
 			InventoryUpdateRequired=true
 		fi
-
-		waitingRoomDIR="/Library/Application Support/JAMF/Waiting Room/"
-
 		
-		if [[ -a "$UEXFolderPath"/defer_jss/"$packageName".plist ]] ; then
+		if [[ -a "$UEXFolderPath"/defer_jss/"$uexNameConsolidated".plist ]] ; then
 			# Create Plist with postpone properties 
-			fn_setPlistValue "package" "$packageName" "defer_jss" "$packageName.plist"
-			fn_setPlistValue "delayDate" "$delayDate" "defer_jss" "$packageName.plist"
-			fn_setPlistValue "delayDateFriendly" "$delayDateFriendly" "defer_jss" "$packageName.plist"
-			fn_setPlistValue "delayNumber" "$delayNumber" "defer_jss" "$packageName.plist"
-			fn_setPlistValue "presentationDelayNumber" "$presentationDelayNumber" "defer_jss" "$packageName.plist"
-			fn_setPlistValue "diskCheckDelayNumber" "$diskCheckDelayNumber" "defer_jss" "$packageName.plist"
-			fn_setPlistValue "inactivityDelay" "$inactivityDelay" "defer_jss" "$packageName.plist"
-			fn_setPlistValue "loginscreeninstall" "$loginscreeninstall" "defer_jss" "$packageName.plist"
-			fn_setPlistValue "policyTrigger" "$UEXpolicyTrigger" "defer_jss" "$packageName.plist"
-			fn_setPlistValue "checks" "$checks" "defer_jss" "$packageName.plist"
+			fn_setPlistValue "package" "$uexNameConsolidated" "defer_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "delayDate" "$delayDate" "defer_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "delayDateFriendly" "$delayDateFriendly" "defer_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "delayNumber" "$delayNumber" "defer_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "presentationDelayNumber" "$presentationDelayNumber" "defer_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "diskCheckDelayNumber" "$diskCheckDelayNumber" "defer_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "inactivityDelay" "$inactivityDelay" "defer_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "loginscreeninstall" "$loginscreeninstall" "defer_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "policyTrigger" "$UEXpolicyTrigger" "defer_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "checks" "$checks" "defer_jss" "$uexNameConsolidated.plist"
 
 		else
 			# Create Plist with postpone properties 
-			fn_addPlistValue "package" "string" "$packageName" "defer_jss" "$packageName.plist"
-			fn_addPlistValue "delayDate" "string" "$delayDate" "defer_jss" "$packageName.plist"
-			fn_addPlistValue "delayDateFriendly" "string" "$delayDateFriendly" "defer_jss" "$packageName.plist"
-			fn_addPlistValue "delayNumber" "string" "$delayNumber" "defer_jss" "$packageName.plist"
-			fn_addPlistValue "presentationDelayNumber" "string" "$presentationDelayNumber" "defer_jss" "$packageName.plist"
-			fn_addPlistValue "diskCheckDelayNumber" "string" "$diskCheckDelayNumber" "defer_jss" "$packageName.plist"
-			fn_addPlistValue "inactivityDelay" "string" "$inactivityDelay" "defer_jss" "$packageName.plist"
-			fn_addPlistValue "loginscreeninstall" "string" "$loginscreeninstall" "defer_jss" "$packageName.plist"
-			fn_addPlistValue "policyTrigger" "string" "$UEXpolicyTrigger" "defer_jss" "$packageName.plist"
-			fn_addPlistValue "checks" "string" "$checks" "defer_jss" "$packageName.plist"
+			fn_addPlistValue "uexNameConsolidated" "string" "$uexNameConsolidated" "defer_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "delayDate" "string" "$delayDate" "defer_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "delayDateFriendly" "string" "$delayDateFriendly" "defer_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "delayNumber" "string" "$delayNumber" "defer_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "presentationDelayNumber" "string" "$presentationDelayNumber" "defer_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "diskCheckDelayNumber" "string" "$diskCheckDelayNumber" "defer_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "inactivityDelay" "string" "$inactivityDelay" "defer_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "loginscreeninstall" "string" "$loginscreeninstall" "defer_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "policyTrigger" "string" "$UEXpolicyTrigger" "defer_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "checks" "string" "$checks" "defer_jss" "$uexNameConsolidated.plist"
 		fi # if the defer plist exists 
 
 	fi # if self service pacakge is true
@@ -3682,12 +3660,12 @@ Downloading packages..."
 		status="$heading,
 another $action is starting
 You will be logged out after all software changes are complete."
-		"$CocoaDialog" bubble --title "$title" --text "$status" --icon-file "$icon"
+		"$CocoaDialog" bubble --title "$title" --text "$status" --icon-file "$icon" --timeout 10
 	elif [[ $preApprovedInstall = true ]] && [[ "$loggedInUser" ]] && [[ $restartQueued = true ]] ; then
 		status="$heading,
 another $action is starting
 The restart will happpen after all software changes are complete."
-		"$CocoaDialog" bubble --title "$title" --text "$status" --icon-file "$icon"
+		"$CocoaDialog" bubble --title "$title" --text "$status" --icon-file "$icon" --timeout 10
 	fi
 
 
@@ -3827,12 +3805,12 @@ fi # no on logged in
 		
 		# Create Plist with all that properties to block the apps
 		# added Package & date info for restar safety measures
-		fn_addPlistValue "name" "string" "$heading" "block_jss" "$packageName.plist"
-		fn_addPlistValue "packageName" "string" "$packageName" "block_jss" "$packageName.plist"
-		fn_addPlistValue "runDate" "string" "$runDate" "block_jss" "$packageName.plist"
-		fn_addPlistValue "runDateFriendly" "string" "$runDateFriendly" "block_jss" "$packageName.plist"
-		fn_addPlistValue "apps2block" "string" "$apps2block" "block_jss" "$packageName.plist"
-		fn_addPlistValue "checks" "string" "$checks" "block_jss" "$packageName.plist"
+		fn_addPlistValue "name" "string" "$heading" "block_jss" "$uexNameConsolidated.plist"
+		fn_addPlistValue "uexNameConsolidated" "string" "$uexNameConsolidated" "block_jss" "$uexNameConsolidated.plist"
+		fn_addPlistValue "runDate" "string" "$runDate" "block_jss" "$uexNameConsolidated.plist"
+		fn_addPlistValue "runDateFriendly" "string" "$runDateFriendly" "block_jss" "$uexNameConsolidated.plist"
+		fn_addPlistValue "apps2block" "string" "$apps2block" "block_jss" "$uexNameConsolidated.plist"
+		fn_addPlistValue "checks" "string" "$checks" "block_jss" "$uexNameConsolidated.plist"
 
 		# Start the agent to actively block the applications
 		logInUEX "Starting Blocking Service"
@@ -3860,21 +3838,21 @@ fi # no on logged in
 		# added username and run time as safety measure to put in just in case
 		# added checked variable to allow for clearring the plist so that the second stage can change it then delete it.
 		
-		if [[ -a "$UEXFolderPath"/logout_jss/"$packageName".plist ]] ; then
-			fn_setPlistValue "name" "$heading" "logout_jss" "$packageName.plist"
-			fn_setPlistValue "packageName" "$packageName" "logout_jss" "$packageName.plist"
-			fn_setPlistValue "runDate" "$runDate" "logout_jss" "$packageName.plist"
-			fn_setPlistValue "runDateFriendly" "$runDateFriendly" "logout_jss" "$packageName.plist"
-			fn_setPlistValue "loggedInUser" "$loggedInUser" "logout_jss" "$packageName.plist"
-			fn_setPlistValue "checked" "false" "logout_jss" "$packageName.plist"
+		if [[ -a "$UEXFolderPath"/logout_jss/"$uexNameConsolidated".plist ]] ; then
+			fn_setPlistValue "name" "$heading" "logout_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "uexNameConsolidated" "$uexNameConsolidated" "logout_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "runDate" "$runDate" "logout_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "runDateFriendly" "$runDateFriendly" "logout_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "loggedInUser" "$loggedInUser" "logout_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "checked" "false" "logout_jss" "$uexNameConsolidated.plist"
 
 		else
-			fn_addPlistValue "name" "string" "$heading" "logout_jss" "$packageName.plist"
-			fn_addPlistValue "packageName" "string" "$packageName" "logout_jss" "$packageName.plist"
-			fn_addPlistValue "runDate" "string" "$runDate" "logout_jss" "$packageName.plist"
-			fn_addPlistValue "runDateFriendly" "string" "$runDateFriendly" "logout_jss" "$packageName.plist"
-			fn_addPlistValue "loggedInUser" "string" "$loggedInUser" "logout_jss" "$packageName.plist"
-			fn_addPlistValue "checked" "bool" "false" "logout_jss" "$packageName.plist"
+			fn_addPlistValue "name" "string" "$heading" "logout_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "uexNameConsolidated" "string" "$uexNameConsolidated" "logout_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "runDate" "string" "$runDate" "logout_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "runDateFriendly" "string" "$runDateFriendly" "logout_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "loggedInUser" "string" "$loggedInUser" "logout_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "checked" "bool" "false" "logout_jss" "$uexNameConsolidated.plist"
 
 
 		fi
@@ -3893,17 +3871,17 @@ fi # no on logged in
 		
 		# Create plist with Restart required
 		# Added date to allow for clearing and fail safe in case the user restart manually
-		if [[ -a "$UEXFolderPath"/restart_jss/"$packageName".plist ]] ; then
-			fn_setPlistValue "name" "$heading" "restart_jss" "$packageName.plist"
-			fn_setPlistValue "packageName" "$packageName" "restart_jss" "$packageName.plist"
-			fn_setPlistValue "runDate" "$runDate" "restart_jss" "$packageName.plist"
-			fn_setPlistValue "runDateFriendly" "$runDateFriendly" "restart_jss" "$packageName.plist"
+		if [[ -a "$UEXFolderPath"/restart_jss/"$uexNameConsolidated".plist ]] ; then
+			fn_setPlistValue "name" "$heading" "restart_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "uexNameConsolidated" "$uexNameConsolidated" "restart_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "runDate" "$runDate" "restart_jss" "$uexNameConsolidated.plist"
+			fn_setPlistValue "runDateFriendly" "$runDateFriendly" "restart_jss" "$uexNameConsolidated.plist"
 
 		else
-			fn_addPlistValue "name" "string" "$heading" "restart_jss" "$packageName.plist"
-			fn_addPlistValue "packageName" "string" "$packageName" "restart_jss" "$packageName.plist"
-			fn_addPlistValue "runDate" "string" "$runDate" "restart_jss" "$packageName.plist"
-			fn_addPlistValue "runDateFriendly" "string" "$runDateFriendly" "restart_jss" "$packageName.plist"
+			fn_addPlistValue "name" "string" "$heading" "restart_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "uexNameConsolidated" "string" "$uexNameConsolidated" "restart_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "runDate" "string" "$runDate" "restart_jss" "$uexNameConsolidated.plist"
+			fn_addPlistValue "runDateFriendly" "string" "$runDateFriendly" "restart_jss" "$uexNameConsolidated.plist"
 		fi # if the check has restart
 
 
@@ -4010,12 +3988,12 @@ EOT
 	/bin/rm "$installJSSfolder"* 2> /dev/null
 	
 	# Install notification Place holder
-	# /usr/libexec/PlistBuddy -c "add name string ${heading}" "$UEXFolderPath"/install_jss/"$packageName".plist > /dev/null 2>&1
-	# /usr/libexec/PlistBuddy -c "add checks string ${checks}" "$UEXFolderPath"/install_jss/"$packageName".plist > /dev/null 2>&1
+	# /usr/libexec/PlistBuddy -c "add name string ${heading}" "$UEXFolderPath"/install_jss/"$uexNameConsolidated".plist > /dev/null 2>&1
+	# /usr/libexec/PlistBuddy -c "add checks string ${checks}" "$UEXFolderPath"/install_jss/"$uexNameConsolidated".plist > /dev/null 2>&1
 
 	# added here to reduce Redundancy
-	fn_addPlistValue "name" "string" "$heading4PleaseWait" "install_jss" "$packageName.plist"
-	fn_addPlistValue "checks" "string" "$checks" "install_jss" "$packageName.plist"
+	fn_addPlistValue "name" "string" "$heading4PleaseWait" "install_jss" "$uexNameConsolidated.plist"
+	fn_addPlistValue "checks" "string" "$checks" "install_jss" "$uexNameConsolidated.plist"
 	
 	if [[ "$suspackage" = true ]] ; then
 		#sus version 
@@ -4088,13 +4066,11 @@ EOT
 			echo "$(date)	$compname	:	RESULT: $(cat "$resultlogfilepath")" >> "$logfilepath"
 	
 			logInUEX "Install Completed"
-			# Deleting the package from temp directory
-			# if [[ $type == "package" ]] ; then
-				logInUEX "Deleting the package from temp directory"
-				logInUEX "Deleting $PKG"
-				/bin/rm "$pkg2install" >& "$resultlogfilepath"
-				echo "$(date)	$compname	:	RESULT: $(cat "$resultlogfilepath")" >> "$logfilepath"
-			# fi
+			## No longer need to Delete the package from temp directory since the jamf binary does automatically
+			# logInUEX "Deleting the package from temp directory"
+			# logInUEX "Deleting $PKG"
+			# /bin/rm "$pkg2install" 
+
 		done
 	fi
 	
@@ -4118,13 +4094,6 @@ EOT
 		fi
 	fi
 	#########################
-
-# 	if [[ $type == "package" ]] ; then	
-# 	# remove immutable bits from package so it can be deleted
-# 		echo $(date)	$compname	:	Unlocking the package >> "$logfilepath"
-# 		chflags -R noschg "$pathToPackage" > /dev/null 2>&1
-# 		chflags -R nouchg "$pathToPackage" > /dev/null 2>&1
-# 	fi
 	
 	##################
 	# Clear Deferral #
@@ -4189,7 +4158,7 @@ EOT
 	/bin/rm $pleasewaitInstallProgress > /dev/null 2>&1
 	
 	# delete place holder
-	/bin/rm "$UEXFolderPath"/install_jss/"$packageName".plist > /dev/null 2>&1
+	/bin/rm "$UEXFolderPath"/install_jss/"$uexNameConsolidated".plist > /dev/null 2>&1
 
 
 	###########################
@@ -4236,7 +4205,7 @@ $action completed."
 	if [[ "$checks" == *"block"* ]] ; then
 		# delete the plist with properties to stop blocking
 		logInUEX "Deleting the blocking plist"
-		/bin/rm "$UEXFolderPath/block_jss/${packageName}.plist" > /dev/null 2>&1
+		/bin/rm "$UEXFolderPath/block_jss/${uexNameConsolidated}.plist" > /dev/null 2>&1
 		
 		#kill all cocoaDialog windows 
 		logInUEX "Killing cocoadialog window"
@@ -4286,12 +4255,6 @@ $action completed."
 		logInUEX "Starting restart Daemon"
 		triggerNgo uexrestartagent &
 	fi
-	
-	# delete package installation
-# 	logInUEX "Deleting package file >> "$logfilepath"
-# 	/bin/rm -R "$pathToPackage" > /dev/null 2>&1
-	
-
 
 fi
 
@@ -4301,10 +4264,10 @@ fi
 
 if [[ "$selfservicePackage" = true ]] ; then
 	 logInUEX "removing self service placeholder"
-	/bin/rm "$SSplaceholderDIR""$packageName" > /dev/null 2>&1
+	/bin/rm "$SSplaceholderDIR""$uexNameConsolidated" > /dev/null 2>&1
 fi
 
-/bin/rm "$debugDIR""$packageName" > /dev/null 2>&1
+/bin/rm "$debugDIR""$uexNameConsolidated" > /dev/null 2>&1
 
 
 ##########################################################################################
@@ -4314,29 +4277,14 @@ fi
 else
 	failedInstall=true
 	
-	# Go through list of packages and delete them one by one
-	for PKG in "${packages[@]}"; do
-		pathtopkg="$waitingRoomDIR"
-		pkg2install="$pathtopkg""$PKG"
-		# /bin/rm "$pkg2install" > /dev/null 2>&1
-	done
+	## No longer need to Delete the package from temp directory since the jamf binary does automatically
+	# for PKG in "${packages[@]}"; do
+			# logInUEX "Deleting the package from temp directory"
+			# logInUEX "Deleting $PKG"
+			# /bin/rm "$pkg2install"
+	# done
 		
-# 	if [ debug != true ] ; then
-# 		# clear resouces
-# 		for i in "${resources[@]}" ; do
-# 			if [[ -e $i ]] ; then
-# 				/bin/rm -R "$i" > /dev/null 2>&1
-# 				echo deleting "$i"
-# 			fi
-# 		done
-# 	fi
-	
-# 	if [ debug != true ] ; then
-# 		for i in "${plistFolders[@]}"; do
-# 			/bin/rm -R "$i" > /dev/null 2>&1
-# 			echo deleting "$i"
-# 		done
-# 	fi
+
 fi # Installations ''
 
 ##########################################################################################

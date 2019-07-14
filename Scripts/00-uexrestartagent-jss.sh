@@ -86,8 +86,6 @@ fi
 ##########################################################################################
 # 										LOGGING PREP									 #
 ##########################################################################################
-# logname="${packageName##*/}"
-# logfilename="$logname".log
 logdir="$UEXFolderPath/UEX_Logs/"
 compname=$( scutil --get ComputerName )
 # resulttmp="$logname"_result.log
@@ -142,7 +140,7 @@ for i in "${plists[@]}" ; do
 	# other wise the advise and schedule the logout.
 	
 	# name=$(fn_getPlistValue "name" "restart_jss" "$i")
-	packageName=$(fn_getPlistValue "packageName" "restart_jss" "$i")
+	uexNameConsolidated=$(fn_getPlistValue "uexNameConsolidated" "restart_jss" "$i")
 	plistrunDate=$(fn_getPlistValue "runDate" "restart_jss" "$i")
 	# runDateFriendly=$( date -r $plistrunDate )
 	
@@ -154,8 +152,8 @@ for i in "${plists[@]}" ; do
 	#######################
 	# Logging files setup #
 	#######################
-	logname="${packageName##*/}"
-	logfilename="$logname".log
+	logname="$uexNameConsolidated"
+	logfilename="${logname//.plist/}".log
 	# resulttmp="$logname"_result.log
 	logfilepath="$logdir""$logfilename"
 	
