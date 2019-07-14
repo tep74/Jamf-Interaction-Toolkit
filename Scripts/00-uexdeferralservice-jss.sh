@@ -89,8 +89,9 @@ logoutHookRunning=$( ps aux | grep "JAMF/ManagementFrameworkScripts/logouthook.s
 if [ "$logoutHookRunning" ] ; then 
 	loggedInUser=""
 fi
-
-plists=$( ls "$UEXFolderPath"/defer_jss/*.plist )
+## Need the plist as a file name in list format
+# shellcheck disable=SC2010
+plists=$( ls "$UEXFolderPath"/defer_jss/ | grep ".plist" )
 runDate=$( date +%s )
 
 IFS=$'\n'
@@ -162,7 +163,10 @@ done
 unset IFS
 
 # if the defer folder is now empty then you should do an inventory update to stop deferral service from running
-deferfolderContents=$( ls "$UEXFolderPath"/defer_jss/*.plist )
+## Need the plist as a file name in list format
+# shellcheck disable=SC2010
+deferfolderContents=$( ls "$UEXFolderPath"/defer_jss/| grep ".plist" )
+# deferfolderContents=$( ls "$UEXFolderPath"/defer_jss/*.plist )
 if [[ -z "$deferfolderContents" ]] ; then
 	log4_JSS "No more deferrals."
 	InventoryUpdateRequired=true

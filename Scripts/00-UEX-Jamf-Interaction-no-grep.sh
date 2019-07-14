@@ -186,9 +186,9 @@ customMessage=${11}
 
 
 # for debugging
-# NameConsolidated="UEX;Quit Dialog;1.0"
-# checks=$( echo "merp nopreclose block" | tr '[:upper:]' '[:lower:]' )
-# apps="Safari.app;Chess.app;iTunes.app;World of Apps.app;Photos.app"
+# NameConsolidated="UEX;restart tests Dialog;1.0"
+# checks=$( echo "restart" | tr '[:upper:]' '[:lower:]' )
+# apps=""
 # installDuration=15
 # maxdeferConsolidated="1"
 # packages=""
@@ -728,19 +728,21 @@ fn_check4PendingRestartsOrLogout () {
 	# lastRebootFriendly=$( date -r$lastReboot )
 
 	## keeping for tesging shellcheck
-	# resartPlists=$( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" )
-	resartPlists=$( ls "$UEXFolderPath"/restart_jss/*.plist )
+	## Need the plist as a file name in list format
+	# shellcheck disable=SC2010
+	resartPlists=$( ls "$UEXFolderPath"/restart_jss/ | grep "plist" )
 	set -- "$resartPlists"
 	IFS=$'\n'
 	##This works because i'm setting the seperator
 	# shellcheck disable=SC2206
-# shellcheck disable=SC2048
+	# shellcheck disable=SC2048
 	declare -a resartPlists=($*)  
 	unset IFS
 
 	## keeping for tesging shellcheck
-	# logoutPlists=$( ls "$UEXFolderPath"/logout_jss/ | grep ".plist" )
-	logoutPlists=$( ls "$UEXFolderPath"/logout_jss/*.plist )
+	## Need the plist as a file name in list format
+	# shellcheck disable=SC2010
+	logoutPlists=$( ls "$UEXFolderPath"/logout_jss/ | grep "plist" )
 	set -- "$logoutPlists" 
 	IFS=$'\n'
 	##This works because i'm setting the seperator
@@ -3588,7 +3590,9 @@ if [[ $PostponeClickResult -gt 0 ]] ; then
 		log4_JSS "The next $action prompt is postponed until after $delayDateFriendly"
 		
 		# if the defer folder if empty and i'm creating the first deferal then invetory updates are needed to the comptuer is in scope of the deferral service
-		deferfolderContents=$( ls "$UEXFolderPath"/defer_jss/*.plist )
+		## Need the plist as a file name in list format
+		# shellcheck disable=SC2010
+		deferfolderContents=$( ls "$UEXFolderPath"/defer_jss/| grep ".plist" )
 		if [[ -z "$deferfolderContents" ]] ; then
 			InventoryUpdateRequired=true
 		fi
@@ -4129,7 +4133,9 @@ EOT
 	logInUEX "Deleting defer plist so the agent doesn not start it again"
 	
 	# go thourgh all the deferal plist and if any of them mention the same triggr then delete them
-	plists=$( ls "$UEXFolderPath"/defer_jss/*.plist )
+	## Need the plist as a file name in list format
+	# shellcheck disable=SC2010
+	plists=$( ls "$UEXFolderPath"/defer_jss/ | grep ".plist" )
 	IFS=$'\n'
 	for i in $plists ; do
 		# deferPolicyTrigger=$( /usr/libexec/PlistBuddy -c "print policyTrigger" "$UEXFolderPath"/defer_jss/"$i" )

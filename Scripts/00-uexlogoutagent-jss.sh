@@ -106,7 +106,9 @@ lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}
 lastRebootFriendly=$( date -r "$lastReboot" )
 
 IFS=$'\n' 
-resartPlists=( "$( ls "$UEXFolderPath"/restart_jss/*.plist )" )
+## Need the plist as a file name in list format
+# shellcheck disable=SC2010
+resartPlists=( "$( ls "$UEXFolderPath"/restart_jss/| grep ".plist" )" )
 
 # resartPlists=$( ls $UEXFolderPath/restart_jss/ | grep ".plist" )
 # set -- "$resartPlists"
@@ -114,8 +116,9 @@ resartPlists=( "$( ls "$UEXFolderPath"/restart_jss/*.plist )" )
 # # shellcheck disable=SC2048
 # IFS=$'\n' ; declare -a resartPlists=($*)  
 # unset IFS
-
-logoutPlists=( "$( ls "$UEXFolderPath"/logout_jss/*.plist )" )
+## Need the plist as a file name in list format
+# shellcheck disable=SC2010
+logoutPlists=( "$( ls "$UEXFolderPath"/logout_jss/| grep ".plist" )" )
 unset IFS
 
 # logoutPlists=$( ls $UEXFolderPath/logout_jss/ | grep ".plist" )

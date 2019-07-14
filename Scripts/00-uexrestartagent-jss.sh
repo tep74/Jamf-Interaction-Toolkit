@@ -123,7 +123,9 @@ lastRebootFriendly=$( date -r "$lastReboot" )
 # runDate=$( date +%s )
 
 IFS=$'\n'
-plists=( "$( ls "$UEXFolderPath"/restart_jss/*.plist )" )
+## Need the plist as a file name in list format
+# shellcheck disable=SC2010
+plists=( "$( ls "$UEXFolderPath"/restart_jss/| grep ".plist" )" )
 unset IFS
 
 # plists=$( ls "$UEXFolderPath"/restart_jss/ | grep ".plist" )

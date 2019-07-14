@@ -109,7 +109,9 @@ log4_JSS () {
 ##################################	
 
 IFS=$'\n'
-blockPlists=("$( ls "$UEXFolderPath"/block_jss/*.plist )")
+## Need the plist as a file name in list format
+# shellcheck disable=SC2010
+blockPlists=("$( ls "$UEXFolderPath"/block_jss/| grep ".plist" )")
 unset IFS
 
 ##################################
@@ -121,14 +123,18 @@ lastReboot=$( date -jf "%s" "$(sysctl kern.boottime | awk -F'[= |,]' '{print $6}
 ##################################
 # 		PLIST PROCESSING		 #
 ##################################
-
-runBlocking="$( ls "$UEXFolderPath"/block_jss/*.plist )"
+## Need the plist as a file name in list format
+# shellcheck disable=SC2010
+runBlocking="$( ls "$UEXFolderPath"/block_jss/| grep ".plist" )"
 	while [ "$runBlocking" ] ; do
-	
-	runBlocking="$( ls "$UEXFolderPath"/block_jss/*.plist )"
+	## Need the plist as a file name in list format
+# shellcheck disable=SC2010
+	runBlocking="$( ls "$UEXFolderPath"/block_jss/| grep ".plist" )"
 	
 	IFS=$'\n'
-	blockPlists=("$( ls "$UEXFolderPath"/block_jss/*.plist )")
+	## Need the plist as a file name in list format
+	# shellcheck disable=SC2010
+	blockPlists=("$( ls "$UEXFolderPath"/block_jss/| grep ".plist" )")
 	unset IFS
 	
 	for i in "${blockPlists[@]}" ; do
