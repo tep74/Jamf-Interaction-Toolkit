@@ -2600,8 +2600,6 @@ elif [[ "$checks" == *"logout"* ]] && [[ "$checks" != *"custom"* ]] ; then
 "
 fi
 
-echo ""***CHECK HERE**""
-
 if [[ "$checks" == *"macosupgrade"* ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="After the preparation completes:
 "
