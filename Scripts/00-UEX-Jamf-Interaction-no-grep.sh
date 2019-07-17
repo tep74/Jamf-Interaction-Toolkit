@@ -187,7 +187,7 @@ customMessage=${11}
 
 # for debugging
 # NameConsolidated="UEX;restart tests Dialog;1.0"
-# checks=$( echo "restart" | tr '[:upper:]' '[:lower:]' )
+# checks=$( echo "macosupgrade saveallwork power" | tr '[:upper:]' '[:lower:]' )
 # apps=""
 # installDuration=15
 # maxdeferConsolidated="1"
@@ -2600,12 +2600,24 @@ elif [[ "$checks" == *"logout"* ]] && [[ "$checks" != *"custom"* ]] ; then
 "
 fi
 
-if [[ "$checks" == *"macosupgrade"* ]] && [[ "$checks" != *"custom"* ]] || [[ "$checks" == *"suspackage"* ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] ; then
+echo ""***CHECK HERE**""
+
+if [[ "$checks" == *"macosupgrade"* ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="After the preparation completes:
 "
 fi
 
-if [[ "$checks" == *"macosupgrade"* ]] && [[ "$checks" != *"custom"* ]] || [[ "$checks" == *"suspackage"* ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] ; then
+if [[ "$checks" == *"macosupgrade"* ]] && [[ "$checks" != *"custom"* ]] ; then
+	PostponeMsg+="• Your computer will restart automatically.
+"
+fi
+
+if [[ "$checks" == *"suspackage"* ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] ; then
+	PostponeMsg+="After the preparation completes:
+"
+fi
+
+if [[ "$checks" == *"suspackage"* ]] && [[ "$checks" == *"restart"* ]] && [[ "$checks" != *"custom"* ]] ; then
 	PostponeMsg+="• Your computer will restart automatically.
 "
 fi
