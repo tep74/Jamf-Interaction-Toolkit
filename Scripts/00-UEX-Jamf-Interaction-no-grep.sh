@@ -187,10 +187,10 @@ customMessage=${11}
 
 # for debugging
 # NameConsolidated="UEX;restart tests Dialog;1.0"
-# checks=$( echo "macosupgrade saveallwork power" | tr '[:upper:]' '[:lower:]' )
+# checks=$( echo "macosupgrade saveallwork compliance" | tr '[:upper:]' '[:lower:]' )
 # apps=""
 # installDuration=15
-# maxdeferConsolidated="1"
+# maxdeferConsolidated="3"
 # packages=""
 # triggers="msupdate"
 # customMessage=""
@@ -2332,6 +2332,19 @@ fi #Suspackage && macOS upgrade safety net
 if [ -e "$UEXFolderPath"/defer_jss/"$uexNameConsolidated".plist ] ; then 
 	# delayNumber=$( /usr/libexec/PlistBuddy -c "print delayNumber" "$UEXFolderPath"/defer_jss/"$uexNameConsolidated".plist 2>/dev/null )
 	delayNumber=$(fn_getPlistValue "delayNumber" "defer_jss" "$uexNameConsolidated.plist")
+	
+	## #73 Reset deferral count if Compliance is enabled
+	## if there is a deferrals already
+	## but the last deferral was not with compliance enabled
+	## but now it is ---> reset the deferral number to zero
+	if [[ "$checks" == *"compliance"* ]] ; then
+		delayChecks=$(fn_getPlistValue "checks" "defer_jss" "$uexNameConsolidated.plist")
+		if [[ "$checks" == *"compliance"* ]] && [[ "$delayChecks" != *"compliance"* ]] ; then
+			log4_JSS "The last time the deferral was enable was not compliance enabled"
+			log4_JSS "Resetting the deferral clock"
+			delayNumber=0
+		fi
+	fi
 else
 	delayNumber=0
 fi
@@ -2342,6 +2355,9 @@ logInUEX4DebugMode "maxdefer is $maxdefer"
 logInUEX4DebugMode "delayNumber is $delayNumber"
 
 postponesLeft=$((maxdefer-delayNumber))
+logInUEX4DebugMode "postponesLeft is $postponesLeft"
+logInUEX4DebugMode "maxdefer is $maxdefer"
+logInUEX4DebugMode "delayNumber is $delayNumber"
 
 logInUEX4DebugMode "postponesLeft is $postponesLeft"
 
@@ -2641,9 +2657,12 @@ fi
 
 if [[ $selfservicePackage != true ]] && [[ "$checks" != *"critical"* ]] && [[ $delayNumber -lt $maxdefer ]] ; then
 
+
+	if [[ "$postponesLeft" -gt 0 ]] ;then 
 	if [[ "$checks" == *"restart"* ]] || [[ "$checks" == *"logout"* ]] || [[ "$checks" == *"macosupgrade"* ]] || [[ "$checks" == *"loginwindow"* ]] || [[ "$checks" == *"lockmac"* ]] || [[ "$checks" == *"saveallworks"* ]] ; then
 		PostponeMsg+="
 To run during a break or end of day, click 'at Logout'."
+	fi
 	fi
 
 if [[ $postponesLeft -gt 1 ]] ; then
@@ -2816,11 +2835,15 @@ You have until tomorrow, then you will prompted again about the $action."
 battMessage="Please note that the $modelName must be connected to a charger for a successful $action. Please connect it now. 
 "
 
-if [[ "$postponesLeft" -gt 0 ]] || [[ "$checks" != *"critical"* ]] ; then
+if [[ "$postponesLeft" -eq 0 ]] ; then
 	battMessage+="
 Click 'No Charger' if you do not have it with you."
 
-elif [[ "$checks" != *"critical"* ]] && [[ $delayNumber -lt $maxdefer ]] ; then
+elif [[ "$checks" == *"critical"* ]] ; then
+	battMessage+="
+Click 'No Charger' if you do not have it with you."
+
+else 
 	battMessage+="
 Otherwise click OK and choose a delay time."
 fi
@@ -2871,7 +2894,6 @@ skipNotices="false"
 
 if [ -e "$UEXFolderPath"/defer_jss/"$uexNameConsolidated".plist ] ; then 
 
-	delayNumber=$(fn_getPlistValue "delayNumber" "defer_jss" "$uexNameConsolidated.plist")
 	presentationDelayNumber=$(fn_getPlistValue "presentationDelayNumber" "defer_jss" "$uexNameConsolidated.plist")
 	inactivityDelay=$(fn_getPlistValue "inactivityDelay" "defer_jss" "$uexNameConsolidated.plist")
 
